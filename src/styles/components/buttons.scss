@@ -1,0 +1,69 @@
+// Unraid renders buttons as a red-to-orange gradient *border frame* with
+// transparent fill; hover fills the frame. We flatten to solid accent fill,
+// modern weights, modern radius. Selectors match Unraid's exact pattern
+// (default-base.css lines 209-232) including the .unapi guard.
+
+input[type="button"]:where(:not(.unapi *)),
+input[type="reset"]:where(:not(.unapi *)),
+input[type="submit"]:where(:not(.unapi *)),
+button:where(:not(.unapi *)),
+button[type="button"]:where(:not(.unapi *)),
+a.button:where(:not(.unapi *)) {
+  background: var(--accent);
+  background-size: 100% 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  padding: 8px 14px;
+  min-width: 0;
+  min-height: 36px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+
+input[type="button"]:where(:not(.unapi *)):hover:not([disabled]),
+input[type="reset"]:where(:not(.unapi *)):hover:not([disabled]),
+input[type="submit"]:where(:not(.unapi *)):hover:not([disabled]),
+button:where(:not(.unapi *)):hover:not([disabled]),
+button[type="button"]:where(:not(.unapi *)):hover:not([disabled]),
+a.button:where(:not(.unapi *)):hover:not([disabled]) {
+  background: var(--accent-hover);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+input[type="button"]:where(:not(.unapi *))[disabled],
+input[type="reset"]:where(:not(.unapi *))[disabled],
+input[type="submit"]:where(:not(.unapi *))[disabled],
+button:where(:not(.unapi *))[disabled],
+button[type="button"]:where(:not(.unapi *))[disabled],
+a.button:where(:not(.unapi *))[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+// Unraid's small variant
+.button-small {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+// Spacing utility used by Unraid for button rows — preserve, just modernize gap
+.buttons-no-margin,
+.buttons-spaced {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
