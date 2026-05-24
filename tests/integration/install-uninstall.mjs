@@ -45,10 +45,17 @@ const install = spawnSync('node', [join(root, 'tools/dev-mirror.mjs'), host], { 
 if (install.status !== 0) { console.error('install failed'); process.exit(1); }
 
 console.log('▶ verifying installed state…');
-const dynamixBlock = ssh('grep -c "unraid-modernui begin" /boot/config/plugins/dynamix/dynamix.cfg');
-if (dynamixBlock !== '1') { console.error('FAIL: expected one modernui block in dynamix.cfg, got', dynamixBlock); process.exit(1); }
+// dynamix.cfg should NOT have our marker (we don't touch it as of v0.1.1)
+const dynamixBlock = ssh('n=$(grep -c "unraid-modernui begin" /boot/config/plugins/dynamix/dynamix.cfg 2>/dev/null || true); echo "$n"');
+if (dynamixBlock !== '0') { console.error('FAIL: dynamix.cfg should have no modernui block, got', dynamixBlock); process.exit(1); }
+// Layout file must have exactly one marker (the <link>+<script> injection point)
 const layoutBlock = ssh(`grep -c "unraid-modernui:begin" ${LAYOUT_FILE}`);
 if (layoutBlock !== '1') { console.error('FAIL: expected one modernui:begin marker in layout, got', layoutBlock); process.exit(1); }
+// And it should contain both the stylesheet link and the loader script
+const linkPresent = ssh(`grep -c 'rel="stylesheet" href="/plugins/unraid-modernui/theme/dist/modernui.css"' ${LAYOUT_FILE}`);
+if (linkPresent !== '1') { console.error('FAIL: stylesheet link not found in layout, got count', linkPresent); process.exit(1); }
+const scriptPresent = ssh(`grep -c 'src="/plugins/unraid-modernui/theme/dist/loader.js"' ${LAYOUT_FILE}`);
+if (scriptPresent !== '1') { console.error('FAIL: loader script not found in layout, got count', scriptPresent); process.exit(1); }
 const cssExists    = ssh('test -f /usr/local/emhttp/plugins/unraid-modernui/theme/dist/modernui.css && echo yes || echo no');
 if (cssExists    !== 'yes') { console.error('FAIL: modernui.css not present'); process.exit(1); }
 const loaderExists = ssh('test -f /usr/local/emhttp/plugins/unraid-modernui/theme/dist/loader.js && echo yes || echo no');

@@ -41,12 +41,6 @@ function modernui_strip_html_block(string $contents): string {
     return preg_replace("/\\s*{$begin}.*?{$end}\\s*/s", "\n", $contents) ?? $contents;
 }
 
-function modernui_dynamix_block(): string {
-    return MODERNUI_MARK_BEGIN . "\n"
-        . "extraCSS=\"/plugins/unraid-modernui/theme/dist/modernui.css\"\n"
-        . MODERNUI_MARK_END . "\n";
-}
-
 function modernui_html_block(): string {
     // Inject both the stylesheet link AND the bootstrap script before </head>.
     // CSS is unconditional (theme tokens). JS is loader.js which routes to modernui.js or re-enable.js
@@ -57,11 +51,15 @@ function modernui_html_block(): string {
         . MODERNUI_HTML_MARK_END . "\n";
 }
 
-function modernui_write_dynamix_block(): void {
-    $cfg = is_file(MODERNUI_DYNAMIX_CFG) ? file_get_contents(MODERNUI_DYNAMIX_CFG) : '';
-    $cfg = modernui_strip_block($cfg);
-    $cfg = rtrim($cfg, "\n") . "\n\n" . modernui_dynamix_block();
-    file_put_contents(MODERNUI_DYNAMIX_CFG, $cfg, LOCK_EX);
+function modernui_strip_dynamix_cfg(): void {
+    // Older versions (v0.1.0) wrote a fictitious extraCSS= block here. Clean it up.
+    // Going forward we don't touch dynamix.cfg at all.
+    if (!is_file(MODERNUI_DYNAMIX_CFG)) return;
+    $cfg = file_get_contents(MODERNUI_DYNAMIX_CFG);
+    $stripped = modernui_strip_block($cfg);
+    if ($stripped !== $cfg) {
+        file_put_contents(MODERNUI_DYNAMIX_CFG, $stripped, LOCK_EX);
+    }
 }
 
 function modernui_inject_script_tag(): void {
@@ -101,10 +99,8 @@ function modernui_generate_loader_js(bool $disabled): void {
 function modernui_install(): void {
     if (!is_dir(MODERNUI_CFG_DIR)) mkdir(MODERNUI_CFG_DIR, 0755, true);
 
-    modernui_backup_file(MODERNUI_DYNAMIX_CFG);
     modernui_backup_file(MODERNUI_LAYOUT_FILE);
-
-    modernui_write_dynamix_block();
+    modernui_strip_dynamix_cfg();
     modernui_inject_script_tag();
 
     $disabled = modernui_is_disabled(MODERNUI_CFG_DIR);

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.1.0">
+<!ENTITY version   "0.1.1">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,7 +21,11 @@
   support="https://github.com/EXAMPLE/unraid-modernui/issues">
 
 <CHANGES>
-##0.1.0 2026-05-24
+###v0.1.1 (2026-05-24)
+- Fix: inject <link rel="stylesheet"> into layout head (extraCSS= in dynamix.cfg never worked)
+- Cleanup: stop writing to dynamix.cfg entirely; strip any v0.1.0 leftovers on install/uninstall
+
+###v0.1.0 (2026-05-24)
 - Phase 1: foundation, safety, design tokens, settings page, fallback paths
 </CHANGES>
 

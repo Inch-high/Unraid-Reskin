@@ -23,7 +23,9 @@ function modernui_restore_from_backup(string $path, callable $stripFallback): vo
 }
 
 function modernui_uninstall(): void {
-    modernui_restore_from_backup(MODERNUI_DYNAMIX_CFG, 'modernui_strip_block');
+    // Strip any leftover marker from dynamix.cfg (v0.1.0 wrote a fictitious extraCSS= line there)
+    modernui_strip_dynamix_cfg();
+    // Restore the layout file from its SHA-keyed backup (or strip our markers if backup is missing)
     modernui_restore_from_backup(MODERNUI_LAYOUT_FILE, 'modernui_strip_html_block');
     // We keep MODERNUI_CFG_DIR (settings.cfg + disabled flag) so a reinstall remembers prefs.
     // The .plg remove block deletes the plugin payload itself.
