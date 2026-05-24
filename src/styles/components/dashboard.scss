@@ -1,113 +1,35 @@
-// Unraid's dashboard widgets aren't actually individual cards — they're
-// <tbody> elements inside one big <table class="dashboard">. Each <tbody>
-// gets visually card-like styling so the layout reads as a grid of widgets.
+// Dashboard widgets — LIGHT-TOUCH overrides only.
 //
-// Structure (from /usr/local/emhttp/plugins/dynamix/DashStats.page):
-//   div.frame > div.grid > div.tile > table.dashboard > tbody[.system|.array|…]
-//                                                       └─ tr/td with .tile-header (row 1)
-//                                                       └─ tr/td body content (row 2+)
+// Unraid 7.x has carefully-tuned dashboard CSS: column widths (.w18, .w26, .w36,
+// .w44, .w72), tbody-as-card layout, .usage-disk inline-block sizing, folder.view2
+// grid layouts, all of which work out of the box. Our v0.2.5 first attempt
+// overrode .w36 to inline-flex and forced .usage-disk to width:100% — that broke
+// per-core bars (invisible) and squashed Docker folder tiles into single column.
+//
+// This file is now strictly additive — typography, colors, and hover affordances.
+// Layout properties (display, width, grid-template-columns, flex direction) are
+// LEFT ALONE so Unraid's stylesheet stays authoritative.
 
-// === Outer frame / grid ===
-
-div.frame {
-  background: transparent;
-  padding: 0;
-}
-
-div.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 16px;
-  margin: 0;
-  padding: 0;
-}
-
-div.tile {
-  background: transparent;
-  padding: 0;
-  margin: 0;
-}
-
-// === Widget card (tbody) ===
-
-table.dashboard {
-  background: transparent;
-  border: none;
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-}
-
-table.dashboard tbody {
-  display: table-row-group;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-
-// Reset borders inherited from generic table styles
-table.dashboard tr,
-table.dashboard td {
-  border: none !important;
-  background: transparent !important;
-}
-
-// Body cells get consistent padding
-table.dashboard tbody > tr > td {
-  padding: 8px 16px;
-  vertical-align: middle;
-}
-
-table.dashboard tbody > tr:hover {
-  background: transparent !important;  // override generic tbody tr:hover from tables.scss
-}
-
-// First row in each tbody is the header
-table.dashboard tbody > tr:first-child > td {
-  padding: 0;
-  background: var(--bg-elevated) !important;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-// === Tile header ===
-
-.tile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  gap: 12px;
-}
-
-.tile-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.tile-header-left > i,
-.tile-header-left > .f32 {
-  font-size: 18px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
+// === Tile header typography ===
+// Modernize the uppercase title text and align icon colors with our palette.
 
 h3.tile-header-main {
-  margin: 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  line-height: 1.2;
+  margin: 0;
+}
+
+.tile-header-left > i,
+.tile-header-left .f32 {
+  color: var(--text-secondary);
 }
 
 .tile-header-left .section {
-  font-size: 12px;
   color: var(--text-secondary);
+  font-size: 12px;
   line-height: 1.3;
 }
 
@@ -116,136 +38,28 @@ h3.tile-header-main {
   font-size: 11px;
 }
 
-.tile-header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.tile-header-right-controls,
-.tile-ctrl {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-// Action icons (cog, wrench, info, refresh, play, power)
-i.fa.control,
-span.fa.control,
-.tile-header-right-controls i.fa,
-.tile-header-right-controls a > i.fa,
-.tile-ctrl > span.fa,
-.tile-ctrl > i.fa {
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13px;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
-  opacity: 1;
-}
+// === Action icons (cog, wrench, refresh, play, power) ===
+// Hover color shift only — preserve Unraid's sizing and padding so layout is unchanged.
 
 i.fa.control:hover,
 span.fa.control:hover,
-.tile-header-right-controls i.fa:hover,
 .tile-header-right-controls a:hover > i.fa,
 .tile-ctrl > span.fa:hover,
 .tile-ctrl > i.fa:hover {
-  color: var(--accent);
-  background: var(--bg-base);
-  opacity: 1;
+  color: var(--accent) !important;
 }
 
-// === Usage bars (per-core CPU, disk utilization) ===
-//
-// Markup: div.usage-disk > span[style="width:N%"][.greenbar|.orangebar|.redbar] + span (empty)
-// Variants: default (full row), .sys (thin, used by per-core), .mm (3px, used by docker/vm cpu rows)
-
-.usage-disk,
-.usage-bar {
-  display: inline-block;
-  position: relative;
-  width: 100%;
-  height: 8px;
-  background: var(--usage-disk-background-color);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  vertical-align: middle;
-}
-
-.usage-disk.sys {
-  height: 6px;
-}
-
-.usage-disk.mm {
-  height: 3px;
-}
-
-.usage-disk > span:first-child,
-.usage-bar > span:first-child {
-  display: block;
-  height: 100%;
-  background: var(--accent);  // overridden by .greenbar/.orangebar/.redbar in status.scss
-  transition: width var(--duration-base) var(--ease-out);
-  border-radius: var(--radius-full);
-}
-
-.usage-disk > span:last-child:not(:first-child),
-.usage-bar > span:last-child:not(:first-child) {
-  display: none;  // Unraid's empty trailing span used for fancy gradients; not needed
-}
-
-// "% used" inline label that sits next to a usage bar
-span.load,
-span.cpu0, span.cpu1, span.cpu2, span.cpu3,
-span.cpu4, span.cpu5, span.cpu6, span.cpu7,
-span.cpu8, span.cpu9, span.cpu10, span.cpu11,
-span.cpu12, span.cpu13, span.cpu14, span.cpu15,
-span.cpu16, span.cpu17, span.cpu18, span.cpu19,
-span.cpu20, span.cpu21, span.cpu22, span.cpu23,
-span.cpu24, span.cpu25, span.cpu26, span.cpu27,
-span.cpu28, span.cpu29, span.cpu30, span.cpu31 {
-  display: inline-block;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-  min-width: 32px;
-}
-
-// Per-core row layout (PROCESSOR widget) — keep tight
-span.dashboard.w36,
-span.dashboard.w44,
-span.dashboard.w26,
-span.dashboard.w18,
-span.dashboard.w72 {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-// === Pie/donut charts (SYSTEM widget) ===
-//
-// Markup: div.pie[#sys0..#sys3] with background:conic-gradient(...) set inline by JS.
-// ::after creates the center hole — needs to match our card surface color.
-
-div.pie {
-  position: relative;
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-}
+// === Pie / donut chart center hole ===
+// JS sets the conic-gradient outer ring; ::after creates the inner hole.
+// We only need to ensure the hole color tracks our card surface (already
+// done via --dashstats-pie-after-bg-color in unraid-tokens.scss, but reassert
+// in case dynamix uses !important).
 
 div.pie::after {
-  content: "";
-  position: absolute;
-  inset: 5px;
   background: var(--dashstats-pie-after-bg-color);
-  border-radius: 50%;
 }
 
+// Pie label inside the donut hole — make sure it's readable on our surface
 div.pie span.sys0,
 div.pie span.sys1,
 div.pie span.sys2,
@@ -254,174 +68,44 @@ div.pie span.var0,
 div.pie span.var1,
 div.pie span.var2,
 div.pie span.var3 {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  z-index: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.tile-system-memory-charts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.tile-system-memory-charts > span {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
-// === Docker / VM tile state spans (folder.view2 plugin and stock containers) ===
-
-span.outer.solid {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-base);
-  border: 1px solid var(--border-subtle);
-  margin: 2px;
-  font-size: 12px;
-  transition: border-color var(--duration-fast) var(--ease-out);
-}
-
-span.outer.solid:hover {
-  border-color: var(--accent);
-}
-
-span.outer.solid .inner {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-span.outer.solid .state {
-  font-size: 10px;
-  color: var(--text-secondary);
-  text-transform: lowercase;
-}
-
-// Folder grouping (folder.view2 plugin) — slightly emphasised outer
-span.outer.folder-docker,
-span.outer.folder-vm {
-  background: var(--bg-elevated);
-  border-color: var(--border-default);
-}
-
-.folder-appname-docker,
-.folder-appname-vm {
-  font-weight: 600;
   color: var(--text-primary);
 }
 
-.folder-img-docker,
-.folder-img-vm {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-xs);
-}
+// === IPMI reading values ===
+// The deprecated <font color=""> tags are recolored via status.scss.
+// Just tune up the numeric typography for tabular alignment.
 
-// === Disk Location plugin widget (top-left disk LED grid) ===
-//
-// grid-container holds slot squares; each square has inline background-color
-// from plugin config (filled/empty) and contains a .orb-disklocation status orb.
-
-.grid-container {
-  display: grid;
-  gap: 4px;
-  padding: 8px 0;
-}
-
-.flex-container-layout_h,
-.flex-container-layout_v {
-  display: flex;
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-  min-height: 32px;
-  position: relative;
-}
-
-.flex-container-layout_h > div,
-.flex-container-layout_v > div {
-  position: relative;
-}
-
-.flex-container-start,
-.flex-container-end {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  padding: 2px 4px;
-}
-
-.flex-container-middle_h,
-.flex-container-middle_v {
-  flex: 1;
-}
-
-// === IPMI tile rows ===
-
-tbody#tblIPMIDash td span.w18 {
-  width: 28px;
-  display: inline-block;
-}
-
-tbody#tblIPMIDash td span.w36 {
-  display: inline-block;
-  font-size: 12px;
-}
-
-tbody#tblIPMIDash td span.reading {
+tbody#tblIPMIDash td span.reading,
+tbody#tblIPMIDash td span.reading font {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
 
-// === Shares widget mode selector (SMB / NFS dropdown) ===
-//
-// The .head_gap wraps it inside the tile header; align nicely with the title.
-.head_gap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+// === Tabular numbers on usage labels ===
+// All those CPU % labels next to per-core bars benefit from tabular figures
+// so they don't visually shift as values change.
+
+span.load,
+[class^="cpu"].load,
+.usage-disk + span,
+.usage-bar + span {
+  font-variant-numeric: tabular-nums;
 }
 
-.head_gap select {
+// === Shares mode dropdown in tile header ===
+// The SMB/NFS select inside .head_gap — keep it compact, don't override
+// its parent layout.
+
+.head_gap select:where(:not(.unapi *)) {
   min-height: 28px;
   padding: 4px 24px 4px 10px;
   font-size: 12px;
 }
 
-// === Row layout helpers ===
-// Unraid uses w18/w26/w36/w44/w72 utility-width spans inside dashboard cells.
-// These don't need overrides for spacing — they already work; just ensure
-// they don't pick up generic table cell styling.
-table.dashboard span.w18,
-table.dashboard span.w26,
-table.dashboard span.w36,
-table.dashboard span.w44,
-table.dashboard span.w72 {
-  display: inline-block;
-  vertical-align: middle;
-}
+// === Light-mode tweak for orb dots ===
+// Slight darkening so the colored circles read on white backgrounds.
 
-// === Light-mode tweaks for orbs ===
 [data-theme="light"] .orb,
 [data-theme="light"] .orb-disklocation {
-  filter: brightness(0.85);  // slightly darken so they read on white backgrounds
+  filter: brightness(0.85);
 }
