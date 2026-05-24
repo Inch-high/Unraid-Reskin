@@ -1,0 +1,112 @@
+// Unraid uses jquery.sweetalert for nearly all dialogs (confirms, errors, logs).
+// Selectors: .sweet-overlay (backdrop), .sweet-alert (dialog container),
+// .sa-icon + .sa-error/.sa-warning/.sa-info/.sa-success, .sa-button-container.
+// Special variant: .sweet-alert.nchan for live log streams.
+
+.sweet-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10000;
+}
+
+[data-theme="light"] .sweet-overlay {
+  background: rgba(15, 20, 25, 0.4);
+}
+
+.sweet-alert {
+  width: 90vw;
+  max-width: 480px;
+  max-height: 90vh;
+  padding: 24px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  z-index: 99999;
+  overflow: auto;
+}
+
+// Title (h2)
+.sweet-alert h2 {
+  color: var(--text-primary) !important;  // Unraid forces a literal #575757
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  letter-spacing: 0;
+}
+
+// Body text
+.sweet-alert p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+// Icons — Unraid renders 80×80 circular icons; shrink slightly and align left
+.sweet-alert .sa-icon {
+  width: 56px;
+  height: 56px;
+  margin: 8px auto 16px;
+  border-width: 3px;
+}
+
+.sweet-alert .sa-error  { border-color: var(--danger); }
+.sweet-alert .sa-warning { border-color: var(--warning); }
+.sweet-alert .sa-info    { border-color: var(--info); }
+.sweet-alert .sa-success { border-color: var(--success); }
+
+// Button container — right-align, primary on the right per modern convention
+.sweet-alert .sa-button-container,
+.sweet-alert .sa-confirm-button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+// Buttons inside dialog — let buttons.scss handle visual; just ensure spacing
+.sweet-alert button.confirm,
+.sweet-alert button.cancel {
+  min-width: 80px;
+}
+
+// Cancel button — outline variant (secondary)
+.sweet-alert button.cancel {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.sweet-alert button.cancel:hover:not([disabled]) {
+  background: var(--bg-elevated);
+  border-color: var(--text-secondary);
+}
+
+// .nchan variant — live log streams need wide layout
+.sweet-alert.nchan {
+  max-width: 1200px;
+  width: 95vw;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sweet-alert.nchan pre#swalbody,
+.sweet-alert.nchan pre#swaltext {
+  flex: 1;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
