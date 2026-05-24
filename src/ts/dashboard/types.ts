@@ -66,4 +66,21 @@ export interface ParityState {
   scheduleEnabled: boolean;
 }
 
-export type WidgetState = UnknownWidget | ArrayState | CacheState | ParityState;
+export type DiskSlotColor = 'green' | 'yellow' | 'red' | 'blue' | 'grey';
+
+export interface DiskSlot {
+  position: number;            // grid order from style="order:N"
+  occupied: boolean;           // inferred from orb color: grey = empty, else occupied
+  orbColor: DiskSlotColor;
+  label: string;               // slot number text from <b>N</b>
+  inlineBgColor: string | null; // The inline background-color of the slot box, if any
+}
+
+export interface DisklocationState {
+  kind: 'disklocation';
+  assignedCount: number;       // "14 of 19 drives assigned" → 14
+  totalCount: number;          // → 19
+  slots: DiskSlot[];           // single flat list; component groups visually
+}
+
+export type WidgetState = UnknownWidget | ArrayState | CacheState | ParityState | DisklocationState;
