@@ -1,25 +1,113 @@
-// Dashboard widgets — LIGHT-TOUCH overrides only.
+// Dashboard widgets — Material 3 inspired styling.
 //
-// Unraid 7.x has carefully-tuned dashboard CSS: column widths (.w18, .w26, .w36,
-// .w44, .w72), tbody-as-card layout, .usage-disk inline-block sizing, folder.view2
-// grid layouts, all of which work out of the box. Our v0.2.5 first attempt
-// overrode .w36 to inline-flex and forced .usage-disk to width:100% — that broke
-// per-core bars (invisible) and squashed Docker folder tiles into single column.
+// Critical constraint (learned the hard way): Unraid's dashboard layout is
+// driven by very specific CSS rules in default-base.css. Touching layout
+// properties (display, width, grid-template-columns, flex direction,
+// .w18/.w26/.w36/.w44/.w72 column-width utilities, .usage-disk sizing,
+// span.outer.solid flex direction) WILL squash widgets and hide per-core
+// bars. So this file is strictly VISUAL — border-radius, box-shadow,
+// background, padding (only where it doesn't break sizing), color,
+// typography, transitions. Never display, never width, never grid.
 //
-// This file is now strictly additive — typography, colors, and hover affordances.
-// Layout properties (display, width, grid-template-columns, flex direction) are
-// LEFT ALONE so Unraid's stylesheet stays authoritative.
+// Structure recap:
+//   div.frame > div.grid > div.tile > table.dashboard > tbody > tr/td
+//   - One table.dashboard per div.tile, multiple <tbody> siblings inside
+//   - tbody has Unraid default: `background-color: var(--mild-background-color);
+//     border: 1px solid var(--table-border-color)` — that's the "card"
+//   - Vertical gap between widgets: <tr><td class="stopgap"> (20px) — KEEP
+//
+// Material 3 card recipe:
+//   - No border, tonal surface (lighter than page bg)
+//   - 16px corner radius
+//   - Subtle elevation shadow (level 1)
+//   - 16-20px padding inside
+//   - State-layer hover on interactive elements
 
-// === Tile header typography ===
-// Modernize the uppercase title text and align icon colors with our palette.
+// === Widget card (each tbody) ===
+
+table.dashboard tbody {
+  background-color: var(--bg-surface);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.20),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+table.dashboard tbody:hover {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.20),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="light"] table.dashboard tbody {
+  box-shadow:
+    0 1px 2px rgba(15, 20, 25, 0.04),
+    0 1px 3px rgba(15, 20, 25, 0.06);
+}
+
+[data-theme="light"] table.dashboard tbody:hover {
+  box-shadow:
+    0 1px 2px rgba(15, 20, 25, 0.04),
+    0 2px 6px rgba(15, 20, 25, 0.10);
+}
+
+// Border-radius on tbody only fully renders the corners if the cells at
+// the corners also get matching corner radii (otherwise the inner cell
+// backgrounds bleed outside the rounded clip on some browsers).
+table.dashboard tbody > tr:first-child > td:first-child {
+  border-top-left-radius: var(--radius-lg);
+}
+table.dashboard tbody > tr:first-child > td:last-child {
+  border-top-right-radius: var(--radius-lg);
+}
+table.dashboard tbody > tr:last-child > td:first-child {
+  border-bottom-left-radius: var(--radius-lg);
+}
+table.dashboard tbody > tr:last-child > td:last-child {
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+// Header row: more generous padding for breathing room
+table.dashboard tbody > tr:first-child > td {
+  padding: 16px 20px 12px 20px;
+}
+
+// Body cells: consistent horizontal padding match the header
+table.dashboard tbody > tr > td {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+// Last row gets extra bottom padding so content doesn't kiss the rounded edge
+table.dashboard tbody > tr:last-child > td {
+  padding-bottom: 18px;
+}
+
+// The td.stopgap is the vertical gap rows between widgets — keep transparent
+// (Unraid sets it to var(--background-color) which we already alias to bg-base)
+// but ensure no border/shadow bleed through:
+table.dashboard tr.stopgap,
+table.dashboard tr.stopgap > td,
+table.dashboard td.stopgap {
+  background-color: transparent !important;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+// === Header text ===
+// Larger, semi-bold, mixed-case — Material 3 title-medium style.
+// Override Unraid's `tr:first-child > td { font-size: 1.6rem; font-weight: bold }`.
 
 h3.tile-header-main {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary);
   margin: 0;
+  line-height: 1.3;
 }
 
 .tile-header-left > i,
@@ -31,35 +119,69 @@ h3.tile-header-main {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.3;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .tile-header-left .section span {
   color: var(--text-muted);
   font-size: 11px;
+  font-weight: 400;
 }
 
-// === Action icons (cog, wrench, refresh, play, power) ===
-// Hover color shift only — preserve Unraid's sizing and padding so layout is unchanged.
+// === Action icons (cog, wrench, refresh, play, power) — Material icon-button ===
+// Unraid default: padding .25rem, border-radius .5rem, opacity 1→.75 on hover.
+// Material: padding .5rem, full circle, state-layer tinted background on hover,
+// color shifts to accent. Override Unraid's !important on font-size with our own
+// for state-layer feel.
 
+table.dashboard .control,
+.control,
+i.fa.control,
+span.fa.control {
+  background-color: transparent !important;
+  border-radius: 50% !important;
+  padding: 0.5rem !important;
+  color: var(--text-secondary) !important;
+  opacity: 1 !important;
+  transition: background-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out) !important;
+}
+
+table.dashboard .control:hover,
+.control:hover,
 i.fa.control:hover,
-span.fa.control:hover,
-.tile-header-right-controls a:hover > i.fa,
+span.fa.control:hover {
+  background-color: var(--accent-muted) !important;
+  color: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+// `.tile-ctrl > span.fa.hand` direct-action icons (Stop array, Sleep, Reboot,
+// Shutdown) also get the icon-button treatment
+.tile-ctrl > span.fa,
+.tile-ctrl > i.fa {
+  background-color: transparent;
+  border-radius: 50%;
+  padding: 0.5rem;
+  color: var(--text-secondary);
+  transition: background-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+
 .tile-ctrl > span.fa:hover,
 .tile-ctrl > i.fa:hover {
-  color: var(--accent) !important;
+  background-color: var(--accent-muted);
+  color: var(--accent);
 }
 
 // === Pie / donut chart center hole ===
-// JS sets the conic-gradient outer ring; ::after creates the inner hole.
-// We only need to ensure the hole color tracks our card surface (already
-// done via --dashstats-pie-after-bg-color in unraid-tokens.scss, but reassert
-// in case dynamix uses !important).
 
 div.pie::after {
   background: var(--dashstats-pie-after-bg-color);
 }
 
-// Pie label inside the donut hole — make sure it's readable on our surface
 div.pie span.sys0,
 div.pie span.sys1,
 div.pie span.sys2,
@@ -69,11 +191,24 @@ div.pie span.var1,
 div.pie span.var2,
 div.pie span.var3 {
   color: var(--text-primary);
+  font-weight: 600;
+}
+
+// === Usage bars — make them fully pill-shaped (visual polish only) ===
+// We can safely add border-radius without touching width/display.
+
+.usage-disk,
+.usage-bar {
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.usage-disk > span,
+.usage-bar > span {
+  border-radius: var(--radius-full);
 }
 
 // === IPMI reading values ===
-// The deprecated <font color=""> tags are recolored via status.scss.
-// Just tune up the numeric typography for tabular alignment.
 
 tbody#tblIPMIDash td span.reading,
 tbody#tblIPMIDash td span.reading font {
@@ -82,8 +217,6 @@ tbody#tblIPMIDash td span.reading font {
 }
 
 // === Tabular numbers on usage labels ===
-// All those CPU % labels next to per-core bars benefit from tabular figures
-// so they don't visually shift as values change.
 
 span.load,
 [class^="cpu"].load,
@@ -93,19 +226,35 @@ span.load,
 }
 
 // === Shares mode dropdown in tile header ===
-// The SMB/NFS select inside .head_gap — keep it compact, don't override
-// its parent layout.
 
 .head_gap select:where(:not(.unapi *)) {
   min-height: 28px;
   padding: 4px 24px 4px 10px;
   font-size: 12px;
+  border-radius: var(--radius-sm);
 }
 
 // === Light-mode tweak for orb dots ===
-// Slight darkening so the colored circles read on white backgrounds.
 
 [data-theme="light"] .orb,
 [data-theme="light"] .orb-disklocation {
   filter: brightness(0.85);
+}
+
+// === Bigger surface for .shade containers too (Material consistency) ===
+// Phase 2 set .shade to --radius-md (8px). Bump to --radius-lg (12px) to match
+// the dashboard widget aesthetic, plus add the level-1 shadow.
+
+.shade {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.20),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .shade {
+  box-shadow:
+    0 1px 2px rgba(15, 20, 25, 0.04),
+    0 1px 3px rgba(15, 20, 25, 0.06);
 }
