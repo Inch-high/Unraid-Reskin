@@ -1,0 +1,13 @@
+#!/bin/bash
+# rc.modernui — runs at plugin start time, ensures dynamix.cfg block matches disabled state.
+#
+# Why: an SSH user may `touch /boot/config/plugins/unraid-modernui/disabled` while the box is down.
+# On next boot we must rewrite dynamix.cfg's block so the floating re-enable pill is what loads,
+# not the full theme.
+
+PHP=/usr/bin/php
+INCLUDE=/usr/local/emhttp/plugins/unraid-modernui/include
+
+if [ -x "$PHP" ] && [ -f "$INCLUDE/install.php" ]; then
+  "$PHP" "$INCLUDE/install.php"
+fi
