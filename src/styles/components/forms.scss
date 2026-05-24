@@ -1,0 +1,117 @@
+// Unraid form inputs use bottom-border-only style + transparent backgrounds.
+// We give them a full border, surface background, and modern focus ring.
+// Selectors include the .unapi guard.
+//
+// Settings rows use a dl/dt/dd grid (35% / 1fr at ≥769px) — preserved, just
+// retoned. Inputs inside dd cap at 400px (Unraid default).
+
+input[type="text"]:where(:not(.unapi *)),
+input[type="password"]:where(:not(.unapi *)),
+input[type="number"]:where(:not(.unapi *)),
+input[type="url"]:where(:not(.unapi *)),
+input[type="email"]:where(:not(.unapi *)),
+input[type="date"]:where(:not(.unapi *)),
+input[type="search"]:where(:not(.unapi *)),
+input[type="tel"]:where(:not(.unapi *)),
+input[type="file"]:where(:not(.unapi *)),
+textarea:where(:not(.unapi *)),
+select:where(:not(.unapi *)) {
+  background-color: var(--bg-surface);
+  background-image: none;  // override Unraid's chevron-via-gradient for selects
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 8px 12px;
+  min-height: 36px;
+  box-shadow: none;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+input:where(:not(.unapi *)):focus,
+textarea:where(:not(.unapi *)):focus,
+select:where(:not(.unapi *)):focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+  background-color: var(--bg-surface);
+}
+
+input:where(:not(.unapi *)):disabled,
+textarea:where(:not(.unapi *)):disabled,
+select:where(:not(.unapi *)):disabled {
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+textarea:where(:not(.unapi *)) {
+  min-height: 80px;
+  resize: vertical;
+}
+
+// Selects need a custom chevron since we removed Unraid's gradient
+select:where(:not(.unapi *)) {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%239aa4b2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px 12px;
+  padding-right: 30px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+// Unraid input variants
+input.narrow:where(:not(.unapi *)) { width: 150px; }
+input.trim:where(:not(.unapi *))   { width: 10rem; }
+select.narrow:where(:not(.unapi *)) { width: 150px; }
+
+// Settings row grid (Unraid's dl/dt/dd pattern) — preserve layout, retune spacing
+dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 16px;
+  margin: 12px 0;
+
+  @media (min-width: 769px) {
+    grid-template-columns: 35% 1fr;
+    gap: 12px 16px;
+  }
+}
+
+dl dt {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+  align-self: center;
+
+  @media (min-width: 769px) {
+    text-align: right;
+  }
+}
+
+dl dd {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+dl dd input:where(:not(.unapi *)),
+dl dd select:where(:not(.unapi *)),
+dl dd textarea:where(:not(.unapi *)) {
+  max-width: 400px;
+}
+
+// Checkbox + radio
+input[type="checkbox"]:where(:not(.unapi *)),
+input[type="radio"]:where(:not(.unapi *)) {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
