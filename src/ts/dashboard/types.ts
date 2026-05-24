@@ -54,4 +54,16 @@ export interface CacheState {
   disks: DiskRow[];
 }
 
-export type WidgetState = UnknownWidget | ArrayState | CacheState;
+export type ParityStatus = 'valid' | 'running' | 'invalid' | 'disabled' | 'unknown';
+
+export interface ParityState {
+  kind: 'parity';
+  status: ParityStatus;
+  lastCheckText: string | null;
+  durationText: string | null;
+  averageSpeedMBs: number | null;
+  errorsFound: number | null;
+  scheduleEnabled: boolean;
+}
+
+export type WidgetState = UnknownWidget | ArrayState | CacheState | ParityState;
