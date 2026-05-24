@@ -99,10 +99,22 @@ export interface ProcessorState {
   coreLoads: CoreLoad[];
 }
 
+export interface MemorySlice {
+  label: string;            // "RAM usage", "Boot device", "Log filesystem", "Docker vdisk"
+  percentUsed: number;
+  detail: string;           // tooltip text "Percent of total used memory (62.6 GiB)"
+}
+
+export interface MemoryState {
+  kind: 'system';
+  pies: MemorySlice[];
+}
+
 export type WidgetState =
   | UnknownWidget
   | ArrayState
   | CacheState
   | ParityState
   | DisklocationState
-  | ProcessorState;
+  | ProcessorState
+  | MemoryState;
