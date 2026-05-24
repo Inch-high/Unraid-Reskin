@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { DashboardStore } from '../store';
-import type { WidgetState, UnknownWidget, ArrayState, CacheState, ParityState, DisklocationState, ProcessorState, MemoryState, GpuState } from '../types';
+import type { WidgetState, UnknownWidget, ArrayState, CacheState, ParityState, DisklocationState, ProcessorState, MemoryState, GpuState, IpmiState } from '../types';
 import './md-section';
 import './md-plugin-card';
 import './md-array-card';
@@ -11,6 +11,7 @@ import './md-disklocation-card';
 import './md-processor-card';
 import './md-memory-card';
 import './md-gpu-card';
+import './md-ipmi-card';
 
 @customElement('modernui-dashboard')
 export class ModernuiDashboard extends LitElement {
@@ -61,6 +62,7 @@ export class ModernuiDashboard extends LitElement {
     const processors = widgets.filter((w): w is ProcessorState => w.kind === 'processor');
     const memories = widgets.filter((w): w is MemoryState => w.kind === 'system');
     const gpus = widgets.filter((w): w is GpuState => w.kind === 'gpu');
+    const ipmis = widgets.filter((w): w is IpmiState => w.kind === 'ipmi');
     const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
 
     return html`
@@ -72,11 +74,12 @@ export class ModernuiDashboard extends LitElement {
           ${disklocations.map((s) => html`<md-disklocation-card .state=${s}></md-disklocation-card>`)}
         </md-section>
       ` : ''}
-      ${(processors.length > 0 || memories.length > 0 || gpus.length > 0) ? html`
+      ${(processors.length > 0 || memories.length > 0 || gpus.length > 0 || ipmis.length > 0) ? html`
         <md-section label="Compute">
           ${processors.map((s) => html`<md-processor-card .state=${s}></md-processor-card>`)}
           ${memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`)}
           ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
+          ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
         </md-section>
       ` : ''}
       ${unknown.length > 0 ? html`

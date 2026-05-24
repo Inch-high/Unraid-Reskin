@@ -126,6 +126,18 @@ export interface GpuState {
   throttling: boolean;
 }
 
+export interface IpmiSensor {
+  name: string;
+  reading: string;
+  status: 'green' | 'yellow' | 'red' | 'blue' | 'grey';
+  group: 'temperature' | 'fan' | 'voltage' | 'other';
+}
+
+export interface IpmiState {
+  kind: 'ipmi';
+  sensors: IpmiSensor[];
+}
+
 export type WidgetState =
   | UnknownWidget
   | ArrayState
@@ -134,4 +146,5 @@ export type WidgetState =
   | DisklocationState
   | ProcessorState
   | MemoryState
-  | GpuState;
+  | GpuState
+  | IpmiState;
