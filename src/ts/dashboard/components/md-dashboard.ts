@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { DashboardStore } from '../store';
-import type { WidgetState, UnknownWidget } from '../types';
+import type { WidgetState, UnknownWidget, ArrayState } from '../types';
 import './md-section';
 import './md-plugin-card';
+import './md-array-card';
 
 @customElement('modernui-dashboard')
 export class ModernuiDashboard extends LitElement {
@@ -46,13 +47,21 @@ export class ModernuiDashboard extends LitElement {
   }
 
   render() {
-    const unknown = this._widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
+    const widgets = this._widgets;
+    const arrays = widgets.filter((w): w is ArrayState => w.kind === 'array');
+    const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
+
     return html`
-      <md-section label="Plugins (untyped)">
-        ${unknown.map(
-          (w) => html`<md-plugin-card .state=${w}></md-plugin-card>`,
-        )}
-      </md-section>
+      ${arrays.length > 0 ? html`
+        <md-section label="Storage">
+          ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
+        </md-section>
+      ` : ''}
+      ${unknown.length > 0 ? html`
+        <md-section label="Plugins (untyped)">
+          ${unknown.map((w) => html`<md-plugin-card .state=${w}></md-plugin-card>`)}
+        </md-section>
+      ` : ''}
     `;
   }
 }

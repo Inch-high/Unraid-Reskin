@@ -1,15 +1,14 @@
 import type { WidgetState } from '../types';
 import { unknownExtractor, type Extractor, type ExtractorContext } from './unknown';
+import { arrayExtractor } from './array';
 
 export type { Extractor, ExtractorContext };
 
 // Ordered registry — earlier entries win.
 // Per-widget tasks insert their entries above the 'unknown' fallback.
 export const registry: Array<{ name: string; extractor: Extractor<WidgetState> }> = [
-  // Future entries land here (above unknown):
-  // { name: 'array', extractor: arrayExtractor },
-  // { name: 'cache', extractor: cacheExtractor },
-  // ...
+  { name: 'array', extractor: arrayExtractor as Extractor<WidgetState> },
+  // Subsequent widgets register above 'unknown' in their tasks
   { name: 'unknown', extractor: unknownExtractor as Extractor<WidgetState> },
 ];
 

@@ -1,5 +1,4 @@
 // All widget state interfaces live here. Each extractor's task adds its own.
-// This file is the canonical source for the WidgetState union and the WidgetKind enum.
 
 export type WidgetKind =
   | 'identity'
@@ -27,9 +26,23 @@ export interface UnknownWidget {
   innerHTML: string;
 }
 
-// Per-widget interfaces extend this with kind: '<their-kind>'.
-// Added incrementally; see each widget's task.
+export type DiskState = 'active' | 'standby' | 'spinning-up' | 'unmounted' | 'unknown';
+export type SmartHealth = 'healthy' | 'warning' | 'failed' | 'unknown';
 
-export type WidgetState = UnknownWidget;
-// As widget interfaces are added, this expands to:
-// export type WidgetState = UnknownWidget | ArrayState | CacheState | ...
+export interface DiskRow {
+  name: string;
+  state: DiskState;
+  tempC: number | null;
+  smart: SmartHealth;
+  utilizationPct: number | null;
+}
+
+export interface ArrayState {
+  kind: 'array';
+  status: 'started' | 'starting' | 'stopped' | 'unknown';
+  usedTB: number | null;
+  totalTB: number | null;
+  disks: DiskRow[];
+}
+
+export type WidgetState = UnknownWidget | ArrayState;
