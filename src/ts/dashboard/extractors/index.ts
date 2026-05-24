@@ -8,6 +8,7 @@ import { processorExtractor } from './processor';
 import { systemExtractor } from './system';
 import { gpuExtractor } from './gpu';
 import { ipmiExtractor } from './ipmi';
+import { dockerExtractor } from './docker';
 
 export type { Extractor, ExtractorContext };
 
@@ -22,6 +23,7 @@ export const registry: Array<{ name: string; extractor: Extractor<WidgetState> }
   { name: 'system', extractor: systemExtractor as Extractor<WidgetState> },
   { name: 'gpu', extractor: gpuExtractor as Extractor<WidgetState> },
   { name: 'ipmi', extractor: ipmiExtractor as Extractor<WidgetState> },
+  { name: 'docker', extractor: dockerExtractor as Extractor<WidgetState> },
   // Subsequent widgets register above 'unknown' in their tasks
   { name: 'unknown', extractor: unknownExtractor as Extractor<WidgetState> },
 ];

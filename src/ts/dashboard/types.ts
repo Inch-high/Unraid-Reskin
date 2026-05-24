@@ -138,6 +138,29 @@ export interface IpmiState {
   sensors: IpmiSensor[];
 }
 
+export interface DockerContainer {
+  name: string;
+  state: 'started' | 'stopped' | 'paused' | 'unknown';
+  imgUrl: string | null;
+  folderName: string | null;   // null if not in a folder.view2 grouping
+}
+
+export interface DockerFolder {
+  name: string;
+  state: 'started' | 'stopped' | 'paused' | 'mixed';
+  containers: DockerContainer[];
+  totalCount: number;
+  runningCount: number;
+}
+
+export interface DockerState {
+  kind: 'docker';
+  folders: DockerFolder[];      // populated when folder.view2 is installed
+  ungrouped: DockerContainer[]; // containers not in any folder
+  totalRunning: number;
+  totalCount: number;
+}
+
 export type WidgetState =
   | UnknownWidget
   | ArrayState
@@ -147,4 +170,5 @@ export type WidgetState =
   | ProcessorState
   | MemoryState
   | GpuState
-  | IpmiState;
+  | IpmiState
+  | DockerState;

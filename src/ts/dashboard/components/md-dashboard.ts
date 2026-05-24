@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { DashboardStore } from '../store';
-import type { WidgetState, UnknownWidget, ArrayState, CacheState, ParityState, DisklocationState, ProcessorState, MemoryState, GpuState, IpmiState } from '../types';
+import type { WidgetState, UnknownWidget, ArrayState, CacheState, ParityState, DisklocationState, ProcessorState, MemoryState, GpuState, IpmiState, DockerState } from '../types';
 import './md-section';
 import './md-plugin-card';
 import './md-array-card';
@@ -12,6 +12,7 @@ import './md-processor-card';
 import './md-memory-card';
 import './md-gpu-card';
 import './md-ipmi-card';
+import './md-docker-card';
 
 @customElement('modernui-dashboard')
 export class ModernuiDashboard extends LitElement {
@@ -63,6 +64,7 @@ export class ModernuiDashboard extends LitElement {
     const memories = widgets.filter((w): w is MemoryState => w.kind === 'system');
     const gpus = widgets.filter((w): w is GpuState => w.kind === 'gpu');
     const ipmis = widgets.filter((w): w is IpmiState => w.kind === 'ipmi');
+    const dockers = widgets.filter((w): w is DockerState => w.kind === 'docker');
     const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
 
     return html`
@@ -80,6 +82,11 @@ export class ModernuiDashboard extends LitElement {
           ${memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`)}
           ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
           ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
+        </md-section>
+      ` : ''}
+      ${dockers.length > 0 ? html`
+        <md-section label="Workloads">
+          ${dockers.map((s) => html`<md-docker-card .state=${s} data-wide></md-docker-card>`)}
         </md-section>
       ` : ''}
       ${unknown.length > 0 ? html`
