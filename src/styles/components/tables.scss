@@ -1,0 +1,99 @@
+// Unraid uses <table> heavily — the array, shares, users, containers, VMs,
+// plugins all render as tables. Classes: .unraid, .tablesorter, .disk_status,
+// .array_status, .share_status, .dashboard, .legacy.
+// .TableContainer wraps with overflow-x: auto.
+
+table:where(:not(.unapi *)) {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+table:where(:not(.unapi *)) th,
+table:where(:not(.unapi *)) td {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+table:where(:not(.unapi *)) tbody tr:last-child td {
+  border-bottom: none;
+}
+
+table:where(:not(.unapi *)) thead th,
+table:where(:not(.unapi *)) th.tablesorter-header {
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px;
+}
+
+// Even-row tinting (Unraid does this on table.unraid)
+table.unraid tr:nth-child(even),
+table.tablesorter tbody tr:nth-child(even) {
+  background-color: var(--bg-base);
+}
+
+// Row hover
+table:where(:not(.unapi *)) tbody tr:hover {
+  background-color: var(--bg-elevated);
+}
+
+// Row state classes — preserve Unraid's semantic colors
+tr.alert {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-left: 3px solid var(--danger);
+}
+
+tr.warn {
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  border-left: 3px solid var(--warning);
+}
+
+// Sortable indicators — Unraid uses .tablesorter-headerAsc / -headerDesc
+.tablesorter-headerAsc,
+.tablesorter-headerDesc {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+// TableContainer wrapper — modern scroll behavior
+.TableContainer {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  margin: 12px 0;
+}
+
+.TableContainer table {
+  min-width: 720px;  // narrower than Unraid's 1000px default
+  margin: 0;
+  border-radius: 0;  // wrapper has the radius now
+  border: none;
+}
+
+.TableContainer--no-min-width table {
+  min-width: 0;
+}
+
+// Stopgap cells used in dashboard tables — flatten
+table.dashboard td.stopgap {
+  background: var(--bg-elevated);
+  padding: 4px 0;
+}
+
+table.dashboard div.section {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+table.dashboard div.section:last-child {
+  border-bottom: none;
+}
