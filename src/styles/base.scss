@@ -1,0 +1,35 @@
+// Phase 1 applies tokens to the page body and form controls only.
+// Component-level styling (cards, tables, etc.) lands in Phase 2.
+
+body {
+  background: var(--bg-base) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  &:hover { color: var(--accent-hover); }
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+// Respect user preference if reduced-motion is on
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
