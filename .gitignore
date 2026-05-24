@@ -1,0 +1,11 @@
+node_modules/
+package/theme/dist/
+package/backups/
+*.txz
+.DS_Store
+dist/
+coverage/
+.env
+.env.local
+*.log
+.vscode/settings.json
