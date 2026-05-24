@@ -83,4 +83,26 @@ export interface DisklocationState {
   slots: DiskSlot[];           // single flat list; component groups visually
 }
 
-export type WidgetState = UnknownWidget | ArrayState | CacheState | ParityState | DisklocationState;
+export interface CoreLoad {
+  index: number;
+  threadLabel: string;  // "CPU 0 - HT 16"
+  loadPct: number;
+}
+
+export interface ProcessorState {
+  kind: 'processor';
+  model: string;             // "AMD EPYC 8124P 16-Core @ 2450 MHz"
+  cores: number;             // parsed from /(\d+)-Core/ in model
+  totalPowerW: number | null;
+  temperatureC: number | null;
+  overallLoadPct: number | null;
+  coreLoads: CoreLoad[];
+}
+
+export type WidgetState =
+  | UnknownWidget
+  | ArrayState
+  | CacheState
+  | ParityState
+  | DisklocationState
+  | ProcessorState;
