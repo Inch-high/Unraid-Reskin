@@ -1,0 +1,39 @@
+<tbody title="Shares Information" class="mixed">
+                    <tr>
+                        <td>
+                            <span class='tile-header'>
+                                <span class='tile-header-left'>
+                                    <i class='icon-folder f32'></i>
+                                    <div class='section'>
+                                        <span class='flex flex-row flex-wrap items-center gap-4'>
+                                          <h3 class='tile-header-main'>Shares</h3>
+                                                                                          <i class='ups fa fa-angle-double-right'></i>
+                                                <span class="head_gap flex flex-row flex-wrap items-center gap-4">
+                                                    <select name="enter_share" onchange="changeMode(this.value)">
+                                                                                                                    <option value='0'>SMB</option>                                                                                                                                                                    </select>
+                                                </span>
+                                                                                    </span>
+                                        <span>
+                                            Share count: 10 with 0 public SMB and 0 public NFS                                        </span><br>
+                                    </div>
+                                </span>
+
+                                <span class='tile-header-right'>
+                                    <span class='tile-header-right-controls'>
+                                        <a href='/Shares' title="Go to Share settings">
+                                            <i class='fa fa-fw fa-cog control'></i>
+                                        </a>
+                                    </span>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr class='header'>
+                        <td>
+                            <span class='w26'>Name</span>
+                            <span class='w44'>Description</span>
+                            <span class='w18'>Security</span>
+                            <span>Streams</span>
+                        </td>
+                    </tr>
+                    <tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=Backups" class="blue-text" title="Backups settings">Backups</a></span><span class='w44'>-</span><span class='w18'>-</span><span id='share0'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=Games" class="blue-text" title="Games settings">Games</a></span><span class='w44'>-</span><span class='w18'>-</span><span id='share1'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=Personal+Files" class="blue-text" title="Personal Files settings">Personal Files</a></span><span class='w44'>-</span><span class='w18'>-</span><span id='share2'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=Plex" class="blue-text" title="Plex settings">Plex</a></span><span class='w44'>-</span><span class='w18'><em>Private</em></span><span id='share3'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=appdata" class="blue-text" title="appdata settings">appdata</a></span><span class='w44'>application data</span><span class='w18'>-</span><span id='share4'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=domains" class="blue-text" title="domains settings">domains</a></span><span class='w44'>saved VM instances</span><span class='w18'>-</span><span id='share5'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=immich" class="blue-text" title="immich settings">immich</a></span><span class='w44'>-</span><span class='w18'>-</span><span id='share6'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=isos" class="blue-text" title="isos settings">isos</a></span><span class='w44'>ISO images</span><span class='w18'>-</span><span id='share7'>0</span></td></tr><tr class='smb share share1'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=sea" class="blue-text" title="sea settings">sea</a></span><span class='w44'>-</span><span class='w18'>-</span><span id='share8'>0</span></td></tr><tr class='smb share share1 last'><td><span class='w26'><i class='icon-folder f14'></i><a href="/Dashboard/Shares/Share?name=system" class="blue-text" title="system settings">system</a></span><span class='w44'>system data</span><span class='w18'>-</span><span id='share9'>0</span></td></tr>                </tbody>

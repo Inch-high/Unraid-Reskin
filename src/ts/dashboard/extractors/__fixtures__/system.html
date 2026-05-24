@@ -1,0 +1,64 @@
+<tbody class='system'>
+                    <tr>
+                        <td>
+                            <span class='tile-header'>
+                                <span class='tile-header-left'>
+                                    <i class='icon-performance f32'></i>
+
+                                    <div class='section'>
+                                        <h3 class='tile-header-main'>HL15Rack</h3>
+                                        <span>Media server</span>
+                                        <span id="current_time_" class="switch head_time"></span><br>
+                                    </div>
+                                </span>
+
+                                <span class='tile-header-right'>
+                                    <span class='tile-ctrl flex flex-row items-center gap-4'>
+                                                                                    <span class='fa fa-fw fa-stop-circle hand' title="Stop the array" onclick='StopArray()'></span>
+                                                                                                                        <span class='fa fa-fw fa-refresh hand' title="Reboot the system" onclick='Reboot()'></span>
+                                        <span class='fa fa-fw fa-power-off hand' title="Shutdown the system" onclick='Shutdown()'></span>
+                                    </span>
+
+                                    <span class='tile-header-right-controls'>
+                                        <a href='/Dashboard/Settings/Identification'>
+                                            <i class='fa fa-fw fa-cog control' title="Go to identification settings"></i>
+                                        </a>
+                                        <i class='fa fa-fw fa-wrench control tile' onclick='contentMgmt()' title="Tile Management"></i>
+                                    </span>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class='leftside'>
+                                <a href="/Settings/DateTime" class="hand none">
+                                    <span id="current_time"></span>
+                                </a><br>
+                                <span id="current_date"></span><br><br>
+                                <span class='header'>
+                                    <i class='indent fa fa-file-text-o'></i>Model
+                                </span><br>
+                                <i class='indent'></i>Custom<br><br>
+                                <span class='header'>
+                                    <i class='indent fa fa-id-badge'></i>Registration
+                                </span><br>
+                                <i class='indent'></i>Unraid OS <b><em>Pro</em></b><br><br>
+                                <span class='header'>
+                                    <i class='indent fa fa-clock-o'></i>Uptime
+                                </span><br>
+                                <i class='indent'></i><span class='uptime'></span>
+                            </div>
+                            <div class='rightside'>
+                                <div
+                                  id='casing'
+                                  class='tile-select-case'
+                                  title='Select Case Model'
+                                  onclick='openChanges("select_case case-model.cfg", "Select Case Model", "selectcase")'
+                                >
+                                                                                                                        <i id='mycase' class='case-45Drives-HL15'></i><br>
+                                                                                                            </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>

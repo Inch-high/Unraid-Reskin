@@ -1,0 +1,69 @@
+<tbody title="Interface Information" class="mixed">
+                    <tr>
+                        <td>
+                            <span class='tile-header'>
+                                <span class='tile-header-left'>
+                                    <i class='icon-ethernet f32'></i>
+                                    <div class='section'>
+                                        <span class='flex flex-row items-center gap-4'>
+                                          <h3 class='tile-header-main'>Interface</h3>
+                                          <span class="head_gap flex flex-row items-center gap-4 network-selects">
+                                              <i class='ups fa fa-angle-double-right'></i>
+                                              <select name="port_select" class="network-select network-interface" onchange="portSelect(this.value)">
+                                                                                                        <option value='bond0'>bond0</option>                                                                                                        <option value='eth0'>eth0</option>                                                                                                        <option value='eth1'>eth1</option>                                                                                                        <option value='lo'>lo</option>                                                                                                </select>
+                                              <select name="enter_view" class="network-select network-type" onchange="changeView(this.value)">
+                                                  <option value='0'>General info</option>                                                  <option value='1'>Counters info</option>                                                  <option value='2'>Errors info</option>                                                  <option value='3'>Network traffic</option>                                              </select>
+                                          </span><br>
+                                        </span>
+                                        <span class='flex flex-row flex-wrap items-center gap-4'>
+                                            <span class='head_info'>
+                                                <i class='ups fa fa-angle-double-down'></i>Inbound: <span id='inbound'>---</span>
+                                            </span>
+                                            <span>
+                                                <i class='ups fa fa-angle-double-up'></i>Outbound: <span id='outbound'>---</span>
+                                            </span><br>
+                                        </span>
+                                    </div>
+                                </span>
+
+                                <span class="tile-header-right">
+                                    <span class='tile-header-right-controls'>
+                                        <a href='/Dashboard/Settings/NetworkSettings' title="Go to network settings">
+                                            <i class='fa fa-fw fa-cog control'></i>
+                                        </a>
+                                    </span>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class='w26'>
+                                &nbsp;
+                            </span>
+                            <span class='w36'>
+                                <i class='view1'>Mode of operation</i>
+                                <i class='view2'>Received packets</i>
+                                <i class='view3'>Receive counters</i>
+                                <i class='fa fa-fw fa-arrow-down view4 red-text'></i>&nbsp;
+                                <i class='view4 red-text'>Inbound</i>
+                            </span>
+                            <span class='w36'>
+                                <i class='view1'></i>
+                                <i class='view2'>Transmitted packets</i>
+                                <i class='view3'>Transmit counters</i>
+                                <i class='fa fa-fw fa-arrow-up view4 orange-text'></i>&nbsp;
+                                <i class='view4 orange-text'>Outbound</i>
+                                <span class='view4' style='float:right'>
+                                    <select id='netline' class='auto' title="Select time frame" onchange='changeNetline(this.value)'>
+                                        <option value='10'>10 s</option>                                        <option value='30'>30 s</option>                                        <option value='60'>1 m</option>                                        <option value='120'>2 m</option>                                        <option value='300'>5 m</option>                                    </select>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr class='view1'><td><span class='w26'>bond0</span><span class='w72' id='main0'></span></td></tr><tr class='view1'><td><span class='w26'>eth0</span><span class='w72' id='main1'></span></td></tr><tr class='view1'><td><span class='w26'>eth1</span><span class='w72' id='main2'></span></td></tr><tr class='view1 last'><td><span class='w26'>lo</span><span class='w72' id='main3'></span></td></tr><tr class='view2'><td><span class='w26'>bond0</span><span class='w36' id='port0'></span><span class='w36' id='port1'></span></td></tr><tr class='view2'><td><span class='w26'>eth0</span><span class='w36' id='port2'></span><span class='w36' id='port3'></span></td></tr><tr class='view2'><td><span class='w26'>eth1</span><span class='w36' id='port4'></span><span class='w36' id='port5'></span></td></tr><tr class='view2 last'><td><span class='w26'>lo</span><span class='w36' id='port6'></span><span class='w36' id='port7'></span></td></tr><tr class='view3'><td><span class='w26'>bond0</span><span class='w36' id='link0'></span><span class='w36' id='link1'></span></td></tr><tr class='view3'><td><span class='w26'>eth0</span><span class='w36' id='link2'></span><span class='w36' id='link3'></span></td></tr><tr class='view3'><td><span class='w26'>eth1</span><span class='w36' id='link4'></span><span class='w36' id='link5'></span></td></tr><tr class='view3 last'><td><span class='w26'>lo</span><span class='w36' id='link6'></span><span class='w36' id='link7'></span></td></tr>                    <tr class="view4">
+                        <td>
+                            <canvas id="netchart" style='width:100%; height:120px'></canvas>
+                        </td>
+                    </tr>
+                </tbody>

@@ -1,0 +1,69 @@
+<tbody title="Memory Utilization">
+                    <tr>
+                        <td>
+                            <span class='tile-header'>
+                                <span class='tile-header-left'>
+                                    <i class='icon-ram f32'></i>
+                                    <div class='section'>
+                                        <h3 class='tile-header-main'>System</h3>
+                                        <span class='flex flex-row flex-wrap items-center gap-4'>
+                                            <span class="head_info">
+                                                <span>
+                                                    <i class='ups fa fa-line-chart'></i>Memory: 128 GiB DDR5 Multi-bit ECC                                                 </span>
+                                            </span>
+                                            <span class="switch">
+                                                RAM:<span class="head_bar">
+                                                    <span class='sys0_ load'>0%</span>
+                                                    <div class='usage-disk sys'>
+                                                        <span id='sys0_'></span>
+                                                        <span></span>
+                                                    </div>
+                                                </span>
+                                            </span><br>
+                                        </span>
+                                    </div>
+                                </span>
+                                <span class='tile-header-right'>
+                                    <span class='tile-header-right-controls'>
+                                        <a href='/Dashboard/Tools/Processes' title="View Running Processes">
+                                            <i class='fa fa-fw fa-info-circle control'></i>
+                                        </a>
+                                    </span>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="tile-system-memory-body">
+                                <div class="tile-system-memory-labels">
+                                    <div>
+                                        <i class='ups fa fa-compress'></i>Usable size: 126 GiB<br>
+                                        <i class='ups fa fa-expand'></i>Maximum size: 6144 GiB                                    </div>
+                                    <div>
+                                        <legend>Legend</legend>
+                                        <span id='dynamic'></span>
+                                    </div>
+                                </div>
+                                <div class='tile-system-memory-charts'>
+                                  <span>
+                                      <a class='info hand none'>RAM usage<span>Percent of total used memory (126 GiB)</span></a>
+                                      <div class='pie' id='sys0'><span class='sys0'></span><span class='var0'></span></div>
+                                  </span>
+                                  <span>
+                                      <a class='info hand none'>Boot device<span>Percent usage of boot device (60 GiB)</span></a>
+                                      <div class='pie' id='sys1'><span class='sys1'></span><span class='var1'></span></div>
+                                  </span>
+                                  <span>
+                                      <a class='info hand none'>Log filesystem<span>Percent usage of LOG file system (128 MiB)</span></a>
+                                      <div class='pie' id='sys2'><span class='sys2'></span><span class='var2'></span></div>
+                                  </span>
+                                  <span>
+                                      <a class='info hand none'>Docker vdisk<span>Percent usage of Docker vdisk (200 GiB)</span></a>
+                                      <div class='pie' id='sys3'><span class='sys3'></span><span class='var3'></span></div>
+                                  </span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>

@@ -1,0 +1,76 @@
+<tbody title="Processor Information" data="toggleCPU(true)">
+                    <tr>
+                        <td>
+                            <span class='tile-header'>
+                                <span class='tile-header-left'>
+                                  <i class='icon-cpu f32'></i>
+                                  <div class='section'>
+                                      <h3 class='tile-header-main'>Processor</h3>
+                                      AMD EPYC 8124P 16-Core  @ 2450 MHz                                  </div>
+                                </span>
+                                <span class='tile-header-right'>
+                                    <span class='tile-header-right-controls'>
+                                        <a href='/Dashboard/Settings/CPUset' title="Go to CPU pinning settings">
+                                            <i class='fa fa-fw fa-cog control'></i>
+                                        </a>
+                                    </span>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class='flex flex-row flex-wrap items-center gap-4'>
+                                <span class="head_info">
+                                    <span id='cpu-total-power'><i class='fa fa-fw fa-plug'></i>Total Power: N/A</span>
+                                </span>
+                                                                <span class="head_info">
+                                  <i class="fa fa-thermometer"></i> Temperature: <span id='cpu-temp0'>N/A</span>
+                                </span>
+                                                                <span class="switch">
+                                    Load:<span class="head_bar">
+                                    <span class='cpu_ load'>0%</span>
+                                    <div class='usage-disk sys'>
+                                        <span id='cpu_'></span>
+                                        <span></span>
+                                    </div>
+                                </span>
+                                <br>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class='w26'>Overall Load:</span>
+                            <span class='w72'>
+                                <span class='cpu load resize'>0%</span>
+                                <div class='usage-disk sys'>
+                                    <span id='cpu'></span>
+                                    <span></span>
+                                </div>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr id='cpu_main'>
+                        <td>
+                            <span class='flex flex-row items-center justify-between gap-4'>
+                                <a onclick='toggleCPU()' title="Click to toggle details" class='cpu_close'>Show details</a>
+                                <span id='chart-toggle' class='flex flex-row items-center gap-4'>
+                                    <span>
+                                        <select id='cpuline' class='auto' title="Select time frame" onchange='changeCPUline(this.value)'>
+                                            <option value='10'>10 s</option>                                            <option value='30'>30 s</option>                                            <option value='60'>1 m</option>                                            <option value='120'>2 m</option>                                            <option value='300'>5 m</option>                                        </select>
+                                    </span>
+                                    <a onclick='toggleChart()' title="Click to toggle CPU chart">
+                                        <span class="fa fa-fw fa-bar-chart hand"></span>
+                                    </a>
+                                </span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                    <tr class='cpu_open'><td><span class='w26'>CPU 0  - HT 16 </span><span class='dashboard w36'><span class='cpu0 load resize'>0%</span><div class='usage-disk sys'><span id='cpu0'></span><span></span></div></span><span class='dashboard w36'><span class='cpu16 load resize'>0%</span><div class='usage-disk sys'><span id='cpu16'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 1  - HT 17 </span><span class='dashboard w36'><span class='cpu1 load resize'>0%</span><div class='usage-disk sys'><span id='cpu1'></span><span></span></div></span><span class='dashboard w36'><span class='cpu17 load resize'>0%</span><div class='usage-disk sys'><span id='cpu17'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 2  - HT 18 </span><span class='dashboard w36'><span class='cpu2 load resize'>0%</span><div class='usage-disk sys'><span id='cpu2'></span><span></span></div></span><span class='dashboard w36'><span class='cpu18 load resize'>0%</span><div class='usage-disk sys'><span id='cpu18'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 3  - HT 19 </span><span class='dashboard w36'><span class='cpu3 load resize'>0%</span><div class='usage-disk sys'><span id='cpu3'></span><span></span></div></span><span class='dashboard w36'><span class='cpu19 load resize'>0%</span><div class='usage-disk sys'><span id='cpu19'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 4  - HT 20 </span><span class='dashboard w36'><span class='cpu4 load resize'>0%</span><div class='usage-disk sys'><span id='cpu4'></span><span></span></div></span><span class='dashboard w36'><span class='cpu20 load resize'>0%</span><div class='usage-disk sys'><span id='cpu20'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 5  - HT 21 </span><span class='dashboard w36'><span class='cpu5 load resize'>0%</span><div class='usage-disk sys'><span id='cpu5'></span><span></span></div></span><span class='dashboard w36'><span class='cpu21 load resize'>0%</span><div class='usage-disk sys'><span id='cpu21'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 6  - HT 22 </span><span class='dashboard w36'><span class='cpu6 load resize'>0%</span><div class='usage-disk sys'><span id='cpu6'></span><span></span></div></span><span class='dashboard w36'><span class='cpu22 load resize'>0%</span><div class='usage-disk sys'><span id='cpu22'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 7  - HT 23 </span><span class='dashboard w36'><span class='cpu7 load resize'>0%</span><div class='usage-disk sys'><span id='cpu7'></span><span></span></div></span><span class='dashboard w36'><span class='cpu23 load resize'>0%</span><div class='usage-disk sys'><span id='cpu23'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 8  - HT 24 </span><span class='dashboard w36'><span class='cpu8 load resize'>0%</span><div class='usage-disk sys'><span id='cpu8'></span><span></span></div></span><span class='dashboard w36'><span class='cpu24 load resize'>0%</span><div class='usage-disk sys'><span id='cpu24'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 9  - HT 25 </span><span class='dashboard w36'><span class='cpu9 load resize'>0%</span><div class='usage-disk sys'><span id='cpu9'></span><span></span></div></span><span class='dashboard w36'><span class='cpu25 load resize'>0%</span><div class='usage-disk sys'><span id='cpu25'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 10  - HT 26 </span><span class='dashboard w36'><span class='cpu10 load resize'>0%</span><div class='usage-disk sys'><span id='cpu10'></span><span></span></div></span><span class='dashboard w36'><span class='cpu26 load resize'>0%</span><div class='usage-disk sys'><span id='cpu26'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 11  - HT 27 </span><span class='dashboard w36'><span class='cpu11 load resize'>0%</span><div class='usage-disk sys'><span id='cpu11'></span><span></span></div></span><span class='dashboard w36'><span class='cpu27 load resize'>0%</span><div class='usage-disk sys'><span id='cpu27'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 12  - HT 28 </span><span class='dashboard w36'><span class='cpu12 load resize'>0%</span><div class='usage-disk sys'><span id='cpu12'></span><span></span></div></span><span class='dashboard w36'><span class='cpu28 load resize'>0%</span><div class='usage-disk sys'><span id='cpu28'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 13  - HT 29 </span><span class='dashboard w36'><span class='cpu13 load resize'>0%</span><div class='usage-disk sys'><span id='cpu13'></span><span></span></div></span><span class='dashboard w36'><span class='cpu29 load resize'>0%</span><div class='usage-disk sys'><span id='cpu29'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 14  - HT 30 </span><span class='dashboard w36'><span class='cpu14 load resize'>0%</span><div class='usage-disk sys'><span id='cpu14'></span><span></span></div></span><span class='dashboard w36'><span class='cpu30 load resize'>0%</span><div class='usage-disk sys'><span id='cpu30'></span><span></span></div></span></td></tr><tr class='cpu_open'><td><span class='w26'>CPU 15  - HT 31 </span><span class='dashboard w36'><span class='cpu15 load resize'>0%</span><div class='usage-disk sys'><span id='cpu15'></span><span></span></div></span><span class='dashboard w36'><span class='cpu31 load resize'>0%</span><div class='usage-disk sys'><span id='cpu31'></span><span></span></div></span></td></tr>                    <tr id='cpu_chart'>
+                        <td>
+                            <canvas id='cpuchart' style='width:100%; height:96px'></canvas>
+                        </td>
+                    </tr>
+                </tbody>
