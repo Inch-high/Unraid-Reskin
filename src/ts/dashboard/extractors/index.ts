@@ -1,6 +1,7 @@
 import type { WidgetState } from '../types';
 import { unknownExtractor, type Extractor, type ExtractorContext } from './unknown';
 import { arrayExtractor } from './array';
+import { cacheExtractor } from './cache';
 
 export type { Extractor, ExtractorContext };
 
@@ -8,6 +9,7 @@ export type { Extractor, ExtractorContext };
 // Per-widget tasks insert their entries above the 'unknown' fallback.
 export const registry: Array<{ name: string; extractor: Extractor<WidgetState> }> = [
   { name: 'array', extractor: arrayExtractor as Extractor<WidgetState> },
+  { name: 'cache', extractor: cacheExtractor as Extractor<WidgetState> },
   // Subsequent widgets register above 'unknown' in their tasks
   { name: 'unknown', extractor: unknownExtractor as Extractor<WidgetState> },
 ];

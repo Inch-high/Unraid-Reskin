@@ -1,10 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { DashboardStore } from '../store';
-import type { WidgetState, UnknownWidget, ArrayState } from '../types';
+import type { WidgetState, UnknownWidget, ArrayState, CacheState } from '../types';
 import './md-section';
 import './md-plugin-card';
 import './md-array-card';
+import './md-cache-card';
 
 @customElement('modernui-dashboard')
 export class ModernuiDashboard extends LitElement {
@@ -49,12 +50,14 @@ export class ModernuiDashboard extends LitElement {
   render() {
     const widgets = this._widgets;
     const arrays = widgets.filter((w): w is ArrayState => w.kind === 'array');
+    const caches = widgets.filter((w): w is CacheState => w.kind === 'cache');
     const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
 
     return html`
-      ${arrays.length > 0 ? html`
+      ${arrays.length > 0 || caches.length > 0 ? html`
         <md-section label="Storage">
           ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
+          ${caches.map((s) => html`<md-cache-card .state=${s}></md-cache-card>`)}
         </md-section>
       ` : ''}
       ${unknown.length > 0 ? html`

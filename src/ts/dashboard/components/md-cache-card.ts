@@ -1,27 +1,19 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import type { ArrayState, DiskState, SmartHealth } from '../types';
+import type { CacheState } from '../types';
+import { stateColor, smartIcon, smartColor } from './md-array-card';
 import './md-card';
 
-export function stateColor(s: DiskState): string {
-  if (s === 'active') return 'var(--success)';
-  if (s === 'standby') return 'var(--text-muted)';
-  if (s === 'spinning-up') return 'var(--warning)';
-  if (s === 'unmounted') return 'var(--danger)';
-  return 'var(--text-muted)';
-}
-export function smartIcon(s: SmartHealth): string {
-  return s === 'healthy' ? '✓' : s === 'warning' ? '!' : s === 'failed' ? '✕' : '?';
-}
-export function smartColor(s: SmartHealth): string {
-  if (s === 'healthy') return 'var(--success)';
-  if (s === 'warning') return 'var(--warning)';
-  if (s === 'failed') return 'var(--danger)';
-  return 'var(--text-muted)';
+function formatSize(gb: number): string {
+  return gb < 1024 ? `${gb.toFixed(0)} GB` : `${(gb / 1024).toFixed(1)} TB`;
 }
 
-@customElement('md-array-card')
-export class MdArrayCard extends LitElement {
+function capitalise(s: string): string {
+  return s.length === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+@customElement('md-cache-card')
+export class MdCacheCard extends LitElement {
   static styles = css`
     :host { display: block; }
     .leds { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 16px; }
@@ -48,18 +40,18 @@ export class MdArrayCard extends LitElement {
     }
   `;
 
-  @property({ type: Object }) state: ArrayState = {
-    kind: 'array', status: 'unknown', usedTB: null, totalTB: null, disks: [],
+  @property({ type: Object }) state: CacheState = {
+    kind: 'cache', poolName: 'cache', status: 'unknown', usedGB: null, totalGB: null, disks: [],
   };
 
   render() {
-    const { usedTB, totalTB, disks } = this.state;
-    const meta = usedTB !== null && totalTB !== null
-      ? `${usedTB.toFixed(1)} TB / ${totalTB.toFixed(0)} TB`
+    const { poolName, usedGB, totalGB, disks } = this.state;
+    const meta = usedGB !== null && totalGB !== null
+      ? `${formatSize(usedGB)} / ${formatSize(totalGB)}`
       : `${disks.length} disks`;
 
     return html`
-      <md-card cardTitle="Array" meta=${meta}>
+      <md-card cardTitle=${capitalise(poolName)} meta=${meta}>
         <div class="leds">
           ${disks.map((d) => html`<div class="led" style="background: ${stateColor(d.state)}"></div>`)}
         </div>

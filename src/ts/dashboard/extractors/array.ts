@@ -1,7 +1,7 @@
 import type { ArrayState, DiskRow, DiskState, SmartHealth } from '../types';
 import type { Extractor } from './unknown';
 
-function parseDiskState(row: Element): DiskState {
+export function parseDiskState(row: Element): DiskState {
   const orb = row.querySelector('i.orb, span.orb, [class*="-orb"]');
   if (!orb) return 'unknown';
   const cls = orb.className;
@@ -12,14 +12,14 @@ function parseDiskState(row: Element): DiskState {
   return 'unknown';
 }
 
-function parseTempCelsius(row: Element): number | null {
+export function parseTempCelsius(row: Element): number | null {
   const tempSpan = row.querySelector('span.green-text, span.orange-text, span.red-text');
   if (!tempSpan) return null;
   const m = tempSpan.textContent?.match(/(\d+)/);
   return m ? Number(m[1]) : null;
 }
 
-function parseSmart(row: Element): SmartHealth {
+export function parseSmart(row: Element): SmartHealth {
   const icon = row.querySelector('[class*="fa-thumbs"]');
   if (!icon) return 'unknown';
   const cls = icon.className;
@@ -30,7 +30,7 @@ function parseSmart(row: Element): SmartHealth {
   return 'unknown';
 }
 
-function parseUtilization(row: Element): number | null {
+export function parseUtilization(row: Element): number | null {
   // Live DOM uses .usage-disk > span[style*="width"]; older layouts may use .usage-bar
   const fill = row.querySelector('.usage-disk > span[style*="width"], .usage-bar > span[style*="width"]');
   if (!fill) return null;
@@ -39,7 +39,7 @@ function parseUtilization(row: Element): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function parseDiskName(row: Element): string {
+export function parseDiskName(row: Element): string {
   // Disk rows render the device name inside <span class='w26'> as an <a> link.
   const link = row.querySelector('span.w26 a');
   if (link?.textContent) return link.textContent.trim();

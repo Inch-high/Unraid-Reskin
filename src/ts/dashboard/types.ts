@@ -45,4 +45,13 @@ export interface ArrayState {
   disks: DiskRow[];
 }
 
-export type WidgetState = UnknownWidget | ArrayState;
+export interface CacheState {
+  kind: 'cache';
+  poolName: string;
+  status: 'online' | 'offline' | 'degraded' | 'unknown';
+  usedGB: number | null;
+  totalGB: number | null;
+  disks: DiskRow[];
+}
+
+export type WidgetState = UnknownWidget | ArrayState | CacheState;
