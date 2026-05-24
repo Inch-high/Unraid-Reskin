@@ -7,6 +7,7 @@ const MODERNUI_CFG_DIR        = '/boot/config/plugins/unraid-modernui';
 const MODERNUI_BACKUP_DIR     = '/usr/local/emhttp/plugins/unraid-modernui/backups';
 // Discovered in Task 7 Step 0 — verify on Unraid 7.x box if changed in a future release.
 const MODERNUI_LAYOUT_FILE    = '/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout.php';
+const MODERNUI_STYLE_TAG      = '<link rel="stylesheet" href="/plugins/unraid-modernui/theme/dist/modernui.css">';
 const MODERNUI_SCRIPT_TAG     = '<script src="/plugins/unraid-modernui/theme/dist/loader.js"></script>';
 
 const MODERNUI_MARK_BEGIN     = '# >>> unraid-modernui begin >>>';
@@ -47,8 +48,11 @@ function modernui_dynamix_block(): string {
 }
 
 function modernui_html_block(): string {
-    // Single loader.js — install-time-generated (Task 9 Step 3 / save.php) — handles enabled/disabled routing.
+    // Inject both the stylesheet link AND the bootstrap script before </head>.
+    // CSS is unconditional (theme tokens). JS is loader.js which routes to modernui.js or re-enable.js
+    // based on the disabled flag (regenerated at install/save time).
     return "\n" . MODERNUI_HTML_MARK_BEGIN . "\n"
+        . MODERNUI_STYLE_TAG . "\n"
         . MODERNUI_SCRIPT_TAG . "\n"
         . MODERNUI_HTML_MARK_END . "\n";
 }
