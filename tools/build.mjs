@@ -17,7 +17,7 @@ writeFileSync(join(distDir, 'modernui.css'), css.css);
 console.log(`✓ modernui.css (${css.css.length} bytes)`);
 
 // Build JS entries via Vite (two outputs: modernui.js, re-enable.js)
-for (const entry of ['modernui', 're-enable']) {
+for (const entry of ['modernui', 're-enable', 'modernui-dashboard']) {
   await viteBuild({
     root,
     build: {
