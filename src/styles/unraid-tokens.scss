@@ -1,0 +1,79 @@
+// Remap Unraid's semantic CSS variables to point at our design tokens.
+// Unraid defines these in default-color-palette.css + themes/{theme}.css.
+// Our modernui.css loads after both, so :root assignments here win the cascade.
+//
+// Mappings reference OUR tokens (defined in tokens.scss). Because OUR tokens
+// already change between dark and light modes via [data-theme="light"],
+// these mappings automatically Light-mode correctly without duplication.
+
+:root {
+  // Text
+  --text-color: var(--text-primary);
+  --alt-text-color: var(--text-secondary);
+  --disabled-text-color: var(--text-muted);
+  --inverse-text-color: #ffffff;
+  --link-text-color: var(--accent);
+  --blockquote-text-color: var(--text-secondary);
+
+  // Background
+  --background-color: var(--bg-base);
+  --mild-background-color: var(--bg-surface);
+  --opac-background-color: rgba(15, 20, 25, 0.6);
+  --inverse-background-color: var(--text-primary);
+  --shade-bg-color: var(--bg-surface);
+  --focus-input-bg-color: var(--bg-elevated);
+  --input-bg-color: var(--bg-surface);
+  --radio-background-color: var(--bg-elevated);
+
+  // Borders
+  --border-color: var(--border-default);
+  --input-border-color: var(--border-default);
+  --disabled-input-border-color: var(--border-subtle);
+  --textarea-border-color: var(--border-default);
+  --table-border-color: var(--border-subtle);
+  --inverse-border-color: var(--text-primary);
+
+  // Buttons — Unraid's are red-to-orange gradient frames; we want flat accent fills
+  --button-text-color: #ffffff;
+  --button-border: 1px solid transparent;
+  --button-background: var(--accent);
+  --button-background-size: 100% 100%;
+  --hover-button-border: 1px solid transparent;
+  --hover-button-text-color: #ffffff;
+  --hover-button-background: var(--accent-hover);
+
+  // Tables
+  --table-background-color: var(--bg-surface);
+  --table-header-background-color: var(--bg-elevated);
+  --hover-table-row-background-color: var(--bg-elevated);
+
+  // Header / footer (kept for compatibility; Phase 3 will overhaul header)
+  --header-text-color: var(--text-primary);
+  --header-background-color: var(--bg-surface);
+  --footer-text: var(--text-secondary);
+  --footer-background-color: var(--bg-surface);
+  --title-header-background-color: var(--bg-elevated);
+
+  // Misc
+  --small-shadow: none;
+  --hr-color: var(--border-subtle);
+  --scrollbar-color: var(--border-default);
+  --scrollbar-hover-color: var(--accent);
+  --checkbox-color: var(--accent);
+  --bg-opacity-10: rgba(255, 255, 255, 0.10);
+  --bg-opacity-30: rgba(255, 255, 255, 0.30);
+
+  // Dynamix-specific
+  --dynamix-sweet-alert-text-color: var(--text-primary);
+}
+
+// Light-mode adjustments: opacities and shadows need to invert.
+// Our text/bg tokens already swap via [data-theme="light"], so semantic
+// names just inherit correctly. Only override the values whose RAW form
+// is inappropriate for light (rgba over black).
+[data-theme="light"] {
+  --opac-background-color: rgba(255, 255, 255, 0.6);
+  --bg-opacity-10: rgba(0, 0, 0, 0.06);
+  --bg-opacity-30: rgba(0, 0, 0, 0.20);
+  --small-shadow: 0 1px 2px rgba(15, 20, 25, 0.06);
+}
