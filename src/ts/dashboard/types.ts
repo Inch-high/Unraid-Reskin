@@ -110,6 +110,22 @@ export interface MemoryState {
   pies: MemorySlice[];
 }
 
+export interface GpuState {
+  kind: 'gpu';
+  model: string;             // "NVIDIA RTX A2000 12GB"
+  vendor: string;            // "NVIDIA"
+  driver: string;            // driver version string
+  pciBus: string;            // "1 (4) Lanes (Max): 16 (16)" or just the bus identifier
+  utilizationPct: number | null;
+  memoryUsedPct: number | null;
+  memoryMHz: number | null;
+  fanRpm: number | null;
+  powerW: number | null;
+  temperatureC: number | null;
+  activeApps: number;
+  throttling: boolean;
+}
+
 export type WidgetState =
   | UnknownWidget
   | ArrayState
@@ -117,4 +133,5 @@ export type WidgetState =
   | ParityState
   | DisklocationState
   | ProcessorState
-  | MemoryState;
+  | MemoryState
+  | GpuState;
