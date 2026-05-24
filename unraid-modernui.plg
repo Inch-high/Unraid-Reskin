@@ -1,0 +1,50 @@
+<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "unraid-modernui">
+<!ENTITY author    "Inch-high">
+<!ENTITY version   "0.1.0">
+<!ENTITY launch    "Settings/Theme">
+<!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
+<!ENTITY cfgdir    "/boot/config/plugins/&name;">
+<!ENTITY tarball   "&name;-&version;.txz">
+<!ENTITY tarurl    "https://github.com/EXAMPLE/unraid-modernui/releases/download/v&version;/&tarball;">
+<!ENTITY pluginurl "https://raw.githubusercontent.com/EXAMPLE/unraid-modernui/main/&name;.plg">
+]>
+
+<PLUGIN
+  name="&name;"
+  author="&author;"
+  version="&version;"
+  launch="&launch;"
+  pluginURL="&pluginurl;"
+  min="7.0.0"
+  support="https://github.com/EXAMPLE/unraid-modernui/issues">
+
+<CHANGES>
+##0.1.0 2026-05-24
+- Phase 1: foundation, safety, design tokens, settings page, fallback paths
+</CHANGES>
+
+<FILE Name="&cfgdir;/&tarball;">
+<URL>&tarurl;</URL>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p "&plugindir;" "&cfgdir;"
+tar -xJf "&cfgdir;/&tarball;" -C "&plugindir;"
+php "&plugindir;/include/install.php"
+echo "Modern UI installed."
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+php "&plugindir;/include/uninstall.php"
+rm -rf "&plugindir;"
+rm -f "&cfgdir;/&tarball;"
+echo "Modern UI removed."
+</INLINE>
+</FILE>
+
+</PLUGIN>
