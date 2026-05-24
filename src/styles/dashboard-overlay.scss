@@ -1,0 +1,15 @@
+// When our dashboard overlay is active, hide Unraid's stock dashboard tile grid.
+// The table.dashboard element stays in the DOM (Unraid's nchan subscribers keep
+// updating it), but it's not visible to the user.
+
+body.modernui-dashboard-active {
+  // Hide the tile grid Unraid renders
+  div.frame > div.grid {
+    display: none !important;
+  }
+
+  // Hide the stopgap rows and any leftover dashboard chrome
+  table.dashboard {
+    display: none !important;
+  }
+}
