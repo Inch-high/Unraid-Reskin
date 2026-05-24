@@ -1,10 +1,13 @@
-// Page detection. Returns true if we're on /Dashboard*; false otherwise.
+import { createStore } from './store';
+import { createSourceObserver } from './source-observer';
+import { dispatch } from './extractors';
+import './components/md-dashboard';
+import type { ModernuiDashboard } from './components/md-dashboard';
+
 function onDashboardPage(): boolean {
   return /^\/Dashboard/i.test(window.location.pathname);
 }
 
-// Wait up to `timeoutMs` for the source table.dashboard to appear in the DOM.
-// Calls `onReady` with the element once it's present, or `onTimeout` if not seen in time.
 function waitForSource(
   timeoutMs: number,
   onReady: (el: HTMLTableElement) => void,
@@ -30,21 +33,48 @@ function waitForSource(
   }, timeoutMs);
 }
 
+function extractAll(source: HTMLTableElement, store: ReturnType<typeof createStore>): void {
+  const tbodies = Array.from(source.querySelectorAll<HTMLTableSectionElement>(':scope > tbody'));
+  const seen = new Set<string>();
+  for (const tbody of tbodies) {
+    const result = dispatch({ source: tbody });
+    if (!result) continue;
+    const id = (result as { id?: string }).id || tbody.id || `idx-${seen.size}`;
+    seen.add(id);
+    store.set(id, result);
+  }
+  // Remove widgets that have disappeared
+  for (const key of Array.from(store.keys())) {
+    if (!seen.has(key)) store.delete(key);
+  }
+}
+
 export function boot(): void {
   if (!onDashboardPage()) return;
 
   waitForSource(
     5000,
     (source) => {
-      // Hide Unraid's stock dashboard by toggling a body class.
-      // CSS in dashboard-overlay.scss handles the actual display:none.
       document.body.classList.add('modernui-dashboard-active');
 
-      // Mount placeholder will come in Task 6. For now just log.
-      console.log('[modernui-dashboard] booted, source detected', source);
+      // Find or create the mount container
+      const container = document.querySelector('div.frame') || document.body;
+      const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
+      container.appendChild(root);
+
+      // Wire store + observer
+      const store = createStore();
+      root.setStore(store);
+
+      // Initial sync
+      extractAll(source, store);
+
+      // Watch for live updates
+      const obs = createSourceObserver(source, () => extractAll(source, store), 50);
+      obs.start();
     },
     () => {
-      console.warn('[modernui-dashboard] source not found within 5s; leaving stock UI');
+      console.warn('[modernui-dashboard] source not found; leaving stock UI');
     },
   );
 }

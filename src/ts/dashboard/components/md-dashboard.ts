@@ -1,0 +1,58 @@
+import { LitElement, html, css } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import type { DashboardStore } from '../store';
+import type { WidgetState, UnknownWidget } from '../types';
+import './md-section';
+import './md-plugin-card';
+
+@customElement('modernui-dashboard')
+export class ModernuiDashboard extends LitElement {
+  static styles = css`
+    :host {
+      display: block;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 16px 24px 48px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+  `;
+
+  private _store: DashboardStore | null = null;
+  private _unsubscribe: (() => void) | null = null;
+
+  @state() private _widgets: WidgetState[] = [];
+
+  setStore(store: DashboardStore): void {
+    this._unsubscribe?.();
+    this._store = store;
+    this._unsubscribe = store.subscribe(() => this._sync());
+    this._sync();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._unsubscribe?.();
+  }
+
+  private _sync(): void {
+    if (!this._store) return;
+    const all: WidgetState[] = [];
+    for (const id of this._store.keys()) {
+      const v = this._store.get(id);
+      if (v) all.push(v);
+    }
+    this._widgets = all;
+  }
+
+  render() {
+    const unknown = this._widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
+    return html`
+      <md-section label="Plugins (untyped)">
+        ${unknown.map(
+          (w) => html`<md-plugin-card .state=${w}></md-plugin-card>`,
+        )}
+      </md-section>
+    `;
+  }
+}
