@@ -1,0 +1,89 @@
+// Unraid's primary "box" primitive is .shade. Section headers use div.title.
+// Menu overview pages use .Panels (grid of icon tiles) / .Panel.
+// Dashboard widgets use table.dashboard td div.section for grouping.
+
+// .shade — the workhorse container
+.shade {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+
+  @media (min-width: 769px) {
+    padding: 24px;
+  }
+}
+
+// div.title — section header bar (replaces Unraid's bordered uppercase)
+div.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin: 0 0 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: transparent;  // Unraid had a tinted background
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+// Inside .title, secondary text gets muted
+div.title small,
+div.title span.title-sub {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 13px;
+}
+
+// .Panels grid — icon-tile menu pages (Tools, Plugins, etc.)
+.Panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.Panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+
+.Panel:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.Panel a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 13px;
+  text-align: center;
+}
+
+.Panel a:hover {
+  color: var(--accent);
+}
+
+.Panel .PanelText {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+// Dashboard widget sections (table.dashboard td div.section already styled in tables.scss)
+// Add slight surface contrast for inner widgets
+table.dashboard td.stopgap {
+  background: var(--bg-elevated);
+}
