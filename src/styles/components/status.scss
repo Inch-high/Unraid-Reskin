@@ -1,0 +1,95 @@
+// Unraid uses three universal patterns for status indication, reused everywhere
+// (array rows, Docker tiles, IPMI sensors, temps, SMART health, etc.):
+//   1. Color text classes: .green-text, .red-text, .orange-text, .blue-text, .grey-text
+//      (plus .passed, .failed, .warning aliases)
+//   2. Orb dots: <i class="fa fa-circle orb {color}-orb"> as a 10-12px inline dot
+//      with .green-orb, .red-orb, .orange-orb, .yellow-orb, .blue-orb, .grey-orb
+//   3. Bar fills: .greenbar, .orangebar, .redbar, .graybar on the inner span of
+//      div.usage-disk / div.usage-bar (sets the fill color, width is inline%)
+//
+// Re-tone all three to our semantic palette so every dashboard surface picks
+// them up consistently — temp colors, status dots, utilization bars all in one.
+
+// 1. Text colors
+.green-text, .passed   { color: var(--success) !important; }
+.orange-text, .warning { color: var(--warning) !important; }
+.red-text, .failed     { color: var(--danger)  !important; }
+.blue-text             { color: var(--info)    !important; }
+.grey-text             { color: var(--text-muted) !important; }
+
+// .green / .red / .orange / .blue (background-padded variants) — make them
+// pill-like at low opacity to match our badge aesthetic instead of solid blocks
+.green, .red, .orange, .blue {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.green  { background: rgba(34, 197, 94, 0.15);  color: var(--success); }
+.orange { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.red    { background: rgba(239, 68, 68, 0.15);  color: var(--danger); }
+.blue   { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+
+// 2. Orb dots — small inline circles, used as status LEDs throughout
+.orb {
+  display: inline-block;
+  font-size: 9px;
+  vertical-align: middle;
+  margin-right: 6px;
+  line-height: 1;
+}
+.orb.middle { vertical-align: middle; }
+
+.green-orb, .green-blink   { color: var(--success); }
+.orange-orb                { color: var(--warning); }
+.yellow-orb, .yellow-blink { color: var(--warning); }
+.red-orb,    .red-blink    { color: var(--danger); }
+.blue-orb,   .blue-blink   { color: var(--info); }
+.grey-orb                  { color: var(--text-muted); }
+
+// Disklocation plugin uses *-orb-disklocation variants on .orb-disklocation
+.orb-disklocation             { display: inline-block; font-size: 9px; line-height: 1; }
+.green-orb-disklocation,
+.green-blink-disklocation     { color: var(--success); }
+.yellow-orb-disklocation,
+.yellow-blink-disklocation    { color: var(--warning); }
+.red-orb-disklocation,
+.red-blink-disklocation       { color: var(--danger); }
+.blue-orb-disklocation,
+.blue-blink-disklocation      { color: var(--info); }
+.grey-orb-disklocation        { color: var(--text-muted); }
+
+// Blink animation (used for active/locating disks)
+@keyframes modernui-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+.green-blink, .yellow-blink, .red-blink, .blue-blink,
+.green-blink-disklocation, .yellow-blink-disklocation,
+.red-blink-disklocation, .blue-blink-disklocation {
+  animation: modernui-blink 1.4s infinite var(--ease-out);
+}
+
+// 3. Bar fill colors — inline span inside div.usage-disk / div.usage-bar.
+// Width is set inline by PHP as a percentage; we only set the fill color.
+.greenbar  { background: var(--success); }
+.orangebar { background: var(--warning); }
+.redbar    { background: var(--danger); }
+.graybar   { background: var(--text-muted); }
+
+// Deprecated <font color="..."> tags (still emitted by ipmi plugin readings).
+// Replace the explicit hardcoded colors with our semantic palette so IPMI
+// sensor readings respect dark/light mode.
+font[color="green"]  { color: var(--success); }
+font[color="red"]    { color: var(--danger); }
+font[color="orange"] { color: var(--warning); }
+font[color="yellow"] { color: var(--warning); }
+font[color="blue"]   { color: var(--info); }
+font[color="black"]  { color: var(--text-primary); }
+font[color="white"]  { color: var(--text-primary); }
+
+// Cursor utility classes used throughout
+.hand { cursor: pointer; }
+.busy { cursor: progress; }

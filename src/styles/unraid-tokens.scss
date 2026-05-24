@@ -65,6 +65,20 @@
 
   // Dynamix-specific
   --dynamix-sweet-alert-text-color: var(--text-primary);
+
+  // Dashboard widget chrome (used by table.dashboard, .tile-header, .control icons)
+  --dashboard-background-color: var(--bg-surface);
+  --dashboard-border-color: var(--border-subtle);
+  --dashboard-icon-color: var(--text-secondary);
+  --dashboard-title-action-color: transparent;
+
+  // Usage bars (per-core CPU, disk utilization)
+  --usage-disk-background-color: var(--bg-base);
+  --usage-bar-background-color: var(--bg-base);
+  --usage-bar-used-background-color: var(--accent);
+
+  // Pie/donut center hole (DashStats system widget)
+  --dashstats-pie-after-bg-color: var(--bg-surface);
 }
 
 // Light-mode adjustments: opacities and shadows need to invert.
