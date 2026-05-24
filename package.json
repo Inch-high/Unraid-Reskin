@@ -1,6 +1,6 @@
 {
   "name": "unraid-modernui",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Clean, flat, responsive theme for Unraid 7.x — Phase 1: foundation & safety",
   "type": "module",
