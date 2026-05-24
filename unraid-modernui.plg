@@ -25,14 +25,24 @@
 - Phase 1: foundation, safety, design tokens, settings page, fallback paths
 </CHANGES>
 
+<FILE Name="/boot/config/plugins/&name;.plg">
+<URL>&pluginurl;</URL>
+</FILE>
+
 <FILE Name="&cfgdir;/&tarball;">
 <URL>&tarurl;</URL>
 </FILE>
 
-<FILE Run="/bin/bash">
+<FILE Run="/bin/bash" Method="install">
 <INLINE>
+set -euo pipefail
 mkdir -p "&plugindir;" "&cfgdir;"
+# If a previous version is installed, let its own uninstall.php roll back its overlays first
+[ -f "&plugindir;/include/uninstall.php" ] &amp;&amp; php "&plugindir;/include/uninstall.php" || true
+# Clear orphans from previous installs before extracting the new payload
+rm -rf "&plugindir;"/*
 tar -xJf "&cfgdir;/&tarball;" -C "&plugindir;"
+[ -f "&plugindir;/include/install.php" ] || { echo "Modern UI: install.php missing after extract — aborting." &gt;&amp;2; exit 1; }
 php "&plugindir;/include/install.php"
 echo "Modern UI installed."
 </INLINE>
@@ -40,7 +50,12 @@ echo "Modern UI installed."
 
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
-php "&plugindir;/include/uninstall.php"
+# Do NOT use set -e here — rm must always run even if uninstall.php is missing/broken
+if [ -f "&plugindir;/include/uninstall.php" ]; then
+  php "&plugindir;/include/uninstall.php" || echo "Modern UI: uninstall.php errored, continuing with removal"
+else
+  echo "Modern UI: uninstall.php not found, skipping rollback"
+fi
 rm -rf "&plugindir;"
 rm -f "&cfgdir;/&tarball;"
 echo "Modern UI removed."
