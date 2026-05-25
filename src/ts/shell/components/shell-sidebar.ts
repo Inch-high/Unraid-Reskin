@@ -17,9 +17,11 @@ export class ShellSidebar extends LitElement {
     }
     .header {
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      padding: 10px 16px;
       height: 64px;
       box-sizing: border-box;
       border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
@@ -28,16 +30,34 @@ export class ShellSidebar extends LitElement {
       cursor: pointer;
     }
     .header:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
-    .logo {
-      width: 32px; height: 32px;
-      flex-shrink: 0;
+    .logo-wordmark {
+      height: 28px;
+      width: auto;
+      max-width: 100%;
       object-fit: contain;
       display: block;
     }
-    .name {
-      font-size: 14px; font-weight: 600;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    .logo-mark {
+      width: 32px; height: 32px;
+      object-fit: contain;
+      display: none;
     }
+    .name {
+      font-size: 11px; font-weight: 500;
+      color: var(--text-secondary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 100%;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    :host-context(body.modernui-shell-collapsed) .header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+    }
+    :host-context(body.modernui-shell-collapsed) .logo-wordmark { display: none; }
+    :host-context(body.modernui-shell-collapsed) .logo-mark { display: block; }
     .body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 0; }
     .footer {
       border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
@@ -203,7 +223,8 @@ export class ShellSidebar extends LitElement {
   render() {
     return html`
       <a class="header" href="/Dashboard">
-        <img class="logo" src="/apple-touch-icon.png" alt="Unraid">
+        <img class="logo-wordmark" src="/webGui/images/UN-logotype-gradient.svg" alt="Unraid">
+        <img class="logo-mark" src="/apple-touch-icon.png" alt="Unraid">
         <span class="name">${this._serverName}</span>
       </a>
       <div class="body">
