@@ -15,10 +15,13 @@
 }
 
 body.modernui-shell-active {
-  // Hide Unraid's top tilebar contents but keep the element so anything
-  // we mirror (server name, plugin slot) stays in DOM and stays polled.
+  // Hide Unraid's chrome — both legacy (tilebar/nav.tabs from 7.0-7.2) and
+  // modern (#header/#menu from Unraid 7.3's Vue-based UI). Keep the elements
+  // in DOM so anything we mirror (server name, plugin slot) stays polled.
   header.tilebar,
-  nav.tabs {
+  nav.tabs,
+  #header,
+  #menu {
     display: none !important;
   }
 
