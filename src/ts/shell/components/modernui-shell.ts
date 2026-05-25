@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import './shell-sidebar';
 
 @customElement('modernui-shell')
 export class ModernuiShell extends LitElement {
@@ -42,7 +43,7 @@ export class ModernuiShell extends LitElement {
 
   render() {
     return html`
-      <div class="sidebar"></div>
+      <div class="sidebar"><shell-sidebar></shell-sidebar></div>
       <div class="topbar"></div>
     `;
   }
