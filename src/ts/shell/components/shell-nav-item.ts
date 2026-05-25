@@ -41,6 +41,11 @@ export class ShellNavItem extends LitElement {
     :host([expanded]) .chevron { transform: rotate(90deg); }
     .children { padding-left: 20px; }
     :host([active][child]) a { font-weight: 500; }
+    :host-context(body.modernui-shell-collapsed) .label,
+    :host-context(body.modernui-shell-collapsed) .chevron,
+    :host-context(body.modernui-shell-collapsed) .children {
+      display: none;
+    }
   `;
 
   @property({ attribute: false }) item!: NavItem;

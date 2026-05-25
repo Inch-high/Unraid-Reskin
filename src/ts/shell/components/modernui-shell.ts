@@ -1,9 +1,18 @@
 import { LitElement, html, css } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import './shell-sidebar';
 
 @customElement('modernui-shell')
 export class ModernuiShell extends LitElement {
+  @property({ type: Boolean, reflect: true }) collapsed = false;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('shell-collapsed-changed', (e: Event) => {
+      this.collapsed = (e as CustomEvent<{ collapsed: boolean }>).detail.collapsed;
+    });
+  }
+
   static styles = css`
     :host {
       display: block;
@@ -39,6 +48,8 @@ export class ModernuiShell extends LitElement {
       border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       box-sizing: border-box;
     }
+    :host([collapsed]) .sidebar { width: var(--shell-sidebar-width-collapsed); }
+    :host([collapsed]) .topbar { left: var(--shell-sidebar-width-collapsed); }
   `;
 
   render() {

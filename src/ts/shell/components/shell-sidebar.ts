@@ -41,17 +41,36 @@ export class ShellSidebar extends LitElement {
       border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       padding: 8px 0;
     }
+    .collapse-toggle {
+      width: 100%;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 0;
+      padding: 8px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .collapse-toggle:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
+    :host-context(body.modernui-shell-collapsed) .name { display: none; }
   `;
 
   @state() private _serverName = '';
   @state() private _nav: NavItem[] = [];
   @state() private _currentPath = '/';
+  @state() private _collapsed = false;
 
   connectedCallback(): void {
     super.connectedCallback();
     this._serverName = this._readServerName();
     this._nav = buildNav(this._readStockAnchors());
     this._currentPath = window.location.pathname;
+    this._collapsed = document.documentElement.dataset.modernuiSidebar === 'collapsed';
+    if (this._collapsed) document.body.classList.add('modernui-shell-collapsed');
+    queueMicrotask(() => this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
+      detail: { collapsed: this._collapsed },
+      bubbles: true,
+      composed: true,
+    })));
     window.addEventListener('popstate', this._onNav);
   }
 
@@ -84,6 +103,31 @@ export class ShellSidebar extends LitElement {
     }));
   }
 
+  private _toggleCollapsed = async (): Promise<void> => {
+    this._collapsed = !this._collapsed;
+    document.body.classList.toggle('modernui-shell-collapsed', this._collapsed);
+    document.documentElement.dataset.modernuiSidebar = this._collapsed ? 'collapsed' : 'expanded';
+    await this._persistCollapsed(this._collapsed);
+    this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
+      detail: { collapsed: this._collapsed },
+      bubbles: true,
+      composed: true,
+    }));
+  };
+
+  private async _persistCollapsed(collapsed: boolean): Promise<void> {
+    const csrf = (window as { csrf_token?: string }).csrf_token;
+    if (!csrf) return; // best-effort; UI state still toggles
+    const body = new URLSearchParams();
+    body.set('sidebar', collapsed ? 'collapsed' : 'expanded');
+    body.set('csrf_token', csrf);
+    await fetch('/plugins/unraid-modernui/include/save.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    }).catch(() => undefined);
+  }
+
   render() {
     return html`
       <a class="header" href="/Dashboard">
@@ -95,7 +139,11 @@ export class ShellSidebar extends LitElement {
           <shell-nav-item .item=${item} current-path=${this._currentPath}></shell-nav-item>
         `)}
       </div>
-      <div class="footer"></div>
+      <div class="footer">
+        <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed}>
+          ${this._collapsed ? '▶' : '◀'}
+        </button>
+      </div>
     `;
   }
 }

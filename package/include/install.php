@@ -86,6 +86,7 @@ function modernui_generate_loader_js(bool $disabled): void {
     $density   = $settings['density']   ?? 'comfortable';
     $dashboard = $settings['dashboard'] ?? 'on';
     $shell     = $settings['shell']     ?? 'on';
+    $sidebar   = $settings['sidebar']   ?? 'expanded';
     $extraScript = $disabled
         ? ''
         : "var d=document.createElement('script');\n"
@@ -97,6 +98,7 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "r.dataset.modernuiDensity=" . json_encode($density) . ";\n"
         . "r.dataset.modernuiDashboard=" . json_encode($dashboard) . ";\n"
         . "r.dataset.modernuiShell=" . json_encode($shell) . ";\n"
+        . "r.dataset.modernuiSidebar=" . json_encode($sidebar) . ";\n"
         . "var s=document.createElement('script');\n"
         . "s.src='/plugins/unraid-modernui/theme/dist/" . $target . "';\n"
         . "document.head.appendChild(s);\n"
