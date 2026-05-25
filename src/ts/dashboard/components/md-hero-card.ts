@@ -73,7 +73,9 @@ export class MdHeroCard extends LitElement {
       min-width: 56px;
     }
 
-    /* Twin-stat layout (e.g. Workloads with separate Containers + VMs) */
+    /* Twin-stat layout (e.g. Workloads with separate Containers + VMs).
+       Two stats sit at opposite ends of the card with their icon on the
+       outer edge, number+label on the inner edge. */
     .body.twin {
       display: flex;
       flex-direction: column;
@@ -88,30 +90,48 @@ export class MdHeroCard extends LitElement {
       color: var(--text-secondary);
     }
     .body.twin .cols {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      flex: 1;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      flex: 1;
+      gap: 12px;
     }
     .body.twin .col {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .body.twin .col.right {
+      flex-direction: row-reverse;
+    }
+    .body.twin .stack {
       display: flex;
       flex-direction: column;
       gap: 4px;
       align-items: flex-start;
     }
-    .body.twin .col .big {
+    .body.twin .col.right .stack {
+      align-items: flex-end;
+    }
+    .body.twin .stack .big {
       font-size: 28px;
       font-weight: 600;
       color: var(--text-primary);
       font-variant-numeric: tabular-nums;
       line-height: 1;
     }
-    .body.twin .col .lbl {
+    .body.twin .stack .lbl {
       font-size: 11px;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.04em;
+    }
+    .body.twin ::slotted(svg[slot='left-icon']),
+    .body.twin ::slotted(svg[slot='right-icon']) {
+      width: 40px;
+      height: 40px;
+      color: var(--mui-accent);
+      flex-shrink: 0;
     }
   `;
 
@@ -157,13 +177,19 @@ export class MdHeroCard extends LitElement {
         <div class="body twin" @click=${this._onClick}>
           <span class="label">${this.label}</span>
           <div class="cols">
-            <div class="col">
-              <span class="big">${this.leftBig}</span>
-              <span class="lbl">${this.leftLabel}</span>
+            <div class="col left">
+              <slot name="left-icon"></slot>
+              <div class="stack">
+                <span class="big">${this.leftBig}</span>
+                <span class="lbl">${this.leftLabel}</span>
+              </div>
             </div>
-            <div class="col">
-              <span class="big">${this.rightBig}</span>
-              <span class="lbl">${this.rightLabel}</span>
+            <div class="col right">
+              <slot name="right-icon"></slot>
+              <div class="stack">
+                <span class="big">${this.rightBig}</span>
+                <span class="lbl">${this.rightLabel}</span>
+              </div>
             </div>
           </div>
         </div>

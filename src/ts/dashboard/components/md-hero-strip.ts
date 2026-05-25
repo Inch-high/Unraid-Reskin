@@ -151,7 +151,10 @@ export class MdHeroStrip extends LitElement {
           rightLabel="${v!.totalCount === 1 ? 'VM' : 'VMs'}"
           scrollTarget="md-docker-card"
           expanderTarget="container-list"
-        ></md-hero-card>
+        >
+          ${this._dockerIcon('left-icon')}
+          ${this._vmIcon('right-icon')}
+        </md-hero-card>
       `;
     }
 
@@ -241,6 +244,40 @@ export class MdHeroStrip extends LitElement {
         ${dockerTotal !== null ? this._dotsRow(dockerStarted ?? 0, dockerTotal, 'CT') : ''}
         ${vmTotal !== null ? this._dotsRow(vmStarted ?? 0, vmTotal, 'VM') : ''}
       </div>
+    `;
+  }
+
+  // Inline SVGs sit in the light DOM with a `slot=...` so md-hero-card's
+  // named slots project them. SVGs use currentColor so the parent's color
+  // rule (--mui-accent on twin slotted SVGs) wins.
+
+  private _dockerIcon(slot: string) {
+    // Docker mark: whale silhouette + 7 stacked containers (Moby).
+    return html`
+      <svg slot="${slot}" viewBox="0 0 256 192" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M250 65c-7 0-13 1-18 3-3-13-14-21-15-22l-2-1-2 2c-3 4-5 9-6 14-2 10 0 19 5 26-6 3-15 4-17 4H10c-5 0-10 4-10 10 0 18 3 36 12 51 11 17 27 22 39 22 33 0 57-15 71-44 7 0 22 0 30-15 1-1 4-7 5-9l-2-1-3 3c-5 5-12 10-25 10h-2c0 0 0 0 0 0c2-3 4-7 5-11 0 0 7-30-20-39z"/>
+        <rect x="30" y="60" width="20" height="20" fill="currentColor"/>
+        <rect x="55" y="60" width="20" height="20" fill="currentColor"/>
+        <rect x="80" y="60" width="20" height="20" fill="currentColor"/>
+        <rect x="105" y="60" width="20" height="20" fill="currentColor"/>
+        <rect x="55" y="35" width="20" height="20" fill="currentColor"/>
+        <rect x="80" y="35" width="20" height="20" fill="currentColor"/>
+        <rect x="105" y="35" width="20" height="20" fill="currentColor"/>
+        <rect x="80" y="10" width="20" height="20" fill="currentColor"/>
+      </svg>
+    `;
+  }
+
+  private _vmIcon(slot: string) {
+    // Computer monitor + stand (virtual machine).
+    return html`
+      <svg slot="${slot}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+           xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="20" height="13" rx="1.5"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
     `;
   }
 
