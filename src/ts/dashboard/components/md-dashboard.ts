@@ -45,8 +45,8 @@ export class ModernuiDashboard extends LitElement {
   static styles = css`
     :host {
       display: block;
-      // Full bleed so the host covers the stock dashboard's wider grid behind it
-      // (dashboard-overlay.scss stacks both in the same CSS Grid cell).
+      /* Full bleed so the host covers the stock dashboard's wider grid behind it
+         (dashboard-overlay.scss stacks both in the same CSS Grid cell). */
       width: 100%;
       background: var(--bg-base);
       color: var(--text-primary);

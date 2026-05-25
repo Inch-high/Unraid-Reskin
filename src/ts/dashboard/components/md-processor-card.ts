@@ -20,6 +20,10 @@ export class MdProcessorCard extends LitElement {
       color: var(--text-primary);
       font-variant-numeric: tabular-nums;
       line-height: 1;
+      /* Reserve room for "100%" so the model text beside us doesn't shift
+         as the percent toggles between 1, 10, 100 digits. */
+      min-width: 4ch;
+      text-align: right;
     }
     .stats .small {
       font-size: 12px;
