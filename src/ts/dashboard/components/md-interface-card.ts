@@ -82,6 +82,11 @@ export class MdInterfaceCard extends LitElement {
     const s = this.state;
     const meta = s.selectedName;
     return html`
+      <!-- Pull Unraid's Font Awesome ::before glyph rules into this shadow
+           root. FontAwesome font itself is loaded at document level, but the
+           .fa-arrow-down::before { content } rule is document-scoped and
+           does not cross the shadow boundary. -->
+      <link rel="stylesheet" href="/webGui/styles/font-awesome.css">
       <md-card cardTitle="Network" meta=${meta}>
         <div class="traffic">
           <div class="stat">
