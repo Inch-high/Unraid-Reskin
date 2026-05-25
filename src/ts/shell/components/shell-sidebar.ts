@@ -186,7 +186,7 @@ export class ShellSidebar extends LitElement {
     if (!text) return '';
     const dotColor = /started/i.test(text) ? '#22c55e' : /stopped/i.test(text) ? '#ef4444' : '#f59e0b';
     return html`
-      <shell-status-row label="Array" value=${text} dot-color=${dotColor}></shell-status-row>
+      <shell-status-row icon-name="harddisk" label="Array" value=${text} dot-color=${dotColor}></shell-status-row>
     `;
   }
 
@@ -221,11 +221,21 @@ export class ShellSidebar extends LitElement {
     if (!text) return '';
     const temps = text.match(/(\d+°C\s*)+/)?.[0]?.trim();
     const power = text.match(/\d+\s*W(?:\s*\(\d+\s*VA\))?/)?.[0];
-    const ups = text.match(/(\d+)\s*%/)?.[0];
+    const upsMatch = text.match(/(\d+)\s*%/);
+    const ups = upsMatch?.[0];
+
+    // Status-aware coloring so collapsed-mode icons aren't all grey.
+    const tempVals = temps ? temps.match(/\d+/g)?.map((s) => parseInt(s, 10)) ?? [] : [];
+    const maxTemp = tempVals.length ? Math.max(...tempVals) : 0;
+    const tempColor = maxTemp >= 75 ? '#ef4444' : maxTemp >= 60 ? '#f59e0b' : maxTemp > 0 ? '#22c55e' : '';
+
+    const upsPct = upsMatch ? parseInt(upsMatch[1], 10) : -1;
+    const upsColor = upsPct >= 80 ? '#22c55e' : upsPct >= 20 ? '#f59e0b' : upsPct >= 0 ? '#ef4444' : '';
+
     return html`
-      ${temps ? html`<shell-status-row label="Temps" value=${temps}></shell-status-row>` : ''}
-      ${power ? html`<shell-status-row label="Power" value=${power}></shell-status-row>` : ''}
-      ${ups ? html`<shell-status-row label="UPS" value=${ups}></shell-status-row>` : ''}
+      ${temps ? html`<shell-status-row icon-name="thermometer" label="Temps" value=${temps} dot-color=${tempColor}></shell-status-row>` : ''}
+      ${power ? html`<shell-status-row icon-name="flash" label="Power" value=${power} dot-color="#60a5fa"></shell-status-row>` : ''}
+      ${ups ? html`<shell-status-row icon-name="battery" label="UPS" value=${ups} dot-color=${upsColor}></shell-status-row>` : ''}
     `;
   }
 

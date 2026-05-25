@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { icon } from '../icons';
 
 @customElement('shell-status-row')
 export class ShellStatusRow extends LitElement {
@@ -16,6 +17,19 @@ export class ShellStatusRow extends LitElement {
     .dot {
       width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
       background: var(--dot-color, var(--text-secondary));
+    }
+    .status-icon {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--dot-color, var(--text-secondary));
+    }
+    :host-context(body.modernui-shell-collapsed) .row {
+      justify-content: center;
+      padding: 8px 0;
+    }
+    :host-context(body.modernui-shell-collapsed) .status-icon {
+      width: 20px; height: 20px;
     }
     .label {
       flex: 1; min-width: 0; font-size: 12px; color: var(--text-secondary);
@@ -43,6 +57,7 @@ export class ShellStatusRow extends LitElement {
   @property({ type: String }) label = '';
   @property({ type: String }) value = '';
   @property({ type: String, attribute: 'dot-color' }) dotColor = '';
+  @property({ type: String, attribute: 'icon-name' }) iconName = '';
   @property({ type: String }) detail = '';
   @property({ type: String, attribute: 'settings-url' }) settingsUrl = '';
   @state() private _open = false;
@@ -73,7 +88,9 @@ export class ShellStatusRow extends LitElement {
   render() {
     return html`
       <button class="row" type="button" @click=${this._toggle} style=${`--dot-color: ${this.dotColor || 'currentColor'}`}>
-        <span class="dot"></span>
+        ${this.iconName
+          ? html`<span class="status-icon">${icon(this.iconName, 16)}</span>`
+          : html`<span class="dot"></span>`}
         <span class="label">${this.label}</span>
         <span class="value">${this.value}</span>
       </button>

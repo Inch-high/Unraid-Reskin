@@ -19,6 +19,10 @@ const PATHS: Record<string, string> = {
   'chevron-right': 'M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z',
   'chevron-left': 'M15.41 16.58L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.42z',
   'chevron-down': 'M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z',
+  thermometer: 'M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z',
+  flash: 'M7 2v11h3v9l7-12h-4l4-8H7z',
+  battery: 'M16.67 4H15V2H9v2H7.33A1.33 1.33 0 006 5.33v15.34c0 .73.6 1.33 1.33 1.33h9.34a1.33 1.33 0 001.33-1.33V5.33C18 4.6 17.4 4 16.67 4z',
+  harddisk: 'M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H6m0 2h12v8h-2v2h-2v-2h-4v2H8v-2H6V4z',
 };
 
 export function icon(name: string, size = 18): TemplateResult | '' {
