@@ -9,6 +9,10 @@ function onDashboardPage(): boolean {
   return /^\/Dashboard/i.test(window.location.pathname);
 }
 
+export function isDashboardEnabled(doc: Document): boolean {
+  return doc.documentElement.dataset.modernuiDashboard !== 'off';
+}
+
 function waitForSource(
   timeoutMs: number,
   onReady: () => void,
@@ -49,6 +53,7 @@ function extractAll(store: ReturnType<typeof createStore>): void {
 }
 
 export function boot(): void {
+  if (!isDashboardEnabled(document)) return;
   if (!onDashboardPage()) return;
 
   waitForSource(

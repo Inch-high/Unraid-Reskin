@@ -4,6 +4,7 @@ import {
   collectDashboardTables,
   collectDashboardTbodies,
 } from '../../../src/ts/dashboard/dom-walk';
+import { isDashboardEnabled } from '../../../src/ts/dashboard/boot';
 
 // Unraid /Dashboard renders three sibling tables — db_box1, db_box2, db_box3.
 // Each is a draggable column tile containing a subset of widget tbodies.
@@ -73,5 +74,30 @@ describe('dashboard DOM walk — multi-table', () => {
     document.body.innerHTML = '<p>no dashboard here</p>';
     expect(collectDashboardTables()).toEqual([]);
     expect(collectDashboardTbodies()).toEqual([]);
+  });
+});
+
+describe('isDashboardEnabled gate', () => {
+  beforeEach(() => {
+    delete document.documentElement.dataset.modernuiDashboard;
+  });
+
+  it('returns true when the attribute is absent (failure-mode default)', () => {
+    expect(isDashboardEnabled(document)).toBe(true);
+  });
+
+  it('returns true when the attribute is "on"', () => {
+    document.documentElement.dataset.modernuiDashboard = 'on';
+    expect(isDashboardEnabled(document)).toBe(true);
+  });
+
+  it('returns false when the attribute is "off"', () => {
+    document.documentElement.dataset.modernuiDashboard = 'off';
+    expect(isDashboardEnabled(document)).toBe(false);
+  });
+
+  it('returns true for any other (unknown / future) value', () => {
+    document.documentElement.dataset.modernuiDashboard = 'something-else';
+    expect(isDashboardEnabled(document)).toBe(true);
   });
 });
