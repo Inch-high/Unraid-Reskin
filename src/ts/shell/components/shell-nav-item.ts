@@ -29,6 +29,7 @@ export class ShellNavItem extends LitElement {
       color: var(--text-primary);
       font-weight: 600;
     }
+    /* Forward-looking: icon span renders in a future task once SVG sprite mapping is wired. */
     .icon {
       width: 18px; height: 18px; flex-shrink: 0;
       background: currentColor;
@@ -48,6 +49,7 @@ export class ShellNavItem extends LitElement {
   @property({ type: Boolean, reflect: true }) expanded = false;
 
   willUpdate(changed: Map<string, unknown>): void {
+    if (!this.item) return;
     if (changed.has('item') || changed.has('currentPath')) {
       this.active = this._isActive(this.item, this.currentPath);
       // Auto-expand a group whose child matches the current path.
