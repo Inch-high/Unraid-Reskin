@@ -10,9 +10,9 @@ describe('CURATED_NAV baseline', () => {
     ]);
   });
 
-  it('Storage is the only expandable group, with Main/Shares/Pools children', () => {
+  it('Storage is the only expandable group, with Main and Shares children', () => {
     const storage = CURATED_NAV.find((n) => n.label === 'Storage');
-    expect(storage?.children?.map((c) => c.label)).toEqual(['Main', 'Shares', 'Pools']);
+    expect(storage?.children?.map((c) => c.label)).toEqual(['Main', 'Shares']);
     expect(CURATED_NAV.filter((n) => n.children?.length).length).toBe(1);
   });
 

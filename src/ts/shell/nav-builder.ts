@@ -15,7 +15,6 @@ export const CURATED_NAV: NavItem[] = [
   { label: 'Storage', icon: 'storage', children: [
     { label: 'Main',   url: '/Main' },
     { label: 'Shares', url: '/Shares' },
-    { label: 'Pools',  url: '/Pools' },
   ] },
   { label: 'Docker',   url: '/Docker',   icon: 'docker' },
   { label: 'VMs',      url: '/VMs',      icon: 'vms' },
