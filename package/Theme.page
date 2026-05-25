@@ -19,6 +19,7 @@ $sidebar   = $settings['sidebar']   ?? 'expanded';
 $zebra     = $settings['zebra']     ?? '0';
 $rmotion   = $settings['reduced_motion'] ?? 'auto';
 $dashboard = $settings['dashboard'] ?? 'on';
+$shell     = $settings['shell']     ?? 'on';
 
 // Unraid's auto_prepend_file (/usr/local/emhttp/webGui/include/local_prepend.php)
 // rejects any POST without a matching csrf_token by calling exit; with no body.
@@ -51,6 +52,15 @@ $csrf_token = $var['csrf_token'] ?? '';
       <?= modernui_radio('dashboard', 'off', 'Stock',  $dashboard) ?>
       <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
         Toggle whether <code>/Dashboard</code> shows the new layout (hero strip, sticky sidebar, collapsible sections). The rest of the theme stays modernized either way.
+      </p>
+    </fieldset>
+
+    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
+      <legend>Shell layout</legend>
+      <?= modernui_radio('shell', 'on',  'Modern', $shell) ?>
+      <?= modernui_radio('shell', 'off', 'Stock',  $shell) ?>
+      <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
+        Replace Unraid's top-nav and bottom status bar with a left sidebar and slim topbar. Plugin items (temps, UPS, power buttons) move into the new shell. Master Disable still turns off the whole theme.
       </p>
     </fieldset>
 
