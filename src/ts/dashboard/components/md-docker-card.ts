@@ -148,6 +148,52 @@ export class MdDockerCard extends LitElement {
     .summary-bar > span.stopped { background: var(--danger); }
     .summary-bar > span.paused  { background: var(--warning); }
     .summary-bar > span.unknown { background: var(--text-muted); }
+    details.container-list {
+      margin-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+    }
+    details.container-list summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      user-select: none;
+      padding: 4px 0;
+    }
+    details.container-list summary::-webkit-details-marker { display: none; }
+    details.container-list .chevron {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--text-secondary);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+    details.container-list[open] .chevron {
+      transform: rotate(90deg);
+    }
+    details.container-list .summary-meta {
+      color: var(--text-secondary);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: auto;
+    }
+    details.container-list[open] .summary-meta {
+      display: none;
+    }
+    details.container-list .label-closed { display: inline; }
+    details.container-list .label-open    { display: none; }
+    details.container-list[open] .label-closed { display: none; }
+    details.container-list[open] .label-open    { display: inline; }
+    details.container-list .container-body {
+      margin-top: 12px;
+    }
   `;
 
   @property({ type: Object }) state: DockerState = {
@@ -232,33 +278,43 @@ export class MdDockerCard extends LitElement {
         `}
 
         ${totalCount > 0 ? html`
-          <div class="filters">
-            <span class="chip" ?data-active=${this._filter === 'all'}
-                  @click=${() => (this._filter = 'all')}>All</span>
-            <span class="chip" ?data-active=${this._filter === 'running'}
-                  @click=${() => (this._filter = 'running')}>Running</span>
-            <span class="chip" ?data-active=${this._filter === 'stopped'}
-                  @click=${() => (this._filter = 'stopped')}>Stopped</span>
-          </div>
-          ${folders.map((f) => {
-            const visible = this._filtered(f.containers);
-            if (visible.length === 0) return '';
-            return html`
-              <div class="folder-label">
-                <span>${f.name}</span>
-                <span>${f.runningCount} / ${f.totalCount}</span>
+          <details class="container-list">
+            <summary>
+              <span class="chevron"></span>
+              <span class="label-closed">Show containers</span>
+              <span class="label-open">Hide containers</span>
+              <span class="summary-meta">${totalRunning} running</span>
+            </summary>
+            <div class="container-body">
+              <div class="filters">
+                <span class="chip" ?data-active=${this._filter === 'all'}
+                      @click=${() => (this._filter = 'all')}>All</span>
+                <span class="chip" ?data-active=${this._filter === 'running'}
+                      @click=${() => (this._filter = 'running')}>Running</span>
+                <span class="chip" ?data-active=${this._filter === 'stopped'}
+                      @click=${() => (this._filter = 'stopped')}>Stopped</span>
               </div>
-              <div class="container-grid">
-                ${visible.map((c) => this._renderTile(c))}
-              </div>
-            `;
-          })}
-          ${ungrouped.length > 0 ? html`
-            <div class="folder-label"><span>Ungrouped</span></div>
-            <div class="container-grid">
-              ${this._filtered(ungrouped).map((c) => this._renderTile(c))}
+              ${folders.map((f) => {
+                const visible = this._filtered(f.containers);
+                if (visible.length === 0) return '';
+                return html`
+                  <div class="folder-label">
+                    <span>${f.name}</span>
+                    <span>${f.runningCount} / ${f.totalCount}</span>
+                  </div>
+                  <div class="container-grid">
+                    ${visible.map((c) => this._renderTile(c))}
+                  </div>
+                `;
+              })}
+              ${ungrouped.length > 0 ? html`
+                <div class="folder-label"><span>Ungrouped</span></div>
+                <div class="container-grid">
+                  ${this._filtered(ungrouped).map((c) => this._renderTile(c))}
+                </div>
+              ` : ''}
             </div>
-          ` : ''}
+          </details>
         ` : ''}
       </md-card>
     `;
