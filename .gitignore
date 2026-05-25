@@ -9,3 +9,11 @@ coverage/
 .env.local
 *.log
 .vscode/settings.json
+
+# Claude Code local session state — never push
+.claude/
+
+# Stray HTML captured during live debugging
+disklocation.html
+dash-live.html
+live-*.html
