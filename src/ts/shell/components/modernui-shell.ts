@@ -5,6 +5,7 @@ import { customElement } from 'lit/decorators.js';
 export class ModernuiShell extends LitElement {
   static styles = css`
     :host {
+      display: block;
       position: fixed;
       top: 0;
       left: 0;
