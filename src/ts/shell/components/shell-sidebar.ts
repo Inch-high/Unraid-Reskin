@@ -2,6 +2,8 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { buildNav, type NavItem, type StockAnchor } from '../nav-builder';
 import './shell-nav-item';
+import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
+import './shell-status-row';
 
 @customElement('shell-sidebar')
 export class ShellSidebar extends LitElement {
@@ -58,6 +60,9 @@ export class ShellSidebar extends LitElement {
   @state() private _nav: NavItem[] = [];
   @state() private _currentPath = '/';
   @state() private _collapsed = false;
+  @state() private _statusItems: Array<{ entry: PluginEntry | null; node: Element }> = [];
+  private _disposeMirror: (() => void) | null = null;
+  private _arrayInterval: number | null = null;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -72,11 +77,22 @@ export class ShellSidebar extends LitElement {
       composed: true,
     })));
     window.addEventListener('popstate', this._onNav);
+    const bottomBar = document.querySelector('div.statusbar') || document.querySelector('footer');
+    this._disposeMirror = startMirror({
+      source: bottomBar,
+      registry: REGISTRY.bottom,
+      onUpdate: (items) => {
+        this._statusItems = items;
+      },
+    });
+    this._arrayInterval = window.setInterval(() => this.requestUpdate(), 5000);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('popstate', this._onNav);
+    this._disposeMirror?.();
+    if (this._arrayInterval) clearInterval(this._arrayInterval);
   }
 
   private _onNav = (): void => {
@@ -128,6 +144,32 @@ export class ShellSidebar extends LitElement {
     }).catch(() => undefined);
   }
 
+  private _renderArrayState() {
+    const el = document.querySelector('.array-state, [data-array-state]');
+    if (!el) return '';
+    const text = el.textContent?.trim() || '';
+    const dotColor = /started/i.test(text) ? '#22c55e' : /stopped/i.test(text) ? '#ef4444' : '#f59e0b';
+    return html`
+      <shell-status-row label="Array" value=${text} dot-color=${dotColor}></shell-status-row>
+    `;
+  }
+
+  private _renderStatus(it: { entry: PluginEntry | null; node: Element }) {
+    const text = it.node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 32) || '';
+    if (it.entry) {
+      return html`
+        <shell-status-row
+          label=${it.entry.label || it.entry.name}
+          value=${text}
+        ></shell-status-row>
+      `;
+    }
+    // Unknown plugin — render generic row preserving the original DOM via innerHTML clone
+    return html`
+      <shell-status-row label="Plugin" value=${text}></shell-status-row>
+    `;
+  }
+
   render() {
     return html`
       <a class="header" href="/Dashboard">
@@ -140,6 +182,8 @@ export class ShellSidebar extends LitElement {
         `)}
       </div>
       <div class="footer">
+        ${this._renderArrayState()}
+        ${this._statusItems.map((it) => this._renderStatus(it))}
         <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed}>
           ${this._collapsed ? '▶' : '◀'}
         </button>
