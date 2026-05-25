@@ -1,0 +1,33 @@
+{
+  "bottom": [
+    {
+      "name": "dynamix.system.temp",
+      "selector": ".dynamix-system-temp, [class*='system-temp']",
+      "slot": "cpu-temp",
+      "label": "CPU temp"
+    },
+    {
+      "name": "dynamix.system.stats",
+      "selector": ".dynamix-system-stats-power, .power",
+      "slot": "power",
+      "label": "Power"
+    },
+    {
+      "name": "dynamix.ups",
+      "selector": ".nut_status, .nut_battery",
+      "slot": "ups",
+      "label": "UPS"
+    }
+  ],
+  "topbar": [
+    {
+      "name": "apcupsd",
+      "selector": "a.apcupsd-power-button, [data-apcupsd]",
+      "icon": "power"
+    },
+    {
+      "name": "ipmi.tools",
+      "selector": "a.ipmi-tools-button, [data-ipmi-tools]"
+    }
+  ]
+}
