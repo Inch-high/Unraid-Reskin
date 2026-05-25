@@ -85,6 +85,11 @@ export class ShellSidebar extends LitElement {
         this._statusItems = items;
       },
     });
+    // Unraid 7.3 renders <footer> asynchronously after our mount, so the first
+    // render misses the status data. Fire a quick re-render at 250ms (after
+    // Vue's typical first paint) so the rows appear immediately, then settle
+    // into the 5s polling cadence.
+    window.setTimeout(() => this.requestUpdate(), 250);
     this._arrayInterval = window.setInterval(() => this.requestUpdate(), 5000);
   }
 
