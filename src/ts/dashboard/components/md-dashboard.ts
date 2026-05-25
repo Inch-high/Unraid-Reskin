@@ -53,12 +53,11 @@ export class ModernuiDashboard extends LitElement {
       font-family: var(--font-sans);
     }
     .content {
-      /* Fill the parent frame the stock dashboard sets (typically 1900px on
-         Unraid's standard layout). The host already centers itself inside
-         the wider page body, so leaving the content un-capped uses all the
-         horizontal real estate the stock UI was already claiming. */
+      /* Fill the available frame. dashboard-overlay.scss overrides
+         Unraid's 1900px frame cap so this picks up the wider viewport on
+         ultrawide monitors. */
       width: 100%;
-      max-width: 1900px;
+      max-width: 2400px;
       margin: 0 auto;
       padding: 16px 24px 48px;
       box-sizing: border-box;
@@ -146,10 +145,12 @@ export class ModernuiDashboard extends LitElement {
         <div class="layout">
           <aside class="sidebar">
             ${hasSidebarHero ? html`
-              <md-processor-card
-                .state=${processors[0]}
-                .memoryState=${memories[0] ?? null}
-              ></md-processor-card>
+              <md-section label="Compute">
+                <md-processor-card
+                  .state=${processors[0]}
+                  .memoryState=${memories[0] ?? null}
+                ></md-processor-card>
+              </md-section>
             ` : ''}
           </aside>
           <div class="main">
@@ -171,7 +172,7 @@ export class ModernuiDashboard extends LitElement {
               </md-section>
             ` : ''}
             ${hasCompute ? html`
-              <md-section label="Compute">
+              <md-section label="Devices">
                 ${processors.length === 0 ? memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`) : ''}
                 ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
                 ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}

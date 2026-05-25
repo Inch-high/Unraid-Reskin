@@ -22,10 +22,22 @@ body.modernui-dashboard-active {
     overflow: visible !important;
   }
 
+  // Unraid's `.Theme--width-boxed #displaybox { max-width: 1920px }` is
+  // the actual cap — div.frame inherits that limit. Override the boxed
+  // mode for /Dashboard so the dashboard can use ultrawide real estate
+  // (we still cap at 2400px so cards don't get absurdly stretched on
+  // 4K+ monitors).
+  #displaybox {
+    max-width: 2400px !important;
+  }
+
   div.frame {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
+    width: auto !important;
+    max-width: 2400px !important;
+    margin: 0 auto !important;
   }
 
   div.frame > div.grid {
