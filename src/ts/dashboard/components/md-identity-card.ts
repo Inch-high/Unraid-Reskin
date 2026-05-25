@@ -60,6 +60,14 @@ export class MdIdentityCard extends LitElement {
       border-radius: var(--radius-md);
       color: var(--text-primary);
     }
+    /* The case-* classes from default-cases.css (loaded via the <link> in
+       render) provide the ::before content glyph; we size it here. Stock
+       Unraid sizes its icon via i#mycase font-size, which is document-scoped
+       and does not cross the shadow boundary. */
+    .case > i {
+      font-size: 72px;
+      line-height: 1;
+    }
     .case-empty {
       width: 96px;
       height: 96px;
