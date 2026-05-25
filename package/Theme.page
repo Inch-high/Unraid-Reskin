@@ -19,6 +19,12 @@ $sidebar   = $settings['sidebar']   ?? 'expanded';
 $zebra     = $settings['zebra']     ?? '0';
 $rmotion   = $settings['reduced_motion'] ?? 'auto';
 $dashboard = $settings['dashboard'] ?? 'on';
+
+// Unraid's auto_prepend_file (/usr/local/emhttp/webGui/include/local_prepend.php)
+// rejects any POST without a matching csrf_token by calling exit; with no body.
+// Without this token, the Save fetch comes back as 200 with empty body and PHP
+// never runs — silently. The global $var is populated by the auto_prepend.
+$csrf_token = $var['csrf_token'] ?? '';
 ?>
 <div style="max-width:720px;padding:16px;">
   <h2 style="margin:0 0 8px 0;">Modern UI</h2>
@@ -31,6 +37,7 @@ $dashboard = $settings['dashboard'] ?? 'on';
   <?php endif; ?>
 
   <form id="modernui-settings" method="post" action="/plugins/unraid-modernui/include/save.php">
+    <input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Color mode</legend>
       <?= modernui_radio('mode', 'system', 'System', $mode) ?>
@@ -95,6 +102,9 @@ $dashboard = $settings['dashboard'] ?? 'on';
   function post(action) {
     const fd = new FormData();
     fd.append('action', action);
+    // Unraid's auto_prepend csrf_token check expects the token on every POST.
+    // `csrf_token` is the global JS variable set by HeadInlineJS.php.
+    if (typeof csrf_token !== 'undefined') fd.append('csrf_token', csrf_token);
     return fetch('/plugins/unraid-modernui/include/save.php', { method: 'POST', body: fd });
   }
 
