@@ -3,7 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { buildNav, type NavItem, type StockAnchor } from '../nav-builder';
 import './shell-nav-item';
 import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
-import { icon } from '../icons';
+import { icon, unraidLogomark } from '../icons';
 import './shell-status-row';
 
 @customElement('shell-sidebar')
@@ -40,9 +40,10 @@ export class ShellSidebar extends LitElement {
     }
     .logo-mark {
       width: 32px; height: 32px;
-      object-fit: contain;
       display: none;
+      flex-shrink: 0;
     }
+    .logo-mark svg { display: block; }
     .name {
       font-size: 11px; font-weight: 500;
       color: var(--text-secondary);
@@ -225,7 +226,7 @@ export class ShellSidebar extends LitElement {
     return html`
       <a class="header" href="/Dashboard">
         <img class="logo-wordmark" src="/webGui/images/UN-logotype-gradient.svg" alt="Unraid">
-        <img class="logo-mark" src="/apple-touch-icon.png" alt="Unraid">
+        <span class="logo-mark">${unraidLogomark(32)}</span>
         <span class="name">${this._serverName}</span>
       </a>
       <div class="body">
