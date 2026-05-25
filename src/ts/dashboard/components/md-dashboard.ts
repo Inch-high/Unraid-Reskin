@@ -45,11 +45,17 @@ export class ModernuiDashboard extends LitElement {
   static styles = css`
     :host {
       display: block;
+      // Full bleed so the host covers the stock dashboard's wider grid behind it
+      // (dashboard-overlay.scss stacks both in the same CSS Grid cell).
+      width: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+    .content {
       max-width: 1440px;
       margin: 0 auto;
       padding: 16px 24px 48px;
-      color: var(--text-primary);
-      font-family: var(--font-sans);
     }
   `;
 
@@ -107,6 +113,7 @@ export class ModernuiDashboard extends LitElement {
     const hasSystem = identities.length + motherboards.length + shares.length + users.length > 0;
 
     return html`
+      <div class="content">
       ${hasStorage ? html`
         <md-section label="Storage">
           ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
@@ -148,6 +155,7 @@ export class ModernuiDashboard extends LitElement {
           ${unknown.map((w) => html`<md-plugin-card .state=${w}></md-plugin-card>`)}
         </md-section>
       ` : ''}
+      </div>
     `;
   }
 }

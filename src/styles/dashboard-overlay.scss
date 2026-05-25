@@ -1,15 +1,39 @@
-// When our dashboard overlay is active, hide Unraid's stock dashboard tile grid.
-// The table.dashboard element stays in the DOM (Unraid's nchan subscribers keep
-// updating it), but it's not visible to the user.
-
+// When our dashboard overlay is active, the stock tile grid must stay fully
+// visible IN the viewport so Unraid's nchan-driven JS keeps animating the
+// `usage-disk > span[style="width:N%"]` fills our extractors read.
+//
+// Hard-learned constraint: Unraid 7.3's JS pauses fill updates when the
+// dashboard isn't visible — anything that affects layout, visibility, opacity,
+// or viewport intersection (display:none, visibility:hidden, opacity:0,
+// position:absolute off-screen, transform translate, even visibility:hidden
+// alone) silently stops the per-core / GPU util / GPU memory bars updating.
+//
+// Solution: stack stock and modernui-dashboard in the same CSS Grid cell on
+// `div.frame`. Both children render at their natural size, the cell grows to
+// the taller of the two, and our card sits on top with an opaque background
+// so the user only ever sees the modern UI.
 body.modernui-dashboard-active {
-  // Hide the tile grid Unraid renders
-  div.frame > div.grid {
-    display: none !important;
+  div.frame {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
   }
 
-  // Hide the stopgap rows and any leftover dashboard chrome
-  table.dashboard {
-    display: none !important;
+  div.frame > div.grid {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 1;
+    // Keep the stock layout untouched — Unraid's column flex math
+    // and IntersectionObserver checks all stay happy.
+  }
+
+  div.frame > modernui-dashboard {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 2;
+    background: var(--bg-base);
+    // Slight bottom padding ensures the opaque background covers any
+    // stock-grid bleed when our content is shorter than the stock layout.
+    min-height: 100%;
   }
 }

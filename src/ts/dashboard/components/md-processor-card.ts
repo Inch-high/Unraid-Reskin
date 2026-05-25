@@ -118,7 +118,7 @@ export class MdProcessorCard extends LitElement {
               <div class="core">
                 <span>${c.threadLabel}</span>
                 <div class="bar"><span style="width: ${c.loadPct}%"></span></div>
-                <span class="pct">${c.loadPct}%</span>
+                <span class="pct">${Math.round(c.loadPct)}%</span>
               </div>
             `,
           )}
