@@ -41,5 +41,22 @@ $noDash = modernui_validate_settings([]);
 assert($noDash['ok'] === true);
 assert($noDash['values']['dashboard'] === 'on', "default dashboard should be on");
 
+// Shell layout toggle: 'on' and 'off' are valid, anything else is rejected.
+$shellOn = modernui_validate_settings(['shell' => 'on']);
+assert($shellOn['ok'] === true, "shell=on should pass: " . var_export($shellOn, true));
+assert($shellOn['values']['shell'] === 'on');
+
+$shellOff = modernui_validate_settings(['shell' => 'off']);
+assert($shellOff['ok'] === true, "shell=off should pass");
+assert($shellOff['values']['shell'] === 'off');
+
+$badShell = modernui_validate_settings(['shell' => 'maybe']);
+assert($badShell['ok'] === false, "shell=maybe should fail");
+assert(strpos($badShell['error'], 'shell') !== false);
+
+$noShell = modernui_validate_settings([]);
+assert($noShell['ok'] === true);
+assert($noShell['values']['shell'] === 'on', "default shell should be on");
+
 echo "all save tests passed\n";
 exit(0);

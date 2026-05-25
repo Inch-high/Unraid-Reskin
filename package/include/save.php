@@ -12,6 +12,7 @@ function modernui_validate_settings(array $input): array {
         'zebra'          => '0',
         'reduced_motion' => 'auto',
         'dashboard'      => 'on',
+        'shell'          => 'on',
     ];
     $allowed = [
         'mode'           => ['system', 'dark', 'light'],
@@ -20,6 +21,7 @@ function modernui_validate_settings(array $input): array {
         'zebra'          => ['0', '1'],
         'reduced_motion' => ['auto', '0', '1'],
         'dashboard'      => ['on', 'off'],
+        'shell'          => ['on', 'off'],
     ];
 
     $out = $defaults;
