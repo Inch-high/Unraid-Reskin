@@ -39,6 +39,7 @@ import './md-identity-card';
 import './md-motherboard-card';
 import './md-shares-card';
 import './md-users-card';
+import './md-hero-strip';
 
 @customElement('modernui-dashboard')
 export class ModernuiDashboard extends LitElement {
@@ -143,6 +144,13 @@ export class ModernuiDashboard extends LitElement {
 
     return html`
       <div class="content">
+        <md-hero-strip
+          .arrayState=${arrays[0] ?? null}
+          .cacheStates=${caches}
+          .dockerState=${dockers[0] ?? null}
+          .vmsState=${vms[0] ?? null}
+          .upsState=${upses[0] ?? null}
+        ></md-hero-strip>
         <div class="layout">
           <aside class="sidebar">
             ${hasSidebarHero ? html`
