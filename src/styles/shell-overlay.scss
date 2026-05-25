@@ -1,0 +1,48 @@
+// Phase 4 shell overlay. Active only while body has .modernui-shell-active
+// (added by shellBoot). Sized via two CSS variables that the topbar/sidebar
+// components also read so layout stays in sync between CSS-driven hiding
+// and Lit-component sizing.
+//
+// Caveat ([[project_nchan_pauses_when_hidden]]): the bottom statusbar is
+// the source for plugin-injected DOM (temps, UPS, power). If display:none
+// pauses plugin polling we move it offscreen instead. Initial choice is
+// display:none for simplicity; the live verify in Task 18 catches the
+// regression if it occurs.
+:root {
+  --shell-sidebar-width: 240px;
+  --shell-sidebar-width-collapsed: 64px;
+  --shell-topbar-height: 48px;
+}
+
+body.modernui-shell-active {
+  // Hide Unraid's top tilebar contents but keep the element so anything
+  // we mirror (server name, plugin slot) stays in DOM and stays polled.
+  header.tilebar,
+  nav.tabs {
+    display: none !important;
+  }
+
+  // Bottom status bar — Unraid 7.x renders this as <div class="statusbar">
+  // inside <footer> in DefaultPageLayout.php. Hide while leaving the DOM
+  // for the MutationObserver mirror.
+  div.statusbar,
+  footer {
+    display: none !important;
+  }
+
+  // Push the rendered page content to sit inside the shell's frame.
+  // Unraid's main content lives in #displaybox; pad both it and the
+  // <body> as a belt-and-braces fallback for pages that bypass #displaybox.
+  padding-left: var(--shell-sidebar-width);
+  padding-top: var(--shell-topbar-height);
+  box-sizing: border-box;
+
+  // Make sure the page content scrolls inside the padded region, not under
+  // our fixed topbar/sidebar.
+  min-height: 100vh;
+}
+
+// While the sidebar is collapsed, narrow the padding.
+body.modernui-shell-active.modernui-shell-collapsed {
+  padding-left: var(--shell-sidebar-width-collapsed);
+}
