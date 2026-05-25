@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { pathToBreadcrumb, type BreadcrumbSegment } from '../breadcrumb';
 import { CURATED_NAV } from '../nav-builder';
+import './shell-notification-bell';
 import './shell-user-menu';
 
 @customElement('shell-topbar')
@@ -96,7 +97,7 @@ export class ShellTopbar extends LitElement {
         <div id="modernui-topbar-actions" class="slot-host"></div>
         <div id="modernui-topbar-plugins" class="slot-host"></div>
         <button class="icon-btn" type="button" title="Search" @click=${this._searchToast}>⌕</button>
-        <slot name="bell"></slot>
+        <shell-notification-bell></shell-notification-bell>
         <shell-user-menu></shell-user-menu>
       </div>
     `;
