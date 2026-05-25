@@ -79,6 +79,7 @@ export class MdHeroCard extends LitElement {
     .body.twin {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
       gap: 12px;
       grid-template-columns: none;
     }
