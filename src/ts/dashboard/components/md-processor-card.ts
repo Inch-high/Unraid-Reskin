@@ -12,7 +12,7 @@ export class MdProcessorCard extends LitElement {
       display: flex;
       align-items: baseline;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .stats .big {
       font-size: 32px;
@@ -24,6 +24,19 @@ export class MdProcessorCard extends LitElement {
     .stats .small {
       font-size: 12px;
       color: var(--text-secondary);
+    }
+    .overall-bar {
+      height: 6px;
+      background: var(--border-default);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .overall-bar > span {
+      display: block;
+      height: 100%;
+      background: var(--mui-accent);
+      transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
     }
     .cores {
       display: grid;
@@ -95,9 +108,10 @@ export class MdProcessorCard extends LitElement {
     return html`
       <md-card cardTitle="Processor" meta=${meta}>
         <div class="stats">
-          <span class="big">${s.overallLoadPct ?? 0}%</span>
+          <span class="big">${Math.round(s.overallLoadPct ?? 0)}%</span>
           <span class="small">load · ${s.model || 'Unknown CPU'}</span>
         </div>
+        <div class="overall-bar"><span style="width: ${s.overallLoadPct ?? 0}%"></span></div>
         <div class="cores">
           ${s.coreLoads.map(
             (c) => html`

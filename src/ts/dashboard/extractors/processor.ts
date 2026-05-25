@@ -52,8 +52,24 @@ function parseTemperatureC(tbody: HTMLTableSectionElement): number | null {
   return m ? Number(m[1]) : null;
 }
 
+// Unraid's dashboard JS pushes a fractional width onto the .usage-disk fill
+// (e.g. `style="width: 3.10652%"`) — this is the smoothed, animated bar value
+// the stock UI shows. The text label next to it is rounded to an integer
+// ("1%"). Prefer the fill width when present so our bars match the stock
+// dashboard's "always alive" feel. Fall back to text when the fill has no
+// style (which is the case for per-core spans at true idle).
+function widthFromFill(el: Element | null): number | null {
+  if (!el) return null;
+  const style = el.getAttribute('style') ?? '';
+  const m = style.match(/width\s*:\s*([\d.]+)/);
+  return m ? Number(m[1]) : null;
+}
+
 function parseOverallLoadPct(tbody: HTMLTableSectionElement): number | null {
-  // Prefer the dedicated "Overall Load:" row to avoid colliding with per-core values.
+  // Live fill width first (e.g. "width: 3.10652%") — that's the bar Unraid animates.
+  const fromFill = widthFromFill(tbody.querySelector('#cpu'));
+  if (fromFill !== null) return fromFill;
+  // Fallback: "Overall Load:" row text, then a textContent scan.
   const rows = Array.from(tbody.querySelectorAll('tr'));
   for (const row of rows) {
     const head = row.querySelector('span.w26');
@@ -63,7 +79,6 @@ function parseOverallLoadPct(tbody: HTMLTableSectionElement): number | null {
       if (m) return Number(m[1]);
     }
   }
-  // Fallback: text scan.
   const text = tbody.textContent ?? '';
   const m = text.match(/Overall\s+Load:\s*(\d+)\s*%/i);
   return m ? Number(m[1]) : null;
@@ -91,8 +106,15 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
         }
       }
       if (index < 0) continue;
-      const m = sp.textContent?.match(/(\d+)\s*%/);
-      const loadPct = m ? Number(m[1]) : 0;
+      // Prefer the live fill width (#cpuN style) over the text — same reason as overall.
+      const fromFill = widthFromFill(tbody.querySelector(`#cpu${index}`));
+      let loadPct: number;
+      if (fromFill !== null) {
+        loadPct = fromFill;
+      } else {
+        const m = sp.textContent?.match(/(\d+)\s*%/);
+        loadPct = m ? Number(m[1]) : 0;
+      }
       out.push({ index, threadLabel, loadPct });
     }
   }

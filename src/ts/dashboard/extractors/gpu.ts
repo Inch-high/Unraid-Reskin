@@ -27,6 +27,21 @@ function preferLoadText(root: Element, baseClass: string): string {
   return textOf(root, `.${baseClass}`);
 }
 
+// Unraid's nvidia-driver dashboard puts a smoothed fractional width on the
+// .usage-disk fill span next to the value text. For utilization-style values
+// (util%, memory%), preferring the fill width gives us the same fluid animation
+// the stock UI shows. The fill is the sibling .usage-disk of the .{baseClass}.load
+// text span — both wrapped in the same .w36/.w72.
+function fillWidthBeside(root: Element, baseClass: string): number | null {
+  const loadEl = root.querySelector(`.${baseClass}.load`);
+  if (!loadEl) return null;
+  const wrap = loadEl.parentElement;
+  const fill = wrap?.querySelector('.usage-disk > span[style*="width"]');
+  if (!fill) return null;
+  const m = (fill.getAttribute('style') ?? '').match(/width\s*:\s*([\d.]+)/);
+  return m ? Number(m[1]) : null;
+}
+
 function parsePciBus(tbody: HTMLTableSectionElement): string {
   // Compose a short PCIe summary from the gen + lanes spans. Either may be empty
   // in cold templates → output is "" in that case.
@@ -76,8 +91,11 @@ export const gpuExtractor: Extractor<GpuState> = {
     const model = textOf(source, '.gpu-name1');
     const pciBus = parsePciBus(source);
 
-    const utilizationPct = parseNumber(preferLoadText(source, 'gpu-util1'));
-    const memoryUsedPct = parseNumber(preferLoadText(source, 'gpu-memutil1'));
+    // Prefer the live fill width (smoothed fractional %) over the rounded text.
+    const utilizationPct = fillWidthBeside(source, 'gpu-util1')
+      ?? parseNumber(preferLoadText(source, 'gpu-util1'));
+    const memoryUsedPct = fillWidthBeside(source, 'gpu-memutil1')
+      ?? parseNumber(preferLoadText(source, 'gpu-memutil1'));
     // gpu-memclock1 carries the memory MHz value; row label is "GPU - Memory (MHz)".
     const memoryMHz = parseNumber(preferLoadText(source, 'gpu-memclock1'));
     const fanRpm = parseNumber(preferLoadText(source, 'gpu-fan1'));
