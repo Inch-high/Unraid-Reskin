@@ -26,26 +26,3 @@ export function icon(name: string, size = 18): TemplateResult | '' {
   if (!d) return '';
   return svg`<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="currentColor" aria-hidden="true"><path d="${d}"></path></svg>`;
 }
-
-// Unraid logomark — orange gradient disc with five white "drive bay" bars of
-// varying heights. Used in the collapsed-sidebar slot where the wide gradient
-// wordmark doesn't fit. Inline SVG avoids the white square padding that's
-// baked into /apple-touch-icon.png.
-export function unraidLogomark(size = 32): TemplateResult {
-  return svg`
-    <svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="Unraid">
-      <defs>
-        <linearGradient id="modernui-unraid-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#e22828"></stop>
-          <stop offset="100%" stop-color="#ff8c2f"></stop>
-        </linearGradient>
-      </defs>
-      <circle cx="12" cy="12" r="11" fill="url(#modernui-unraid-grad)"></circle>
-      <rect x="5"    y="10" width="1.4" height="6" rx="0.5" fill="#fff"></rect>
-      <rect x="7.5"  y="11" width="1.4" height="4" rx="0.5" fill="#fff"></rect>
-      <rect x="10.3" y="7"  width="1.4" height="9" rx="0.5" fill="#fff"></rect>
-      <rect x="13.1" y="9"  width="1.4" height="6" rx="0.5" fill="#fff"></rect>
-      <rect x="15.9" y="11" width="1.4" height="3" rx="0.5" fill="#fff"></rect>
-    </svg>
-  `;
-}

@@ -3,7 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { buildNav, type NavItem, type StockAnchor } from '../nav-builder';
 import './shell-nav-item';
 import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
-import { icon, unraidLogomark } from '../icons';
+import { icon } from '../icons';
 import './shell-status-row';
 
 @customElement('shell-sidebar')
@@ -38,12 +38,19 @@ export class ShellSidebar extends LitElement {
       object-fit: contain;
       display: block;
     }
+    /* Use the real apple-touch-icon PNG (which is the actual Unraid logomark)
+       but zoom in 145% to crop the hard-white square padding baked into it,
+       and clip the result to a circle for any remaining edge pixels. */
     .logo-mark {
       width: 32px; height: 32px;
       display: none;
       flex-shrink: 0;
+      background-image: url('/apple-touch-icon.png');
+      background-size: 145% 145%;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 50%;
     }
-    .logo-mark svg { display: block; }
     .name {
       font-size: 11px; font-weight: 500;
       color: var(--text-secondary);
@@ -226,7 +233,7 @@ export class ShellSidebar extends LitElement {
     return html`
       <a class="header" href="/Dashboard">
         <img class="logo-wordmark" src="/webGui/images/UN-logotype-gradient.svg" alt="Unraid">
-        <span class="logo-mark">${unraidLogomark(32)}</span>
+        <span class="logo-mark" role="img" aria-label="Unraid"></span>
         <span class="name">${this._serverName}</span>
       </a>
       <div class="body">
