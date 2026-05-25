@@ -1,7 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import type { DisklocationState, DiskSlot } from '../types';
+import type { DisklocationState, DiskSlot, ArrayState, CacheState, ParityState } from '../types';
 import './md-card';
+import './md-array-card';
+import './md-cache-card';
+import './md-parity-card';
 
 @customElement('md-disklocation-card')
 export class MdDisklocationCard extends LitElement {
@@ -66,7 +69,7 @@ export class MdDisklocationCard extends LitElement {
       font-size: 10px;
       text-align: center;
       letter-spacing: 0.02em;
-      min-height: 12px; /* reserve space so empty bays don't collapse the row */
+      min-height: 12px;
     }
     .status.active  { color: var(--success); }
     .status.standby { color: var(--text-secondary); }
@@ -76,6 +79,50 @@ export class MdDisklocationCard extends LitElement {
       color: var(--text-secondary);
       margin-top: 4px;
     }
+
+    /* Collapsible "details" footer that holds the Array / Cache / Parity content */
+    details.storage-details {
+      margin-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+    }
+    details.storage-details summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      user-select: none;
+      padding: 4px 0;
+    }
+    details.storage-details summary::-webkit-details-marker { display: none; }
+    .chevron {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--text-secondary);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+    details.storage-details[open] .chevron {
+      transform: rotate(90deg);
+    }
+    .summary-meta {
+      color: var(--text-secondary);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: auto;
+    }
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
   `;
 
   @property({ type: Object }) state: DisklocationState = {
@@ -84,6 +131,13 @@ export class MdDisklocationCard extends LitElement {
     totalCount: 0,
     groups: [],
   };
+
+  // Optional companion states; when provided, the card surfaces a collapsible
+  // "Storage details" footer that holds the Array / Cache / Parity cards so
+  // the user has one consolidated storage view instead of four side-by-side cards.
+  @property({ type: Object }) arrayState: ArrayState | null = null;
+  @property({ type: Array })  cacheStates: CacheState[] = [];
+  @property({ type: Object }) parityState: ParityState | null = null;
 
   private _renderSlot(s: DiskSlot) {
     const statusText = s.state === 'active' ? 'active'
@@ -100,6 +154,34 @@ export class MdDisklocationCard extends LitElement {
     `;
   }
 
+  private _detailsSummary(): string {
+    const parts: string[] = [];
+    if (this.arrayState) {
+      const a = this.arrayState;
+      if (a.usedTB !== null && a.totalTB !== null) {
+        parts.push(`Array ${a.usedTB.toFixed(1)} / ${a.totalTB.toFixed(0)} TB`);
+      } else {
+        parts.push(`Array (${a.disks.length} disks)`);
+      }
+    }
+    for (const c of this.cacheStates) {
+      if (c.usedGB !== null && c.totalGB !== null) {
+        const total = c.totalGB >= 1024
+          ? `${(c.totalGB / 1024).toFixed(1)} TB`
+          : `${c.totalGB.toFixed(0)} GB`;
+        const used = c.usedGB >= 1024
+          ? `${(c.usedGB / 1024).toFixed(1)} TB`
+          : `${c.usedGB.toFixed(0)} GB`;
+        parts.push(`${c.poolName || 'Cache'} ${used} / ${total}`);
+      }
+    }
+    if (this.parityState) {
+      const s = this.parityState.status;
+      parts.push(`Parity ${s}`);
+    }
+    return parts.join(' · ');
+  }
+
   render() {
     const { assignedCount, totalCount, groups } = this.state;
     const meta = `${assignedCount} / ${totalCount} bays`;
@@ -108,6 +190,7 @@ export class MdDisklocationCard extends LitElement {
       ? sortedGroups.reduce((a, b) => (b.length > a.length ? b : a))
       : [];
     const otherGroups = sortedGroups.filter((g) => g !== hddGroup);
+    const hasDetails = !!this.arrayState || this.cacheStates.length > 0 || !!this.parityState;
 
     return html`
       <md-card cardTitle="Disk Location" meta=${meta}>
@@ -121,6 +204,20 @@ export class MdDisklocationCard extends LitElement {
         ` : ''}
         ${assignedCount < totalCount ? html`
           <div class="summary">${totalCount - assignedCount} bay${totalCount - assignedCount === 1 ? '' : 's'} empty</div>
+        ` : ''}
+        ${hasDetails ? html`
+          <details class="storage-details">
+            <summary>
+              <span class="chevron"></span>
+              Storage details
+              <span class="summary-meta">${this._detailsSummary()}</span>
+            </summary>
+            <div class="details-grid">
+              ${this.arrayState ? html`<md-array-card .state=${this.arrayState}></md-array-card>` : ''}
+              ${this.cacheStates.map((c) => html`<md-cache-card .state=${c}></md-cache-card>`)}
+              ${this.parityState ? html`<md-parity-card .state=${this.parityState}></md-parity-card>` : ''}
+            </div>
+          </details>
         ` : ''}
       </md-card>
     `;
