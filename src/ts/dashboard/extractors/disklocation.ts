@@ -51,26 +51,28 @@ export const disklocationExtractor: Extractor<DisklocationState> = {
   extract: ({ source }) => {
     const { assignedCount, totalCount } = parseHeaderCounts(source);
 
-    // Each slot is a top-level div inside a .grid-container. There can be two grids
-    // (NVMe + HDD); we flatten them into one list since the type design calls for it.
-    const slotEls = Array.from(source.querySelectorAll('.grid-container > div'));
-
-    const slots: DiskSlot[] = slotEls.map((el) => {
-      const orbColor = parseOrbColor(el);
-      return {
-        position: parsePosition(el),
-        occupied: orbColor !== 'grey',
-        orbColor,
-        label: parseLabel(el),
-        inlineBgColor: parseInlineBgColor(el),
-      };
+    // One .grid-container per physical tier (NVMe row + HDD bays on HL15).
+    // Keep them as separate groups so the card can render each as its own row.
+    const containerEls = Array.from(source.querySelectorAll('.grid-container'));
+    const groups: DiskSlot[][] = containerEls.map((container) => {
+      const slotEls = Array.from(container.querySelectorAll(':scope > div'));
+      return slotEls.map((el) => {
+        const orbColor = parseOrbColor(el);
+        return {
+          position: parsePosition(el),
+          occupied: orbColor !== 'grey',
+          orbColor,
+          label: parseLabel(el),
+          inlineBgColor: parseInlineBgColor(el),
+        };
+      });
     });
 
     return {
       kind: 'disklocation',
       assignedCount,
       totalCount,
-      slots,
+      groups,
     };
   },
 };

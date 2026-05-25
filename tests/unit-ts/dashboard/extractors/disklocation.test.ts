@@ -37,20 +37,20 @@ describe('disklocationExtractor', () => {
 
   it('extracts at least one slot', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    expect((result?.slots.length ?? 0)).toBeGreaterThan(0);
+    expect((result?.groups.flat().length ?? 0)).toBeGreaterThan(0);
   });
 
   it('has a mix of occupied and empty slots', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const occupied = result?.slots.filter((s) => s.occupied) ?? [];
-    const empty = result?.slots.filter((s) => !s.occupied) ?? [];
+    const occupied = result?.groups.flat().filter((s) => s.occupied) ?? [];
+    const empty = result?.groups.flat().filter((s) => !s.occupied) ?? [];
     expect(occupied.length).toBeGreaterThan(0);
     expect(empty.length).toBeGreaterThan(0);
   });
 
   it('parses slot label from <b>N</b>', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const labels = result?.slots.map((s) => s.label) ?? [];
+    const labels = result?.groups.flat().map((s) => s.label) ?? [];
     // Slot labels are stringified numbers (e.g. "1", "2", …)
     expect(labels.every((l) => l.length > 0)).toBe(true);
     // Confirm presence of a known label from the fixture
@@ -59,27 +59,27 @@ describe('disklocationExtractor', () => {
 
   it('parses position from style="order:N"', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const positions = result?.slots.map((s) => s.position) ?? [];
+    const positions = result?.groups.flat().map((s) => s.position) ?? [];
     expect(positions.every((p) => typeof p === 'number' && p > 0)).toBe(true);
   });
 
   it('marks grey-orb slots as not occupied', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const greySlots = result?.slots.filter((s) => s.orbColor === 'grey') ?? [];
+    const greySlots = result?.groups.flat().filter((s) => s.orbColor === 'grey') ?? [];
     expect(greySlots.length).toBeGreaterThan(0);
     expect(greySlots.every((s) => !s.occupied)).toBe(true);
   });
 
   it('marks green-orb slots as occupied', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const greenSlots = result?.slots.filter((s) => s.orbColor === 'green') ?? [];
+    const greenSlots = result?.groups.flat().filter((s) => s.orbColor === 'green') ?? [];
     expect(greenSlots.length).toBeGreaterThan(0);
     expect(greenSlots.every((s) => s.occupied)).toBe(true);
   });
 
   it('captures inlineBgColor where present', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const withBg = result?.slots.filter((s) => s.inlineBgColor !== null) ?? [];
+    const withBg = result?.groups.flat().filter((s) => s.inlineBgColor !== null) ?? [];
     expect(withBg.length).toBeGreaterThan(0);
   });
 });

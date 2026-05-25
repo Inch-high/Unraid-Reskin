@@ -80,7 +80,11 @@ export interface DisklocationState {
   kind: 'disklocation';
   assignedCount: number;       // "14 of 19 drives assigned" → 14
   totalCount: number;          // → 19
-  slots: DiskSlot[];           // single flat list; component groups visually
+  // The disklocation plugin emits one .grid-container per physical tier
+  // (e.g. HL15Rack: top container = 4 NVMe slots, bottom container = 15
+  // HDD bays). Order preserved as in the source DOM so consumers can render
+  // each tier in its own row.
+  groups: DiskSlot[][];
 }
 
 export interface CoreLoad {

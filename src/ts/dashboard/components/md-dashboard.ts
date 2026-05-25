@@ -116,10 +116,10 @@ export class ModernuiDashboard extends LitElement {
       <div class="content">
       ${hasStorage ? html`
         <md-section label="Storage">
+          ${disklocations.map((s) => html`<md-disklocation-card .state=${s} data-wide></md-disklocation-card>`)}
           ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
           ${caches.map((s) => html`<md-cache-card .state=${s}></md-cache-card>`)}
           ${parities.map((s) => html`<md-parity-card .state=${s}></md-parity-card>`)}
-          ${disklocations.map((s) => html`<md-disklocation-card .state=${s}></md-disklocation-card>`)}
         </md-section>
       ` : ''}
       ${hasCompute ? html`
