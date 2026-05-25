@@ -82,8 +82,9 @@ function modernui_inject_script_tag(): void {
 function modernui_generate_loader_js(bool $disabled): void {
     $target = $disabled ? 're-enable.js' : 'modernui.js';
     $settings = modernui_parse_cfg('/boot/config/plugins/unraid-modernui/settings.cfg');
-    $mode = $settings['mode'] ?? 'system';
-    $density = $settings['density'] ?? 'comfortable';
+    $mode      = $settings['mode']      ?? 'system';
+    $density   = $settings['density']   ?? 'comfortable';
+    $dashboard = $settings['dashboard'] ?? 'on';
     $extraScript = $disabled
         ? ''
         : "var d=document.createElement('script');\n"
@@ -93,6 +94,7 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "var r=document.documentElement;\n"
         . "r.dataset.modernuiMode=" . json_encode($mode) . ";\n"
         . "r.dataset.modernuiDensity=" . json_encode($density) . ";\n"
+        . "r.dataset.modernuiDashboard=" . json_encode($dashboard) . ";\n"
         . "var s=document.createElement('script');\n"
         . "s.src='/plugins/unraid-modernui/theme/dist/" . $target . "';\n"
         . "document.head.appendChild(s);\n"
