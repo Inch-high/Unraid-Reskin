@@ -1,4 +1,4 @@
-import type { DisklocationState, DiskSlot, DiskSlotColor } from '../types';
+import type { DisklocationState, DiskSlot, DiskSlotColor, DiskSlotState } from '../types';
 import type { Extractor } from './unknown';
 
 function parseHeaderCounts(tbody: HTMLTableSectionElement): { assignedCount: number; totalCount: number } {
@@ -8,19 +8,36 @@ function parseHeaderCounts(tbody: HTMLTableSectionElement): { assignedCount: num
   return { assignedCount: Number(m[1]), totalCount: Number(m[2]) };
 }
 
+// The disklocation plugin uses orb-class combinations to encode three slot states:
+//   green-orb-disklocation                            → active   (drive spinning, normal operation)
+//   grey-orb-disklocation + green-blink-disklocation  → standby  (drive assigned but spun-down)
+//   grey-orb-disklocation alone                       → empty    (no drive in this bay)
+function parseSlotState(slotEl: Element): DiskSlotState {
+  const orb = slotEl.querySelector('i.orb-disklocation, i[class*="orb-disklocation"]');
+  if (!orb) return 'empty';
+  const cls = orb.className;
+  if (cls.includes('green-orb-disklocation')) return 'active';
+  if (cls.includes('green-blink-disklocation')) return 'standby';
+  if (cls.includes('yellow-orb-disklocation') || cls.includes('red-orb-disklocation')) return 'active';
+  return 'empty';
+}
+
 function parseOrbColor(slotEl: Element): DiskSlotColor {
   const orb = slotEl.querySelector('i.orb-disklocation, i[class*="orb-disklocation"]');
   if (!orb) return 'grey';
   const cls = orb.className;
-  // Order matters: classes can stack (e.g. "grey-orb-disklocation green-blink-disklocation"),
-  // so check the steady-state orb token first. The blink modifier indicates animation,
-  // not the resting indicator color.
-  if (cls.includes('grey-orb-disklocation')) return 'grey';
   if (cls.includes('green-orb-disklocation')) return 'green';
   if (cls.includes('yellow-orb-disklocation')) return 'yellow';
   if (cls.includes('red-orb-disklocation')) return 'red';
   if (cls.includes('blue-orb-disklocation')) return 'blue';
   return 'grey';
+}
+
+function parseDiskName(slotEl: Element): string | null {
+  const link = slotEl.querySelector('a[href*="/Main/Device?name="]');
+  const href = link?.getAttribute('href') ?? '';
+  const m = href.match(/name=([^&]+)/);
+  return m ? m[1] : null;
 }
 
 function parsePosition(slotEl: Element): number {
@@ -57,11 +74,13 @@ export const disklocationExtractor: Extractor<DisklocationState> = {
     const groups: DiskSlot[][] = containerEls.map((container) => {
       const slotEls = Array.from(container.querySelectorAll(':scope > div'));
       return slotEls.map((el) => {
-        const orbColor = parseOrbColor(el);
+        const state = parseSlotState(el);
         return {
           position: parsePosition(el),
-          occupied: orbColor !== 'grey',
-          orbColor,
+          occupied: state !== 'empty',
+          orbColor: parseOrbColor(el),
+          state,
+          diskName: parseDiskName(el),
           label: parseLabel(el),
           inlineBgColor: parseInlineBgColor(el),
         };

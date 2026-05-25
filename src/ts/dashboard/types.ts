@@ -68,10 +68,18 @@ export interface ParityState {
 
 export type DiskSlotColor = 'green' | 'yellow' | 'red' | 'blue' | 'grey';
 
+// Per-slot lifecycle state, derived from the disklocation plugin's orb classes:
+//   green-orb-disklocation                                 → 'active'  (drive spinning)
+//   grey-orb-disklocation + green-blink-disklocation       → 'standby' (drive assigned, spun-down)
+//   grey-orb-disklocation alone                            → 'empty'   (no drive present)
+export type DiskSlotState = 'active' | 'standby' | 'empty';
+
 export interface DiskSlot {
   position: number;            // grid order from style="order:N"
-  occupied: boolean;           // inferred from orb color: grey = empty, else occupied
+  occupied: boolean;           // true for both 'active' and 'standby' — empty bays are false
   orbColor: DiskSlotColor;
+  state: DiskSlotState;
+  diskName: string | null;     // device identifier parsed from the slot's /Main/Device?name=… link (e.g. "disk1", "parity", "cache")
   label: string;               // slot number text from <b>N</b>
   inlineBgColor: string | null; // The inline background-color of the slot box, if any
 }

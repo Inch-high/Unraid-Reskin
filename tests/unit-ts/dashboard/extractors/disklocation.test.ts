@@ -63,18 +63,18 @@ describe('disklocationExtractor', () => {
     expect(positions.every((p) => typeof p === 'number' && p > 0)).toBe(true);
   });
 
-  it('marks grey-orb slots as not occupied', () => {
+  it('marks empty-state slots as not occupied', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const greySlots = result?.groups.flat().filter((s) => s.orbColor === 'grey') ?? [];
-    expect(greySlots.length).toBeGreaterThan(0);
-    expect(greySlots.every((s) => !s.occupied)).toBe(true);
+    const empty = result?.groups.flat().filter((s) => s.state === 'empty') ?? [];
+    expect(empty.length).toBeGreaterThan(0);
+    expect(empty.every((s) => !s.occupied)).toBe(true);
   });
 
-  it('marks green-orb slots as occupied', () => {
+  it('marks active-state slots as occupied', () => {
     const result = disklocationExtractor.extract({ source: tbody });
-    const greenSlots = result?.groups.flat().filter((s) => s.orbColor === 'green') ?? [];
-    expect(greenSlots.length).toBeGreaterThan(0);
-    expect(greenSlots.every((s) => s.occupied)).toBe(true);
+    const active = result?.groups.flat().filter((s) => s.state === 'active') ?? [];
+    expect(active.length).toBeGreaterThan(0);
+    expect(active.every((s) => s.occupied)).toBe(true);
   });
 
   it('captures inlineBgColor where present', () => {
