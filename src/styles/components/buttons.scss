@@ -9,7 +9,7 @@ input[type="submit"]:where(:not(.unapi *)),
 button:where(:not(.unapi *)),
 button[type="button"]:where(:not(.unapi *)),
 a.button:where(:not(.unapi *)) {
-  background: var(--accent);
+  background: var(--mui-accent);
   background-size: 100% 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -35,7 +35,7 @@ input[type="submit"]:where(:not(.unapi *)):hover:not([disabled]),
 button:where(:not(.unapi *)):hover:not([disabled]),
 button[type="button"]:where(:not(.unapi *)):hover:not([disabled]),
 a.button:where(:not(.unapi *)):hover:not([disabled]) {
-  background: var(--accent-hover);
+  background: var(--mui-accent-hover);
   color: #ffffff;
   text-decoration: none;
 }

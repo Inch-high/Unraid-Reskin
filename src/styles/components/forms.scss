@@ -34,8 +34,8 @@ select:where(:not(.unapi *)) {
 input:where(:not(.unapi *)):focus,
 textarea:where(:not(.unapi *)):focus,
 select:where(:not(.unapi *)):focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-muted);
+  border-color: var(--mui-accent);
+  box-shadow: 0 0 0 3px var(--mui-accent-muted);
   background-color: var(--bg-surface);
 }
 
@@ -109,7 +109,7 @@ dl dd textarea:where(:not(.unapi *)) {
 // Checkbox + radio
 input[type="checkbox"]:where(:not(.unapi *)),
 input[type="radio"]:where(:not(.unapi *)) {
-  accent-color: var(--accent);
+  accent-color: var(--mui-accent);
   width: 16px;
   height: 16px;
   margin-right: 6px;

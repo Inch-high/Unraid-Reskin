@@ -28,7 +28,7 @@ export class MdUsersCard extends LitElement {
       color: var(--text-secondary);
       font-weight: 600;
     }
-    .name { color: var(--accent); font-weight: 500; }
+    .name { color: var(--mui-accent); font-weight: 500; }
     .desc {
       color: var(--text-secondary);
       overflow: hidden;

@@ -43,7 +43,7 @@ export class MdVmsCard extends LitElement {
       color: var(--text-primary);
       transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1);
     }
-    .vm-row:hover { border-color: var(--accent); }
+    .vm-row:hover { border-color: var(--mui-accent); }
     .vm-row img,
     .vm-row .icon-fallback {
       width: 24px;

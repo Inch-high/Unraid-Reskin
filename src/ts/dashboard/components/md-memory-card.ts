@@ -62,7 +62,7 @@ export class MdMemoryCard extends LitElement {
         <div class="pies">
           ${this.state.pies.map((p) => {
             const deg = Math.min(360, (p.percentUsed / 100) * 360);
-            const gradient = `conic-gradient(var(--accent) 0 ${deg}deg, var(--bg-elevated) ${deg}deg 360deg)`;
+            const gradient = `conic-gradient(var(--mui-accent) 0 ${deg}deg, var(--bg-elevated) ${deg}deg 360deg)`;
             return html`
               <div class="pie-wrap" title="${p.detail}">
                 <div class="pie" style="background: ${gradient}">

@@ -12,7 +12,7 @@
   --alt-text-color: var(--text-secondary);
   --disabled-text-color: var(--text-muted);
   --inverse-text-color: #ffffff;
-  --link-text-color: var(--accent);
+  --link-text-color: var(--mui-accent);
   --blockquote-text-color: var(--text-secondary);
 
   // Background
@@ -36,11 +36,11 @@
   // Buttons — Unraid's are red-to-orange gradient frames; we want flat accent fills
   --button-text-color: #ffffff;
   --button-border: 1px solid transparent;
-  --button-background: var(--accent);
+  --button-background: var(--mui-accent);
   --button-background-size: 100% 100%;
   --hover-button-border: 1px solid transparent;
   --hover-button-text-color: #ffffff;
-  --hover-button-background: var(--accent-hover);
+  --hover-button-background: var(--mui-accent-hover);
 
   // Tables
   --table-background-color: var(--bg-surface);
@@ -58,8 +58,8 @@
   --small-shadow: none;
   --hr-color: var(--border-subtle);
   --scrollbar-color: var(--border-default);
-  --scrollbar-hover-color: var(--accent);
-  --checkbox-color: var(--accent);
+  --scrollbar-hover-color: var(--mui-accent);
+  --checkbox-color: var(--mui-accent);
   --bg-opacity-10: rgba(255, 255, 255, 0.10);
   --bg-opacity-30: rgba(255, 255, 255, 0.30);
 
@@ -75,7 +75,7 @@
   // Usage bars (per-core CPU, disk utilization)
   --usage-disk-background-color: var(--bg-base);
   --usage-bar-background-color: var(--bg-base);
-  --usage-bar-used-background-color: var(--accent);
+  --usage-bar-used-background-color: var(--mui-accent);
 
   // Pie/donut center hole (DashStats system widget)
   --dashstats-pie-after-bg-color: var(--bg-surface);

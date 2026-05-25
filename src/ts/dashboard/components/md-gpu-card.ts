@@ -46,7 +46,7 @@ export class MdGpuCard extends LitElement {
     .bar > span {
       display: block;
       height: 100%;
-      background: var(--accent);
+      background: var(--mui-accent);
       transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
     }
     .footer {

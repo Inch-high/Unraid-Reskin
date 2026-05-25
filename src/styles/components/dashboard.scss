@@ -153,8 +153,8 @@ table.dashboard .control:hover,
 .control:hover,
 i.fa.control:hover,
 span.fa.control:hover {
-  background-color: var(--accent-muted) !important;
-  color: var(--accent) !important;
+  background-color: var(--mui-accent-muted) !important;
+  color: var(--mui-accent) !important;
   opacity: 1 !important;
 }
 
@@ -172,8 +172,8 @@ span.fa.control:hover {
 
 .tile-ctrl > span.fa:hover,
 .tile-ctrl > i.fa:hover {
-  background-color: var(--accent-muted);
-  color: var(--accent);
+  background-color: var(--mui-accent-muted);
+  color: var(--mui-accent);
 }
 
 // === Pie / donut chart center hole ===

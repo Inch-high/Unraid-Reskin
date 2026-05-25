@@ -36,9 +36,9 @@ export class MdDockerCard extends LitElement {
     }
     .chip:hover { color: var(--text-primary); }
     .chip[data-active] {
-      background: var(--accent-muted);
-      color: var(--accent);
-      border-color: var(--accent);
+      background: var(--mui-accent-muted);
+      color: var(--mui-accent);
+      border-color: var(--mui-accent);
     }
     .folder-label {
       font-size: 11px;
@@ -69,7 +69,7 @@ export class MdDockerCard extends LitElement {
       transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1);
       overflow: hidden;
     }
-    .container-tile:hover { border-color: var(--accent); }
+    .container-tile:hover { border-color: var(--mui-accent); }
     .container-tile img {
       width: 24px;
       height: 24px;

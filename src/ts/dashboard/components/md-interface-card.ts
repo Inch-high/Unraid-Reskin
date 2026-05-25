@@ -34,7 +34,7 @@ export class MdInterfaceCard extends LitElement {
       font-variant-numeric: tabular-nums;
     }
     .arrow-in { color: var(--success); }
-    .arrow-out { color: var(--accent); }
+    .arrow-out { color: var(--mui-accent); }
     .iface-list {
       display: flex;
       flex-direction: column;

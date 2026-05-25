@@ -42,7 +42,7 @@ export class MdSharesCard extends LitElement {
       font-size: 13px;
     }
     .row:last-child { border-bottom: none; }
-    .name { color: var(--accent); font-weight: 500; }
+    .name { color: var(--mui-accent); font-weight: 500; }
     .desc { color: var(--text-secondary); }
     .streams {
       text-align: right;

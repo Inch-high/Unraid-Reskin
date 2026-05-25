@@ -43,7 +43,7 @@ export class MdArrayCard extends LitElement {
     .temp, .smart { font-variant-numeric: tabular-nums; font-size: 12px; }
     .util { position: relative; height: 4px; background: var(--bg-base); border-radius: 4px; overflow: hidden; }
     .util > span {
-      display: block; height: 100%; background: var(--accent);
+      display: block; height: 100%; background: var(--mui-accent);
       transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
     }
   `;

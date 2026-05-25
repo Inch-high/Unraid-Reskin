@@ -58,7 +58,7 @@ div.title span.title-sub {
 }
 
 .Panel:hover {
-  border-color: var(--accent);
+  border-color: var(--mui-accent);
   transform: translateY(-1px);
 }
 
@@ -74,7 +74,7 @@ div.title span.title-sub {
 }
 
 .Panel a:hover {
-  color: var(--accent);
+  color: var(--mui-accent);
 }
 
 .Panel .PanelText {

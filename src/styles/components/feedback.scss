@@ -73,13 +73,13 @@ progress::-webkit-progress-bar {
 }
 
 progress::-webkit-progress-value {
-  background: var(--accent);
+  background: var(--mui-accent);
   border-radius: var(--radius-full);
   transition: width var(--duration-base) var(--ease-out);
 }
 
 progress::-moz-progress-bar {
-  background: var(--accent);
+  background: var(--mui-accent);
   border-radius: var(--radius-full);
 }
 

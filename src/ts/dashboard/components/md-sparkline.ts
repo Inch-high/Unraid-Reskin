@@ -22,7 +22,7 @@ export class MdSparkline extends LitElement {
       .join(' ');
     return html`
       <svg viewBox="0 0 100 32" preserveAspectRatio="none">
-        <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"
+        <polyline points="${pts}" fill="none" stroke="var(--mui-accent)" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     `;

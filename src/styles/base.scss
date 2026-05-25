@@ -9,8 +9,8 @@ body {
 }
 
 a {
-  color: var(--accent);
-  &:hover { color: var(--accent-hover); }
+  color: var(--mui-accent);
+  &:hover { color: var(--mui-accent-hover); }
 }
 
 input, select, textarea, button {
@@ -23,7 +23,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-muted);
+  box-shadow: 0 0 0 3px var(--mui-accent-muted);
 }
 
 // Respect user preference if reduced-motion is on
