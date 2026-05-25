@@ -1,6 +1,7 @@
 import { createStore } from './store';
 import { createSourceObserver } from './source-observer';
 import { dispatch } from './extractors';
+import { collectDashboardTables, collectDashboardTbodies } from './dom-walk';
 import './components/md-dashboard';
 import type { ModernuiDashboard } from './components/md-dashboard';
 
@@ -10,20 +11,18 @@ function onDashboardPage(): boolean {
 
 function waitForSource(
   timeoutMs: number,
-  onReady: (el: HTMLTableElement) => void,
+  onReady: () => void,
   onTimeout: () => void,
 ): void {
-  const existing = document.querySelector<HTMLTableElement>('table.dashboard');
-  if (existing) {
-    onReady(existing);
+  if (collectDashboardTables().length > 0) {
+    onReady();
     return;
   }
   const observer = new MutationObserver(() => {
-    const found = document.querySelector<HTMLTableElement>('table.dashboard');
-    if (found) {
+    if (collectDashboardTables().length > 0) {
       observer.disconnect();
       clearTimeout(timeoutHandle);
-      onReady(found);
+      onReady();
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -33,8 +32,8 @@ function waitForSource(
   }, timeoutMs);
 }
 
-function extractAll(source: HTMLTableElement, store: ReturnType<typeof createStore>): void {
-  const tbodies = Array.from(source.querySelectorAll<HTMLTableSectionElement>(':scope > tbody'));
+function extractAll(store: ReturnType<typeof createStore>): void {
+  const tbodies = collectDashboardTbodies();
   const seen = new Set<string>();
   for (const tbody of tbodies) {
     const result = dispatch({ source: tbody });
@@ -54,7 +53,7 @@ export function boot(): void {
 
   waitForSource(
     5000,
-    (source) => {
+    () => {
       document.body.classList.add('modernui-dashboard-active');
 
       // Find or create the mount container
@@ -62,16 +61,18 @@ export function boot(): void {
       const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
       container.appendChild(root);
 
-      // Wire store + observer
+      // Wire store
       const store = createStore();
       root.setStore(store);
 
-      // Initial sync
-      extractAll(source, store);
+      // Initial sync across all dashboard tables
+      extractAll(store);
 
-      // Watch for live updates
-      const obs = createSourceObserver(source, () => extractAll(source, store), 50);
-      obs.start();
+      // Watch every table for live updates (Unraid renders db_box1/2/3)
+      for (const table of collectDashboardTables()) {
+        const obs = createSourceObserver(table, () => extractAll(store), 50);
+        obs.start();
+      }
     },
     () => {
       console.warn('[modernui-dashboard] source not found; leaving stock UI');
