@@ -76,7 +76,7 @@ export class ShellUserMenu extends LitElement {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
-    });
+    }).catch(() => undefined);
     window.location.reload();
   };
 
