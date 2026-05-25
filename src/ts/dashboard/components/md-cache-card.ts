@@ -21,7 +21,7 @@ export class MdCacheCard extends LitElement {
     .disk-list { display: grid; gap: 6px; }
     .disk {
       display: grid;
-      grid-template-columns: 1fr auto auto auto 80px;
+      grid-template-columns: 1fr auto auto auto 80px 36px;
       gap: 12px;
       align-items: center;
       padding: 6px 0;
@@ -32,7 +32,9 @@ export class MdCacheCard extends LitElement {
     .name { color: var(--text-primary); font-weight: 500; }
     .state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
     .dot { width: 8px; height: 8px; border-radius: 50%; }
-    .temp, .smart { font-variant-numeric: tabular-nums; font-size: 12px; }
+    .temp, .smart, .pct { font-variant-numeric: tabular-nums; font-size: 12px; }
+    .pct { color: var(--text-secondary); text-align: right; }
+    .pct.empty { color: var(--text-muted); }
     .util { position: relative; height: 4px; background: var(--border-default); border-radius: 4px; overflow: hidden; }
     .util > span {
       display: block; height: 100%; background: var(--mui-accent);
@@ -67,6 +69,7 @@ export class MdCacheCard extends LitElement {
               <div class="util">
                 ${d.utilizationPct !== null ? html`<span style="width: ${d.utilizationPct}%"></span>` : ''}
               </div>
+              <span class="pct ${d.utilizationPct === null ? 'empty' : ''}">${d.utilizationPct !== null ? `${Math.round(d.utilizationPct)}%` : '—'}</span>
             </div>
           `)}
         </div>
