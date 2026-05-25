@@ -70,7 +70,8 @@ export class ShellTopbar extends LitElement {
     }
     @media (max-width: 639px) {
       .breadcrumb { font-size: 12px; }
-      .breadcrumb a:not(:last-child), .breadcrumb .sep:not(:last-of-type) { display: none; }
+      .breadcrumb a:not(:last-child) { display: none; }
+      .breadcrumb .sep { display: none; }
     }
   `;
 
