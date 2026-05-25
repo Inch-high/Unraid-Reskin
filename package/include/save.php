@@ -11,6 +11,7 @@ function modernui_validate_settings(array $input): array {
         'sidebar'        => 'expanded',
         'zebra'          => '0',
         'reduced_motion' => 'auto',
+        'dashboard'      => 'on',
     ];
     $allowed = [
         'mode'           => ['system', 'dark', 'light'],
@@ -18,6 +19,7 @@ function modernui_validate_settings(array $input): array {
         'sidebar'        => ['expanded', 'collapsed'],
         'zebra'          => ['0', '1'],
         'reduced_motion' => ['auto', '0', '1'],
+        'dashboard'      => ['on', 'off'],
     ];
 
     $out = $defaults;

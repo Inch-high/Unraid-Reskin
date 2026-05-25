@@ -23,5 +23,23 @@ $bools = modernui_validate_settings(['zebra' => '1']);
 assert($bools['ok'] === true);
 assert($bools['values']['zebra'] === '1');
 
+// Dashboard layout toggle: 'on' and 'off' are valid, anything else is rejected.
+$onOk = modernui_validate_settings(['dashboard' => 'on']);
+assert($onOk['ok'] === true, "dashboard=on should pass: " . var_export($onOk, true));
+assert($onOk['values']['dashboard'] === 'on');
+
+$offOk = modernui_validate_settings(['dashboard' => 'off']);
+assert($offOk['ok'] === true, "dashboard=off should pass");
+assert($offOk['values']['dashboard'] === 'off');
+
+$badDash = modernui_validate_settings(['dashboard' => 'maybe']);
+assert($badDash['ok'] === false, "dashboard=maybe should fail");
+assert(strpos($badDash['error'], 'dashboard') !== false);
+
+// Default when key is absent is "on" (modern dashboard).
+$noDash = modernui_validate_settings([]);
+assert($noDash['ok'] === true);
+assert($noDash['values']['dashboard'] === 'on', "default dashboard should be on");
+
 echo "all save tests passed\n";
 exit(0);
