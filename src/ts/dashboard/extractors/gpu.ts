@@ -96,11 +96,16 @@ export const gpuExtractor: Extractor<GpuState> = {
       ?? parseNumber(preferLoadText(source, 'gpu-util1'));
     const memoryUsedPct = fillWidthBeside(source, 'gpu-memutil1')
       ?? parseNumber(preferLoadText(source, 'gpu-memutil1'));
-    // gpu-memclock1 carries the memory MHz value; row label is "GPU - Memory (MHz)".
+    const encoderUtilPct = fillWidthBeside(source, 'gpu-encutil1')
+      ?? parseNumber(preferLoadText(source, 'gpu-encutil1'));
+    const decoderUtilPct = fillWidthBeside(source, 'gpu-decutil1')
+      ?? parseNumber(preferLoadText(source, 'gpu-decutil1'));
+    const gpuClockMHz = parseNumber(preferLoadText(source, 'gpu-clock1'));
     const memoryMHz = parseNumber(preferLoadText(source, 'gpu-memclock1'));
     const fanRpm = parseNumber(preferLoadText(source, 'gpu-fan1'));
     const powerW = parseNumber(preferLoadText(source, 'gpu-power1'));
     const temperatureC = parseNumber(textOf(source, '.gpu-temp1'));
+    const perfState = textOf(source, '.gpu-perfstate1');
 
     return {
       kind: 'gpu',
@@ -110,10 +115,14 @@ export const gpuExtractor: Extractor<GpuState> = {
       pciBus,
       utilizationPct,
       memoryUsedPct,
+      encoderUtilPct,
+      decoderUtilPct,
+      gpuClockMHz,
       memoryMHz,
       fanRpm,
       powerW,
       temperatureC,
+      perfState,
       activeApps: parseActiveApps(source),
       throttling: parseThrottling(source),
     };

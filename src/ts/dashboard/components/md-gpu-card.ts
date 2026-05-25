@@ -61,9 +61,11 @@ export class MdGpuCard extends LitElement {
 
   @property({ type: Object }) state: GpuState = {
     kind: 'gpu', model: '', vendor: '', driver: '', pciBus: '',
-    utilizationPct: null, memoryUsedPct: null, memoryMHz: null,
+    utilizationPct: null, memoryUsedPct: null,
+    encoderUtilPct: null, decoderUtilPct: null,
+    gpuClockMHz: null, memoryMHz: null,
     fanRpm: null, powerW: null, temperatureC: null,
-    activeApps: 0, throttling: false,
+    perfState: '', activeApps: 0, throttling: false,
   };
 
   @state() private _history: number[] = [];
@@ -91,27 +93,29 @@ export class MdGpuCard extends LitElement {
         </div>
         <div class="grid">
           <div class="stat">
-            <span class="label">Utilization</span>
+            <span class="label">GPU Load</span>
             <span class="val">${Math.round(s.utilizationPct ?? 0)}%</span>
             <div class="bar"><span style="width: ${s.utilizationPct ?? 0}%"></span></div>
           </div>
           <div class="stat">
-            <span class="label">Memory</span>
+            <span class="label">Mem Load</span>
             <span class="val">${Math.round(s.memoryUsedPct ?? 0)}%</span>
             <div class="bar"><span style="width: ${s.memoryUsedPct ?? 0}%"></span></div>
+          </div>
+          <div class="stat">
+            <span class="label">Encoder</span>
+            <span class="val">${Math.round(s.encoderUtilPct ?? 0)}%</span>
+            <div class="bar"><span style="width: ${s.encoderUtilPct ?? 0}%"></span></div>
+          </div>
+          <div class="stat">
+            <span class="label">Decoder</span>
+            <span class="val">${Math.round(s.decoderUtilPct ?? 0)}%</span>
+            <div class="bar"><span style="width: ${s.decoderUtilPct ?? 0}%"></span></div>
           </div>
           <div class="stat">
             <span class="label">Fan</span>
             <span class="val">${fanPct !== null ? `${fanPct}%` : '—'}</span>
             ${fanPct !== null ? html`<div class="bar"><span style="width: ${fanPct}%"></span></div>` : ''}
-          </div>
-          <div class="stat">
-            <span class="label">Mem Clock</span>
-            <span class="val">${s.memoryMHz !== null ? `${s.memoryMHz} MHz` : '—'}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Temperature</span>
-            <span class="val">${s.temperatureC !== null ? `${s.temperatureC} °C` : '—'}</span>
           </div>
           <div class="stat">
             <span class="label">Power</span>
@@ -120,8 +124,17 @@ export class MdGpuCard extends LitElement {
         </div>
         <md-sparkline .values=${this._history} max="100"></md-sparkline>
         <div class="footer">
-          <span>${s.activeApps > 0 ? `${s.activeApps} app${s.activeApps === 1 ? '' : 's'} active` : 'No active apps'}</span>
-          <span>${s.throttling ? 'Throttling' : 'Nominal'}</span>
+          <span>
+            ${s.gpuClockMHz !== null ? html`GPU ${s.gpuClockMHz} MHz` : ''}
+            ${s.gpuClockMHz !== null && s.memoryMHz !== null ? html` · ` : ''}
+            ${s.memoryMHz !== null ? html`Mem ${s.memoryMHz} MHz` : ''}
+            ${s.temperatureC !== null ? html` · ${s.temperatureC} °C` : ''}
+          </span>
+          <span>
+            ${s.activeApps > 0 ? `${s.activeApps} app${s.activeApps === 1 ? '' : 's'}` : 'No apps'}
+            ${s.perfState ? ` · ${s.perfState}` : ''}
+            ${s.throttling ? ' · Throttling' : ''}
+          </span>
         </div>
       </md-card>
     `;

@@ -116,12 +116,16 @@ export interface GpuState {
   vendor: string;            // "NVIDIA"
   driver: string;            // driver version string
   pciBus: string;            // "1 (4) Lanes (Max): 16 (16)" or just the bus identifier
-  utilizationPct: number | null;
-  memoryUsedPct: number | null;
-  memoryMHz: number | null;
-  fanRpm: number | null;
+  utilizationPct: number | null;  // gpu-util1: GPU controller activity %
+  memoryUsedPct: number | null;   // gpu-memutil1: memory controller activity % (NOT VRAM allocation)
+  encoderUtilPct: number | null;  // gpu-encutil1: hardware encoder %
+  decoderUtilPct: number | null;  // gpu-decutil1: hardware decoder %
+  gpuClockMHz: number | null;     // gpu-clock1: core clock (always non-zero on a powered card)
+  memoryMHz: number | null;       // gpu-memclock1: memory clock
+  fanRpm: number | null;          // gpu-fan1: fan % (0-100); the "RPM" suffix in the Unraid label is a misnomer
   powerW: number | null;
   temperatureC: number | null;
+  perfState: string;              // gpu-perfstate1: "P0".."P12"
   activeApps: number;
   throttling: boolean;
 }
