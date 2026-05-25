@@ -161,6 +161,106 @@ export interface DockerState {
   totalCount: number;
 }
 
+// VMs widget. The cold tbody is empty (data="noVMs()"); libvirt.json
+// populates VM tiles client-side as <span.outer.solid.vms.{state}>.
+export interface VmRow {
+  name: string;
+  state: 'started' | 'stopped' | 'paused' | 'unknown';
+  iconUrl: string | null;
+}
+
+export interface VmsState {
+  kind: 'vms';
+  vms: VmRow[];
+  totalRunning: number;
+  totalCount: number;
+}
+
+// Network interface widget. The header has a <select name="port_select">
+// listing interfaces; per-row data is injected into ids like #main0, #port0,
+// #link0 by JS. We surface the list + currently-selected interface.
+export interface NetworkInterface {
+  name: string;          // "bond0", "eth0", "eth1", "lo"
+  mainText: string;      // contents of #mainN once populated (mode/speed/duplex)
+}
+
+export interface InterfaceState {
+  kind: 'interface';
+  interfaces: NetworkInterface[];
+  selectedName: string;
+  inboundText: string;   // contents of #inbound (e.g. "237.1 Kbps")
+  outboundText: string;
+}
+
+// UPS widget. The cold tbody shows placeholder spinners; live values appear
+// in spans with class names like .nut_bcharge, .nut_timeleft, .nut_loadpct.
+export type UpsStatus = 'on-line' | 'on-battery' | 'low-battery' | 'replace-battery' | 'unknown';
+
+export interface UpsState {
+  kind: 'ups';
+  status: UpsStatus;
+  statusText: string;        // raw text from .nut_status
+  batteryChargePct: number | null;
+  loadPct: number | null;
+  loadW: number | null;       // computed (loadPct% * nominalPowerW)
+  runtimeMinutes: number | null;
+  nominalPowerW: number | null;
+  nominalVA: number | null;
+}
+
+// Identity widget — the HL15Rack-style tbody with class='system'. Header shows
+// server name, description, time. Body shows model, registration, uptime, case icon.
+export interface IdentityState {
+  kind: 'identity';
+  serverName: string;        // "HL15Rack"
+  description: string;       // "Media server"
+  model: string;             // "Custom"
+  registration: string;      // "Unraid OS Pro"
+  uptimeText: string;        // populated client-side from .uptime
+  caseClass: string | null;  // e.g. "case-45Drives-HL15" — for icon rendering
+}
+
+// Motherboard widget — three plain-text lines after the header.
+export interface MotherboardState {
+  kind: 'motherboard';
+  vendor: string;            // "Giga Computing ME03-CE0-000 , Version 01000100"
+  biosVendor: string;        // "GIGABYTE, Version F12"
+  biosDated: string;         // "Sun 12 Apr 2026 12:00 AM"
+}
+
+// Shares widget — list of shares with name, description, security, stream count.
+export type ShareSecurity = 'public' | 'private' | 'secure' | 'hidden';
+
+export interface ShareRow {
+  name: string;
+  description: string;
+  security: ShareSecurity;
+  streams: number | null;    // null when the count span is empty
+}
+
+export interface SharesState {
+  kind: 'shares';
+  shares: ShareRow[];
+  totalCount: number;        // parsed from header "Share count: 10 with..."
+  publicSmbCount: number;
+  publicNfsCount: number;
+}
+
+// Users widget — list of users with description, write/read counts.
+export interface UserRow {
+  name: string;
+  description: string;
+  writeCount: number | null;
+  readCount: number | null;
+}
+
+export interface UsersState {
+  kind: 'users';
+  users: UserRow[];
+  totalCount: number;
+  unprotectedCount: number;
+}
+
 export type WidgetState =
   | UnknownWidget
   | ArrayState
@@ -171,4 +271,11 @@ export type WidgetState =
   | MemoryState
   | GpuState
   | IpmiState
-  | DockerState;
+  | DockerState
+  | VmsState
+  | InterfaceState
+  | UpsState
+  | IdentityState
+  | MotherboardState
+  | SharesState
+  | UsersState;
