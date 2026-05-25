@@ -101,9 +101,6 @@ export class MdHeroCard extends LitElement {
       align-items: center;
       gap: 12px;
     }
-    .body.twin .col.right {
-      flex-direction: row-reverse;
-    }
     .body.twin .stack {
       display: flex;
       flex-direction: column;
@@ -178,18 +175,18 @@ export class MdHeroCard extends LitElement {
           <span class="label">${this.label}</span>
           <div class="cols">
             <div class="col left">
-              <slot name="left-icon"></slot>
               <div class="stack">
                 <span class="big">${this.leftBig}</span>
                 <span class="lbl">${this.leftLabel}</span>
               </div>
+              <slot name="left-icon"></slot>
             </div>
             <div class="col right">
-              <slot name="right-icon"></slot>
               <div class="stack">
                 <span class="big">${this.rightBig}</span>
                 <span class="lbl">${this.rightLabel}</span>
               </div>
+              <slot name="right-icon"></slot>
             </div>
           </div>
         </div>
