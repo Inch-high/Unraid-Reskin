@@ -13,11 +13,12 @@ function modernui_radio(string $name, string $value, string $label, string $curr
     return "<label style='margin-right:16px;'><input type='radio' name='{$name}' value='{$value}'{$checked}> {$label}</label>";
 }
 
-$mode    = $settings['mode']    ?? 'system';
-$density = $settings['density'] ?? 'comfortable';
-$sidebar = $settings['sidebar'] ?? 'expanded';
-$zebra   = $settings['zebra']   ?? '0';
-$rmotion = $settings['reduced_motion'] ?? 'auto';
+$mode      = $settings['mode']      ?? 'system';
+$density   = $settings['density']   ?? 'comfortable';
+$sidebar   = $settings['sidebar']   ?? 'expanded';
+$zebra     = $settings['zebra']     ?? '0';
+$rmotion   = $settings['reduced_motion'] ?? 'auto';
+$dashboard = $settings['dashboard'] ?? 'on';
 ?>
 <div style="max-width:720px;padding:16px;">
   <h2 style="margin:0 0 8px 0;">Modern UI</h2>
@@ -35,6 +36,15 @@ $rmotion = $settings['reduced_motion'] ?? 'auto';
       <?= modernui_radio('mode', 'system', 'System', $mode) ?>
       <?= modernui_radio('mode', 'dark',   'Dark',   $mode) ?>
       <?= modernui_radio('mode', 'light',  'Light',  $mode) ?>
+    </fieldset>
+
+    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
+      <legend>Dashboard layout</legend>
+      <?= modernui_radio('dashboard', 'on',  'Modern', $dashboard) ?>
+      <?= modernui_radio('dashboard', 'off', 'Stock',  $dashboard) ?>
+      <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
+        Toggle whether <code>/Dashboard</code> shows the new layout (hero strip, sticky sidebar, collapsible sections). The rest of the theme stays modernized either way.
+      </p>
     </fieldset>
 
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
