@@ -88,6 +88,66 @@ export class MdDockerCard extends LitElement {
       border-radius: 50%;
       flex-shrink: 0;
     }
+    .summary {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary .total {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .summary .total .big {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .summary .total .small {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .summary .counts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .summary .counts .count {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .summary .counts .count .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .summary .counts .count .num {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .summary-bar {
+      display: flex;
+      height: 6px;
+      background: var(--border-default);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .summary-bar > span {
+      display: block;
+      height: 100%;
+      transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    .summary-bar > span.started { background: var(--success); }
+    .summary-bar > span.stopped { background: var(--danger); }
+    .summary-bar > span.paused  { background: var(--warning); }
+    .summary-bar > span.unknown { background: var(--text-muted); }
   `;
 
   @property({ type: Object }) state: DockerState = {
@@ -116,35 +176,89 @@ export class MdDockerCard extends LitElement {
 
   render() {
     const { folders, ungrouped, totalRunning, totalCount } = this.state;
-    const meta = `${totalRunning} / ${totalCount} running`;
+
+    // Derive the four state counts from folders + ungrouped. totalRunning
+    // already exists on DockerState; the others we count here so we don't
+    // touch the extractor's state shape.
+    const allContainers = [...ungrouped, ...folders.flatMap((f) => f.containers)];
+    const stopped = allContainers.filter((c) => c.state === 'stopped').length;
+    const paused  = allContainers.filter((c) => c.state === 'paused').length;
+    const unknown = allContainers.filter((c) => c.state === 'unknown').length;
+
+    const meta = totalCount > 0 ? `${totalRunning} / ${totalCount} running` : '';
+
     return html`
       <md-card cardTitle="Docker Containers" meta=${meta}>
-        <div class="filters">
-          <span class="chip" ?data-active=${this._filter === 'all'}
-                @click=${() => (this._filter = 'all')}>All</span>
-          <span class="chip" ?data-active=${this._filter === 'running'}
-                @click=${() => (this._filter = 'running')}>Running</span>
-          <span class="chip" ?data-active=${this._filter === 'stopped'}
-                @click=${() => (this._filter = 'stopped')}>Stopped</span>
-        </div>
-        ${folders.map((f) => {
-          const visible = this._filtered(f.containers);
-          if (visible.length === 0) return '';
-          return html`
-            <div class="folder-label">
-              <span>${f.name}</span>
-              <span>${f.runningCount} / ${f.totalCount}</span>
+        ${totalCount > 0 ? html`
+          <div class="summary">
+            <div class="total">
+              <span class="big">${totalCount}</span>
+              <span class="small">container${totalCount === 1 ? '' : 's'}</span>
             </div>
-            <div class="container-grid">
-              ${visible.map((c) => this._renderTile(c))}
+            <div class="counts">
+              <span class="count">
+                <span class="dot" style="background: var(--success)"></span>
+                <span class="num">${totalRunning}</span> started
+              </span>
+              <span class="count">
+                <span class="dot" style="background: var(--danger)"></span>
+                <span class="num">${stopped}</span> stopped
+              </span>
+              <span class="count">
+                <span class="dot" style="background: var(--warning)"></span>
+                <span class="num">${paused}</span> paused
+              </span>
+              ${unknown > 0 ? html`
+                <span class="count">
+                  <span class="dot" style="background: var(--text-muted)"></span>
+                  <span class="num">${unknown}</span> unknown
+                </span>
+              ` : ''}
             </div>
-          `;
-        })}
-        ${ungrouped.length > 0 ? html`
-          <div class="folder-label"><span>Ungrouped</span></div>
-          <div class="container-grid">
-            ${this._filtered(ungrouped).map((c) => this._renderTile(c))}
+            <div class="summary-bar">
+              <span class="started" style="width: ${(totalRunning / totalCount) * 100}%"></span>
+              <span class="stopped" style="width: ${(stopped / totalCount) * 100}%"></span>
+              <span class="paused"  style="width: ${(paused  / totalCount) * 100}%"></span>
+              ${unknown > 0 ? html`<span class="unknown" style="width: ${(unknown / totalCount) * 100}%"></span>` : ''}
+            </div>
           </div>
+        ` : html`
+          <div class="summary">
+            <div class="total">
+              <span class="big">0</span>
+              <span class="small">containers</span>
+            </div>
+          </div>
+        `}
+
+        ${totalCount > 0 ? html`
+          <div class="filters">
+            <span class="chip" ?data-active=${this._filter === 'all'}
+                  @click=${() => (this._filter = 'all')}>All</span>
+            <span class="chip" ?data-active=${this._filter === 'running'}
+                  @click=${() => (this._filter = 'running')}>Running</span>
+            <span class="chip" ?data-active=${this._filter === 'stopped'}
+                  @click=${() => (this._filter = 'stopped')}>Stopped</span>
+          </div>
+          ${folders.map((f) => {
+            const visible = this._filtered(f.containers);
+            if (visible.length === 0) return '';
+            return html`
+              <div class="folder-label">
+                <span>${f.name}</span>
+                <span>${f.runningCount} / ${f.totalCount}</span>
+              </div>
+              <div class="container-grid">
+                ${visible.map((c) => this._renderTile(c))}
+              </div>
+            `;
+          })}
+          ${ungrouped.length > 0 ? html`
+            <div class="folder-label"><span>Ungrouped</span></div>
+            <div class="container-grid">
+              ${this._filtered(ungrouped).map((c) => this._renderTile(c))}
+            </div>
+          ` : ''}
         ` : ''}
       </md-card>
     `;
