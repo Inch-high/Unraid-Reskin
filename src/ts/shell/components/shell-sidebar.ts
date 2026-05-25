@@ -30,9 +30,9 @@ export class ShellSidebar extends LitElement {
     .header:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
     .logo {
       width: 32px; height: 32px;
-      background: var(--accent, #ff8c2f);
-      border-radius: 6px;
       flex-shrink: 0;
+      object-fit: contain;
+      display: block;
     }
     .name {
       font-size: 14px; font-weight: 600;
@@ -145,9 +145,11 @@ export class ShellSidebar extends LitElement {
   }
 
   private _renderArrayState() {
-    const el = document.querySelector('.array-state, [data-array-state]');
+    // Unraid 7.3 dropped .array-state — the indicator now lives in <footer> .footer-left.
+    const el = document.querySelector('.array-state, [data-array-state], footer .footer-left');
     if (!el) return '';
     const text = el.textContent?.trim() || '';
+    if (!text) return '';
     const dotColor = /started/i.test(text) ? '#22c55e' : /stopped/i.test(text) ? '#ef4444' : '#f59e0b';
     return html`
       <shell-status-row label="Array" value=${text} dot-color=${dotColor}></shell-status-row>
@@ -155,7 +157,12 @@ export class ShellSidebar extends LitElement {
   }
 
   private _renderStatus(it: { entry: PluginEntry | null; node: Element }) {
-    const text = it.node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 32) || '';
+    // Skip layout filler + the array-state row (rendered separately by _renderArrayState).
+    const cls = it.node.className || '';
+    if (/footer-spacer/.test(cls)) return '';
+    if (/footer-left/.test(cls)) return '';
+    const text = it.node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80) || '';
+    if (!text) return '';
     if (it.entry) {
       return html`
         <shell-status-row
@@ -164,16 +171,34 @@ export class ShellSidebar extends LitElement {
         ></shell-status-row>
       `;
     }
-    // Unknown plugin — render generic row preserving the original DOM via innerHTML clone
     return html`
       <shell-status-row label="Plugin" value=${text}></shell-status-row>
+    `;
+  }
+
+  // Direct-query fallback for Unraid 7.3 footer-right (temps + power + UPS).
+  // Used instead of the MutationObserver mirror because <footer> is rendered
+  // by Vue after our connectedCallback runs, leaving the mirror source null.
+  // Updates ride the 5-second setInterval that already drives _renderArrayState.
+  private _renderFooterRight() {
+    const right = document.querySelector('footer .footer-right');
+    if (!right) return '';
+    const text = right.textContent?.trim().replace(/\s+/g, ' ') || '';
+    if (!text) return '';
+    const temps = text.match(/(\d+°C\s*)+/)?.[0]?.trim();
+    const power = text.match(/\d+\s*W(?:\s*\(\d+\s*VA\))?/)?.[0];
+    const ups = text.match(/(\d+)\s*%/)?.[0];
+    return html`
+      ${temps ? html`<shell-status-row label="Temps" value=${temps}></shell-status-row>` : ''}
+      ${power ? html`<shell-status-row label="Power" value=${power}></shell-status-row>` : ''}
+      ${ups ? html`<shell-status-row label="UPS" value=${ups}></shell-status-row>` : ''}
     `;
   }
 
   render() {
     return html`
       <a class="header" href="/Dashboard">
-        <span class="logo"></span>
+        <img class="logo" src="/apple-touch-icon.png" alt="Unraid">
         <span class="name">${this._serverName}</span>
       </a>
       <div class="body">
@@ -183,6 +208,7 @@ export class ShellSidebar extends LitElement {
       </div>
       <div class="footer">
         ${this._renderArrayState()}
+        ${this._renderFooterRight()}
         ${this._statusItems.map((it) => this._renderStatus(it))}
         <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed}>
           ${this._collapsed ? '▶' : '◀'}

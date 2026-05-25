@@ -17,8 +17,15 @@ export class ShellStatusRow extends LitElement {
       width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
       background: var(--dot-color, var(--text-secondary));
     }
-    .label { flex: 1; min-width: 0; font-size: 12px; color: var(--text-secondary); }
-    .value { font-size: 12px; color: var(--text-primary); }
+    .label {
+      flex: 1; min-width: 0; font-size: 12px; color: var(--text-secondary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .value {
+      font-size: 12px; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 50%;
+    }
     .popover {
       position: absolute; left: calc(100% + 8px); bottom: 0;
       background: var(--bg-surface, #1a1a1a);
