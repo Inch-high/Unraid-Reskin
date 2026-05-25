@@ -6,10 +6,7 @@ import './md-card';
 @customElement('md-plugin-card')
 export class MdPluginCard extends LitElement {
   static styles = css`
-    :host { display: contents; }
-    .mirror {
-      /* Original Unraid CSS classes still apply because outer modernui.css is global */
-    }
+    :host { display: block; }
   `;
 
   @property({ type: Object }) state: UnknownWidget = {
@@ -23,7 +20,7 @@ export class MdPluginCard extends LitElement {
     const title = this.state.hint || this.state.id || 'Plugin';
     return html`
       <md-card .cardTitle=${title} meta="plugin">
-        <div class="mirror" .innerHTML=${this.state.innerHTML}></div>
+        <div .innerHTML=${this.state.innerHTML}></div>
       </md-card>
     `;
   }
