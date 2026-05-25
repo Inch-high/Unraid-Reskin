@@ -138,20 +138,33 @@ export class MdHeroStrip extends LitElement {
     const vmsHas    = !!v && v.totalCount > 0;
     if (!dockerHas && !vmsHas) return '';
 
-    if (dockerHas) {
-      const dockerStarted = d!.totalRunning;
-      const dockerTotal   = d!.totalCount;
-      const vmLine = vmsHas
-        ? `${v!.totalRunning} of ${v!.totalCount} VM${v!.totalCount === 1 ? '' : 's'} running`
-        : '';
+    // Both exist → twin layout so containers and VMs each get their own
+    // headline number instead of one being buried in the sub-text.
+    if (dockerHas && vmsHas) {
       return html`
         <md-hero-card
           label="Workloads"
-          bigText="${dockerStarted} / ${dockerTotal}"
-          subText="${vmLine}"
+          twin
+          leftBig="${d!.totalRunning}/${d!.totalCount}"
+          leftLabel="Containers"
+          rightBig="${v!.totalRunning}/${v!.totalCount}"
+          rightLabel="${v!.totalCount === 1 ? 'VM' : 'VMs'}"
           scrollTarget="md-docker-card"
           expanderTarget="container-list"
-        >${this._dotsStack(dockerStarted, dockerTotal, vmsHas ? v!.totalRunning : null, vmsHas ? v!.totalCount : null)}</md-hero-card>
+        ></md-hero-card>
+      `;
+    }
+
+    // Only one type exists → single big number with dot-row visual
+    if (dockerHas) {
+      return html`
+        <md-hero-card
+          label="Workloads"
+          bigText="${d!.totalRunning} / ${d!.totalCount}"
+          subText="containers running"
+          scrollTarget="md-docker-card"
+          expanderTarget="container-list"
+        >${this._dotsStack(d!.totalRunning, d!.totalCount, null, null)}</md-hero-card>
       `;
     }
 

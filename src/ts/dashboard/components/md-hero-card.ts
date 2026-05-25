@@ -72,6 +72,47 @@ export class MdHeroCard extends LitElement {
       justify-content: center;
       min-width: 56px;
     }
+
+    /* Twin-stat layout (e.g. Workloads with separate Containers + VMs) */
+    .body.twin {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      grid-template-columns: none;
+    }
+    .body.twin .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .body.twin .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+      align-items: center;
+    }
+    .body.twin .col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+    }
+    .body.twin .col .big {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .body.twin .col .lbl {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
   `;
 
   @property({ type: String }) label = '';
@@ -79,6 +120,14 @@ export class MdHeroCard extends LitElement {
   @property({ type: String }) subText = '';
   @property({ type: String }) scrollTarget = '';
   @property({ type: String }) expanderTarget = '';
+  // Twin-stat mode: two side-by-side big numbers with their own labels.
+  // When `twin` is true, the four left*/right* props are used instead of
+  // bigText/subText, and the default visual slot is ignored.
+  @property({ type: Boolean }) twin = false;
+  @property({ type: String }) leftBig = '';
+  @property({ type: String }) leftLabel = '';
+  @property({ type: String }) rightBig = '';
+  @property({ type: String }) rightLabel = '';
 
   private _onClick(): void {
     if (!this.scrollTarget) return;
@@ -103,6 +152,23 @@ export class MdHeroCard extends LitElement {
   }
 
   render() {
+    if (this.twin) {
+      return html`
+        <div class="body twin" @click=${this._onClick}>
+          <span class="label">${this.label}</span>
+          <div class="cols">
+            <div class="col">
+              <span class="big">${this.leftBig}</span>
+              <span class="lbl">${this.leftLabel}</span>
+            </div>
+            <div class="col">
+              <span class="big">${this.rightBig}</span>
+              <span class="lbl">${this.rightLabel}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
     return html`
       <div class="body" @click=${this._onClick}>
         <div class="text">
