@@ -38,7 +38,7 @@ function flattenCuratedUrls(tree: NavItem[]): Set<string> {
 export function buildNav(anchors: StockAnchor[]): NavItem[] {
   const known = flattenCuratedUrls(CURATED_NAV);
   const unknowns = anchors.filter((a) => a.href && !known.has(a.href));
-  if (unknowns.length === 0) return CURATED_NAV;
+  if (unknowns.length === 0) return [...CURATED_NAV];
   return [
     ...CURATED_NAV,
     { label: 'Other', icon: 'other', children: unknowns.map((a) => ({
