@@ -41,7 +41,7 @@ export class ShellNotificationBell extends LitElement {
 
   @state() private _open = false;
   @state() private _unread = 0;
-  @state() private _items: Array<{ title: string; subject?: string; severity?: string }> = [];
+  @state() private _items: Array<{ title: string; severity?: string }> = [];
 
   private _observer: MutationObserver | null = null;
 
@@ -50,7 +50,12 @@ export class ShellNotificationBell extends LitElement {
     this._sync();
     const source = document.getElementById('notifier') || document.querySelector('[data-notifications]') || document.body;
     this._observer = new MutationObserver(() => this._sync());
-    this._observer.observe(source, { childList: true, subtree: true, characterData: true });
+    const isBodyFallback = source === document.body;
+    this._observer.observe(source, {
+      childList: true,
+      subtree: !isBodyFallback,
+      characterData: !isBodyFallback,
+    });
     document.addEventListener('click', this._onOutside);
   }
 
@@ -87,6 +92,7 @@ export class ShellNotificationBell extends LitElement {
     this._unread = isFinite(count) ? count : 0;
 
     const items = Array.from(notifier.querySelectorAll('.notification, [data-notification]')).slice(0, 20);
+    // severity is parsed for future styling (Phase 5+); currently unused in render().
     this._items = items.map((el) => ({
       title: el.querySelector('.subject, .title')?.textContent?.trim() || el.textContent?.trim().slice(0, 80) || '',
       severity: (el.getAttribute('data-severity') || 'info') as string,
