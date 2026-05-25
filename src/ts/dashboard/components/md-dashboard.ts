@@ -63,6 +63,28 @@ export class ModernuiDashboard extends LitElement {
       padding: 16px 24px 48px;
       box-sizing: border-box;
     }
+    .layout {
+      /* Default single-column flow (mobile / narrow viewports). On wide
+         viewports a media query promotes us to a sticky sidebar + main grid. */
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .sidebar { min-width: 0; }
+    .main { min-width: 0; }
+    @media (min-width: 1400px) {
+      .layout {
+        grid-template-columns: minmax(380px, 28%) 1fr;
+      }
+      .sidebar {
+        /* Pin Processor & Memory to the viewport so it stays visible while
+           the rest of the dashboard scrolls. 16px matches the .content
+           top padding so it doesn't bump against the top edge. */
+        position: sticky;
+        top: 16px;
+      }
+    }
   `;
 
   private _store: DashboardStore | null = null;
@@ -113,69 +135,75 @@ export class ModernuiDashboard extends LitElement {
     const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
 
     const hasStorage = arrays.length + caches.length + parities.length + disklocations.length > 0;
-    const hasCompute = processors.length + memories.length + gpus.length + ipmis.length > 0;
+    const hasCompute = gpus.length + ipmis.length + (processors.length === 0 && memories.length > 0 ? memories.length : 0) > 0;
     const hasWorkloads = dockers.length + vms.length > 0;
     const hasNetworkPower = interfaces.length + upses.length > 0;
     const hasSystem = identities.length + motherboards.length + shares.length + users.length > 0;
+    const hasSidebarHero = processors.length > 0;
 
     return html`
       <div class="content">
-      ${hasStorage ? html`
-        <md-section label="Storage">
-          ${disklocations.length > 0 ? html`
-            <md-disklocation-card
-              .state=${disklocations[0]}
-              .arrayState=${arrays[0] ?? null}
-              .cacheStates=${caches}
-              .parityState=${parities[0] ?? null}
-              data-wide
-            ></md-disklocation-card>
-          ` : html`
-            ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
-            ${caches.map((s) => html`<md-cache-card .state=${s}></md-cache-card>`)}
-            ${parities.map((s) => html`<md-parity-card .state=${s}></md-parity-card>`)}
-          `}
-        </md-section>
-      ` : ''}
-      ${hasCompute ? html`
-        <md-section label="Compute">
-          ${processors.length > 0 ? html`
-            <md-processor-card
-              .state=${processors[0]}
-              .memoryState=${memories[0] ?? null}
-            ></md-processor-card>
-          ` : html`
-            ${memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`)}
-          `}
-          ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
-          ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
-        </md-section>
-      ` : ''}
-      ${hasWorkloads ? html`
-        <md-section label="Workloads">
-          ${dockers.map((s) => html`<md-docker-card .state=${s} data-wide></md-docker-card>`)}
-          ${vms.map((s) => html`<md-vms-card .state=${s}></md-vms-card>`)}
-        </md-section>
-      ` : ''}
-      ${hasNetworkPower ? html`
-        <md-section label="Network & Power">
-          ${interfaces.map((s) => html`<md-interface-card .state=${s}></md-interface-card>`)}
-          ${upses.map((s) => html`<md-ups-card .state=${s}></md-ups-card>`)}
-        </md-section>
-      ` : ''}
-      ${hasSystem ? html`
-        <md-section label="System">
-          ${identities.map((s) => html`<md-identity-card .state=${s}></md-identity-card>`)}
-          ${motherboards.map((s) => html`<md-motherboard-card .state=${s}></md-motherboard-card>`)}
-          ${shares.map((s) => html`<md-shares-card .state=${s}></md-shares-card>`)}
-          ${users.map((s) => html`<md-users-card .state=${s}></md-users-card>`)}
-        </md-section>
-      ` : ''}
-      ${unknown.length > 0 ? html`
-        <md-section label="Plugins (untyped)">
-          ${unknown.map((w) => html`<md-plugin-card .state=${w}></md-plugin-card>`)}
-        </md-section>
-      ` : ''}
+        <div class="layout">
+          <aside class="sidebar">
+            ${hasSidebarHero ? html`
+              <md-processor-card
+                .state=${processors[0]}
+                .memoryState=${memories[0] ?? null}
+              ></md-processor-card>
+            ` : ''}
+          </aside>
+          <div class="main">
+            ${hasStorage ? html`
+              <md-section label="Storage">
+                ${disklocations.length > 0 ? html`
+                  <md-disklocation-card
+                    .state=${disklocations[0]}
+                    .arrayState=${arrays[0] ?? null}
+                    .cacheStates=${caches}
+                    .parityState=${parities[0] ?? null}
+                    data-wide
+                  ></md-disklocation-card>
+                ` : html`
+                  ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
+                  ${caches.map((s) => html`<md-cache-card .state=${s}></md-cache-card>`)}
+                  ${parities.map((s) => html`<md-parity-card .state=${s}></md-parity-card>`)}
+                `}
+              </md-section>
+            ` : ''}
+            ${hasCompute ? html`
+              <md-section label="Compute">
+                ${processors.length === 0 ? memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`) : ''}
+                ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
+                ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
+              </md-section>
+            ` : ''}
+            ${hasWorkloads ? html`
+              <md-section label="Workloads">
+                ${dockers.map((s) => html`<md-docker-card .state=${s} data-wide></md-docker-card>`)}
+                ${vms.map((s) => html`<md-vms-card .state=${s}></md-vms-card>`)}
+              </md-section>
+            ` : ''}
+            ${hasNetworkPower ? html`
+              <md-section label="Network & Power">
+                ${interfaces.map((s) => html`<md-interface-card .state=${s}></md-interface-card>`)}
+                ${upses.map((s) => html`<md-ups-card .state=${s}></md-ups-card>`)}
+              </md-section>
+            ` : ''}
+            ${hasSystem ? html`
+              <md-section label="System">
+                ${identities.map((s) => html`<md-identity-card .state=${s}></md-identity-card>`)}
+                ${motherboards.map((s) => html`<md-motherboard-card .state=${s}></md-motherboard-card>`)}
+                ${shares.map((s) => html`<md-shares-card .state=${s}></md-shares-card>`)}
+                ${users.map((s) => html`<md-users-card .state=${s}></md-users-card>`)}
+              </md-section>
+            ` : ''}
+            ${unknown.length > 0 ? html`
+              <md-section label="Plugins (untyped)">
+                ${unknown.map((w) => html`<md-plugin-card .state=${w}></md-plugin-card>`)}
+              </md-section>
+            ` : ''}
+          </div>
+        </div>
       </div>
     `;
   }

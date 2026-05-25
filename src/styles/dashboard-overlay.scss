@@ -13,6 +13,15 @@
 // the taller of the two, and our card sits on top with an opaque background
 // so the user only ever sees the modern UI.
 body.modernui-dashboard-active {
+  // Unraid's `div.content` wrapper sets `overflow: auto` which creates a
+  // scroll context that traps `position: sticky` inside our sidebar —
+  // the sidebar pins to the wrapper's top instead of the viewport, so it
+  // visually scrolls out of view. Restore `overflow: visible` on the
+  // wrapper so the html/viewport becomes the scroll context again.
+  div.content {
+    overflow: visible !important;
+  }
+
   div.frame {
     display: grid;
     grid-template-columns: 1fr;
