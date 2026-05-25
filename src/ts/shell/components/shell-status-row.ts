@@ -1,0 +1,79 @@
+import { LitElement, html, css } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+
+@customElement('shell-status-row')
+export class ShellStatusRow extends LitElement {
+  static styles = css`
+    :host { display: block; position: relative; }
+    .row {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; box-sizing: border-box;
+      padding: 6px 16px;
+      background: transparent; color: var(--text-primary); border: 0;
+      cursor: pointer; font: inherit; text-align: left;
+    }
+    .row:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--dot-color, var(--text-secondary));
+    }
+    .label { flex: 1; min-width: 0; font-size: 12px; color: var(--text-secondary); }
+    .value { font-size: 12px; color: var(--text-primary); }
+    .popover {
+      position: absolute; left: calc(100% + 8px); bottom: 0;
+      background: var(--bg-surface, #1a1a1a);
+      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      min-width: 200px; padding: 12px; font-size: 12px;
+      display: none; z-index: 100;
+    }
+    :host([open]) .popover { display: block; }
+    :host-context(body.modernui-shell-collapsed) .label,
+    :host-context(body.modernui-shell-collapsed) .value { display: none; }
+  `;
+
+  @property({ type: String }) label = '';
+  @property({ type: String }) value = '';
+  @property({ type: String, attribute: 'dot-color' }) dotColor = '';
+  @property({ type: String }) detail = '';
+  @property({ type: String, attribute: 'settings-url' }) settingsUrl = '';
+  @state() private _open = false;
+
+  private _toggle = (e: MouseEvent): void => {
+    e.stopPropagation();
+    this._open = !this._open;
+    this.toggleAttribute('open', this._open);
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    document.addEventListener('click', this._onOutside);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this._onOutside);
+  }
+
+  private _onOutside = (e: MouseEvent): void => {
+    if (!this.contains(e.target as Node) && !this.shadowRoot?.contains(e.target as Node)) {
+      this._open = false;
+      this.removeAttribute('open');
+    }
+  };
+
+  render() {
+    return html`
+      <button class="row" type="button" @click=${this._toggle} style=${`--dot-color: ${this.dotColor || 'currentColor'}`}>
+        <span class="dot"></span>
+        <span class="label">${this.label}</span>
+        <span class="value">${this.value}</span>
+      </button>
+      <div class="popover">
+        <div>${this.detail || this.label}</div>
+        ${this.settingsUrl ? html`<p style="margin:8px 0 0 0;"><a href=${this.settingsUrl}>Settings</a></p>` : ''}
+      </div>
+    `;
+  }
+}
