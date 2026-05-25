@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.3.0",
+  "version": "0.4.0-beta",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x with a rebuilt /Dashboard (hero strip, sticky sidebar, grouped widget cards).",
+  "description": "Clean, flat, responsive theme for Unraid 7.x with a rebuilt /Dashboard (hero strip, sticky sidebar) plus a left-sidebar + topbar shell. v0.4.0-beta: shell visible on Unraid 7.3, plugin mirror sources need v0.4.1 follow-up.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",
