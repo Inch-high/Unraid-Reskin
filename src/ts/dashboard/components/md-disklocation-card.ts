@@ -206,7 +206,7 @@ export class MdDisklocationCard extends LitElement {
           <div class="summary">${totalCount - assignedCount} bay${totalCount - assignedCount === 1 ? '' : 's'} empty</div>
         ` : ''}
         ${hasDetails ? html`
-          <details class="storage-details">
+          <details class="storage-details" data-hero-expander="storage-details">
             <summary>
               <span class="chevron"></span>
               Storage details

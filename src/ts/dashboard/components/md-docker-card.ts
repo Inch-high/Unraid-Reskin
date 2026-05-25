@@ -278,7 +278,7 @@ export class MdDockerCard extends LitElement {
         `}
 
         ${totalCount > 0 ? html`
-          <details class="container-list">
+          <details class="container-list" data-hero-expander="container-list">
             <summary>
               <span class="chevron"></span>
               <span class="label-closed">Show containers</span>
