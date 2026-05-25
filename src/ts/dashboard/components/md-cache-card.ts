@@ -33,7 +33,7 @@ export class MdCacheCard extends LitElement {
     .state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
     .dot { width: 8px; height: 8px; border-radius: 50%; }
     .temp, .smart { font-variant-numeric: tabular-nums; font-size: 12px; }
-    .util { position: relative; height: 4px; background: var(--bg-base); border-radius: 4px; overflow: hidden; }
+    .util { position: relative; height: 4px; background: var(--border-default); border-radius: 4px; overflow: hidden; }
     .util > span {
       display: block; height: 100%; background: var(--mui-accent);
       transition: width 240ms cubic-bezier(0.2, 0, 0, 1);

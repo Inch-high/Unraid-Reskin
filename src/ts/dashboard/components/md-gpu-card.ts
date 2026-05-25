@@ -38,7 +38,7 @@ export class MdGpuCard extends LitElement {
     }
     .bar {
       height: 4px;
-      background: var(--bg-base);
+      background: var(--border-default);
       border-radius: 4px;
       overflow: hidden;
       margin-top: 4px;
