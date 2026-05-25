@@ -81,6 +81,12 @@ export class MdIdentityCard extends LitElement {
   render() {
     const s = this.state;
     return html`
+      <!-- Pull Unraid's case-icon ::before rules into this shadow root. The
+           "cases" icon font is already loaded at the document level (font
+           resources cross the shadow boundary), but ::before { content }
+           rules do not - they're document-scoped. Without this link the
+           <i class="case-XXX"> below stays 0x0 with no glyph. -->
+      <link rel="stylesheet" href="/webGui/styles/default-cases.css">
       <md-card cardTitle=${s.serverName} meta=${s.registration}>
         <div class="grid">
           <div class="left">
