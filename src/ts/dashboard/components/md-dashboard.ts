@@ -133,8 +133,14 @@ export class ModernuiDashboard extends LitElement {
       ` : ''}
       ${hasCompute ? html`
         <md-section label="Compute">
-          ${processors.map((s) => html`<md-processor-card .state=${s}></md-processor-card>`)}
-          ${memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`)}
+          ${processors.length > 0 ? html`
+            <md-processor-card
+              .state=${processors[0]}
+              .memoryState=${memories[0] ?? null}
+            ></md-processor-card>
+          ` : html`
+            ${memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`)}
+          `}
           ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
           ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
         </md-section>
