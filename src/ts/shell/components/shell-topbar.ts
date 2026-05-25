@@ -64,6 +64,14 @@ export class ShellTopbar extends LitElement {
       display: inline-flex; align-items: center; justify-content: center;
     }
     .plugin-mirror img, .plugin-mirror svg { width: 18px; height: 18px; }
+    .hamburger { display: none; }
+    @media (max-width: 959px) {
+      .hamburger { display: inline-flex; }
+    }
+    @media (max-width: 639px) {
+      .breadcrumb { font-size: 12px; }
+      .breadcrumb a:not(:last-child), .breadcrumb .sep:not(:last-of-type) { display: none; }
+    }
   `;
 
   @state() private _crumbs: BreadcrumbSegment[] = [];
@@ -127,8 +135,13 @@ export class ShellTopbar extends LitElement {
     }
   }
 
+  private _onHamburger = (): void => {
+    this.dispatchEvent(new CustomEvent('shell-toggle-drawer', { bubbles: true, composed: true }));
+  };
+
   render() {
     return html`
+      <button class="icon-btn hamburger" type="button" @click=${this._onHamburger} title="Menu">☰</button>
       <nav class="breadcrumb">
         ${this._crumbs.map((c, i) => html`
           ${i > 0 ? html`<span class="sep">/</span>` : ''}

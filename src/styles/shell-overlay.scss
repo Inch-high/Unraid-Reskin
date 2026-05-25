@@ -46,3 +46,17 @@ body.modernui-shell-active {
 body.modernui-shell-active.modernui-shell-collapsed {
   padding-left: var(--shell-sidebar-width-collapsed);
 }
+
+// Drawer mode — sidebar hidden by default, body padding drops to 0 on the left.
+@media (max-width: 959px) {
+  body.modernui-shell-active {
+    padding-left: 0;
+  }
+}
+
+// Slim mode — sidebar collapsed by default at intermediate widths.
+@media (min-width: 960px) and (max-width: 1279px) {
+  body.modernui-shell-active:not(.modernui-shell-expanded-pinned) {
+    padding-left: var(--shell-sidebar-width-collapsed);
+  }
+}
