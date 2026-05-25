@@ -53,9 +53,15 @@ export class ModernuiDashboard extends LitElement {
       font-family: var(--font-sans);
     }
     .content {
-      max-width: 1440px;
+      /* Fill the parent frame the stock dashboard sets (typically 1900px on
+         Unraid's standard layout). The host already centers itself inside
+         the wider page body, so leaving the content un-capped uses all the
+         horizontal real estate the stock UI was already claiming. */
+      width: 100%;
+      max-width: 1900px;
       margin: 0 auto;
       padding: 16px 24px 48px;
+      box-sizing: border-box;
     }
   `;
 

@@ -18,7 +18,11 @@ export class MdSection extends LitElement {
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      /* Larger minimum so wide layouts (≥1900px frame) settle into 3 evenly
+         spread columns — the typical Compute / Network & Power / System
+         sections fit naturally with no empty trailing cells, and on narrow
+         viewports it gracefully drops to 2 then 1 column. */
+      grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
       gap: 16px;
     }
     ::slotted([data-wide]) {
