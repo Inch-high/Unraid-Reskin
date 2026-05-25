@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.2.0">
+<!ENTITY version   "0.3.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,17 @@
   support="https://github.com/EXAMPLE/unraid-modernui/issues">
 
 <CHANGES>
+###v0.3.0 (2026-05-25)
+- Phase 3: complete /Dashboard rebuild — hero metrics strip (Array · Cache · Workloads · Power), sticky Compute + Network sidebar, grouped Storage / Devices / Workloads / Power / System sections
+- Full-width Disk Location card with landscape drive-bay grid (active / spun-down / empty states)
+- Collapsible Storage details (Array / Cache / Parity) and Docker container list, defaulting to closed for a clean glance
+- 16 first-class widget cards typed from Unraid's source DOM: Array, Cache, Parity, Disk Location, Processor, Memory, GPU, IPMI, Docker, VMs, Interface, UPS, Identity, Motherboard, Shares, Users
+- New Settings → Theme → Dashboard layout toggle (Modern / Stock); per-feature gate that leaves the rest of the theme active when off
+- Fix: Save button on Settings → Theme now works — sends `csrf_token` and switches form encoding to urlencoded (multipart hangs Unraid's PHP-FPM, undetected since v0.1)
+- Fix: Theme.page now appears under Settings → User Preferences (was nested under package/pages/, never visible to webGui)
+- Fix: case-* chassis icons and `fa-arrow-*` icons render correctly inside Lit shadow roots (stock stylesheets pulled in via <link>)
+- 202 unit tests across 23 files (extractors + dashboard wiring + settings validation)
+
 ###v0.2.0 (2026-05-24)
 - Phase 2: component re-skin — buttons, tables, forms, containers, dialogs, badges
 - Remap Unraid's semantic CSS variables to our design tokens (no per-theme CSS branching needed)
