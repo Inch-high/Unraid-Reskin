@@ -4,6 +4,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 import { pathToBreadcrumb, type BreadcrumbSegment } from '../breadcrumb';
 import { CURATED_NAV } from '../nav-builder';
 import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
+import { icon } from '../icons';
 import './shell-notification-bell';
 import './shell-user-menu';
 
@@ -142,7 +143,7 @@ export class ShellTopbar extends LitElement {
 
   render() {
     return html`
-      <button class="icon-btn hamburger" type="button" @click=${this._onHamburger} title="Menu">☰</button>
+      <button class="icon-btn hamburger" type="button" @click=${this._onHamburger} aria-label="Menu" title="Menu">${icon('menu', 20)}</button>
       <nav class="breadcrumb">
         ${this._crumbs.map((c, i) => html`
           ${i > 0 ? html`<span class="sep">/</span>` : ''}
@@ -154,7 +155,7 @@ export class ShellTopbar extends LitElement {
         <div id="modernui-topbar-plugins" class="slot-host">
           ${this._pluginItems.map((it) => this._renderPluginItem(it))}
         </div>
-        <button class="icon-btn" type="button" title="Search" @click=${this._searchToast}>⌕</button>
+        <button class="icon-btn" type="button" aria-label="Search" title="Search" @click=${this._searchToast}>${icon('search', 18)}</button>
         <shell-notification-bell></shell-notification-bell>
         <shell-user-menu></shell-user-menu>
       </div>

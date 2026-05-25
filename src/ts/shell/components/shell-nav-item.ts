@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { NavItem } from '../nav-builder';
+import { icon } from '../icons';
 
 @customElement('shell-nav-item')
 export class ShellNavItem extends LitElement {
@@ -29,15 +30,19 @@ export class ShellNavItem extends LitElement {
       color: var(--text-primary);
       font-weight: 600;
     }
-    /* Forward-looking: icon span renders in a future task once SVG sprite mapping is wired. */
     .icon {
       width: 18px; height: 18px; flex-shrink: 0;
-      background: currentColor;
-      mask-size: contain; -webkit-mask-size: contain;
-      opacity: 0.7;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
     }
+    :host([active]) .icon { color: var(--accent, #ff8c2f); }
     .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .chevron { font-size: 10px; opacity: 0.6; transition: transform 120ms; }
+    .chevron {
+      width: 16px; height: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      transition: transform 120ms;
+    }
     :host([expanded]) .chevron { transform: rotate(90deg); }
     .children { padding-left: 20px; }
     :host([active][child]) a { font-weight: 500; }
@@ -45,6 +50,11 @@ export class ShellNavItem extends LitElement {
     :host-context(body.modernui-shell-collapsed) .chevron,
     :host-context(body.modernui-shell-collapsed) .children {
       display: none;
+    }
+    :host-context(body.modernui-shell-collapsed) a,
+    :host-context(body.modernui-shell-collapsed) > button {
+      justify-content: center;
+      padding: 10px 0;
     }
   `;
 
@@ -76,11 +86,16 @@ export class ShellNavItem extends LitElement {
 
   render() {
     const { item } = this;
+    // Nested child items (under Storage / Other) don't repeat the parent's icon —
+    // the indent already communicates the relationship.
+    const iconName = this.hasAttribute('child') ? '' : (item.icon || '');
+    const iconEl = iconName ? html`<span class="icon">${icon(iconName)}</span>` : '';
     if (item.children && item.children.length > 0) {
       return html`
         <button type="button" @click=${this._toggle}>
+          ${iconEl}
           <span class="label">${item.label}</span>
-          <span class="chevron">▶</span>
+          <span class="chevron">${icon('chevron-right', 14)}</span>
         </button>
         ${this.expanded ? html`
           <div class="children">
@@ -93,6 +108,7 @@ export class ShellNavItem extends LitElement {
     }
     return html`
       <a href=${item.url || '#'}>
+        ${iconEl}
         <span class="label">${item.label}</span>
       </a>
     `;

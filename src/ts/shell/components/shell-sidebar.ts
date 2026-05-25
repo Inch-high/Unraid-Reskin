@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { buildNav, type NavItem, type StockAnchor } from '../nav-builder';
 import './shell-nav-item';
 import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
+import { icon } from '../icons';
 import './shell-status-row';
 
 @customElement('shell-sidebar')
@@ -236,8 +237,8 @@ export class ShellSidebar extends LitElement {
         ${this._renderArrayState()}
         ${this._renderFooterRight()}
         ${this._statusItems.map((it) => this._renderStatus(it))}
-        <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed}>
-          ${this._collapsed ? '▶' : '◀'}
+        <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed} aria-label=${this._collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          ${icon(this._collapsed ? 'chevron-right' : 'chevron-left', 18)}
         </button>
       </div>
     `;

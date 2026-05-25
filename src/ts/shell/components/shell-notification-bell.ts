@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { icon } from '../icons';
 
 @customElement('shell-notification-bell')
 export class ShellNotificationBell extends LitElement {
@@ -101,7 +102,7 @@ export class ShellNotificationBell extends LitElement {
 
   render() {
     return html`
-      <button class="trigger" type="button" @click=${this._toggle} title="Notifications">🔔</button>
+      <button class="trigger" type="button" @click=${this._toggle} aria-label="Notifications" title="Notifications">${icon('bell', 18)}</button>
       ${this._unread > 0 ? html`<span class="badge">${this._unread > 99 ? '99+' : this._unread}</span>` : ''}
       <div class="popover" role="menu">
         ${this._items.length === 0
