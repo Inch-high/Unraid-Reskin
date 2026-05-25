@@ -50,7 +50,13 @@ function modernui_handle_post(array $post): array {
         return ['ok' => true, 'reload' => true];
     }
 
-    $v = modernui_validate_settings($post);
+    // Merge incoming POST over existing cfg so partial POSTs (e.g. just
+    // sidebar=collapsed from the shell toggle) don't reset other settings
+    // to defaults. Validation runs against the merged input.
+    $existing = modernui_parse_cfg(MODERNUI_SETTINGS_PATH);
+    $merged = array_merge($existing, $post);
+
+    $v = modernui_validate_settings($merged);
     if (!$v['ok']) return $v;
     modernui_write_cfg(MODERNUI_SETTINGS_PATH, $v['values']);
     // Regenerate loader.js so data-modernui-mode/density on <html> reflects the new settings on next reload

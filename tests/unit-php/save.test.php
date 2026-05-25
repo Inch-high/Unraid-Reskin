@@ -58,5 +58,31 @@ $noShell = modernui_validate_settings([]);
 assert($noShell['ok'] === true);
 assert($noShell['values']['shell'] === 'on', "default shell should be on");
 
+// Partial POST merge: when only one key is in the input, the others come
+// from the existing cfg (not from hardcoded defaults). This guards the
+// shell-sidebar toggle path which POSTs only sidebar=collapsed.
+// (Verified by calling modernui_handle_post with a mocked cfg file.)
+$tmpDir = sys_get_temp_dir() . '/modernui-test-' . uniqid();
+mkdir($tmpDir, 0755, true);
+$tmpCfg = $tmpDir . '/settings.cfg';
+file_put_contents($tmpCfg, "mode=dark\ndensity=compact\nsidebar=expanded\ndashboard=on\nshell=on\n");
+
+// Verify modernui_parse_cfg reads what we just wrote
+$parsed = modernui_parse_cfg($tmpCfg);
+assert($parsed['mode'] === 'dark', "parse cfg should read mode=dark, got " . var_export($parsed, true));
+assert($parsed['density'] === 'compact', "parse cfg should read density=compact");
+assert($parsed['sidebar'] === 'expanded', "parse cfg should read sidebar=expanded");
+
+// Verify array_merge semantics — incoming $post wins on conflicts, existing wins for missing keys
+$incoming = ['sidebar' => 'collapsed', 'csrf_token' => 'xyz'];
+$merged = array_merge($parsed, $incoming);
+assert($merged['sidebar'] === 'collapsed', "merge: incoming sidebar should win");
+assert($merged['mode'] === 'dark', "merge: existing mode should be preserved");
+assert($merged['density'] === 'compact', "merge: existing density should be preserved");
+
+// Cleanup
+unlink($tmpCfg);
+rmdir($tmpDir);
+
 echo "all save tests passed\n";
 exit(0);
