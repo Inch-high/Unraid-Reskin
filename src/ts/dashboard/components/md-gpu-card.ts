@@ -79,6 +79,9 @@ export class MdGpuCard extends LitElement {
   render() {
     const s = this.state;
     const meta = s.model || `${s.vendor || 'GPU'}`;
+    // The `gpu-fan1` class on Unraid stores a 0-100 percent (despite the
+    // stock label "Fan (RPM)") — display as percent for clarity.
+    const fanPct = s.fanRpm;
     return html`
       <md-card cardTitle="GPU" meta=${meta}>
         <div class="head">
@@ -89,13 +92,22 @@ export class MdGpuCard extends LitElement {
         <div class="grid">
           <div class="stat">
             <span class="label">Utilization</span>
-            <span class="val">${s.utilizationPct ?? '—'}${s.utilizationPct !== null ? '%' : ''}</span>
-            ${s.utilizationPct !== null ? html`<div class="bar"><span style="width: ${s.utilizationPct}%"></span></div>` : ''}
+            <span class="val">${Math.round(s.utilizationPct ?? 0)}%</span>
+            <div class="bar"><span style="width: ${s.utilizationPct ?? 0}%"></span></div>
           </div>
           <div class="stat">
             <span class="label">Memory</span>
-            <span class="val">${s.memoryUsedPct ?? '—'}${s.memoryUsedPct !== null ? '%' : ''}</span>
-            ${s.memoryUsedPct !== null ? html`<div class="bar"><span style="width: ${s.memoryUsedPct}%"></span></div>` : ''}
+            <span class="val">${Math.round(s.memoryUsedPct ?? 0)}%</span>
+            <div class="bar"><span style="width: ${s.memoryUsedPct ?? 0}%"></span></div>
+          </div>
+          <div class="stat">
+            <span class="label">Fan</span>
+            <span class="val">${fanPct !== null ? `${fanPct}%` : '—'}</span>
+            ${fanPct !== null ? html`<div class="bar"><span style="width: ${fanPct}%"></span></div>` : ''}
+          </div>
+          <div class="stat">
+            <span class="label">Mem Clock</span>
+            <span class="val">${s.memoryMHz !== null ? `${s.memoryMHz} MHz` : '—'}</span>
           </div>
           <div class="stat">
             <span class="label">Temperature</span>
@@ -108,8 +120,8 @@ export class MdGpuCard extends LitElement {
         </div>
         <md-sparkline .values=${this._history} max="100"></md-sparkline>
         <div class="footer">
-          <span>${s.fanRpm !== null ? `Fan ${s.fanRpm} RPM` : ''}</span>
-          <span>${s.activeApps > 0 ? `${s.activeApps} app${s.activeApps === 1 ? '' : 's'}` : 'No active apps'} ${s.throttling ? '· Throttling' : ''}</span>
+          <span>${s.activeApps > 0 ? `${s.activeApps} app${s.activeApps === 1 ? '' : 's'} active` : 'No active apps'}</span>
+          <span>${s.throttling ? 'Throttling' : 'Nominal'}</span>
         </div>
       </md-card>
     `;
