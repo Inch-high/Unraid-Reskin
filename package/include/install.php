@@ -7,8 +7,14 @@ const MODERNUI_CFG_DIR        = '/boot/config/plugins/unraid-modernui';
 const MODERNUI_BACKUP_DIR     = '/usr/local/emhttp/plugins/unraid-modernui/backups';
 // Discovered in Task 7 Step 0 — verify on Unraid 7.x box if changed in a future release.
 const MODERNUI_LAYOUT_FILE    = '/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout.php';
-const MODERNUI_STYLE_TAG      = '<link rel="stylesheet" href="/plugins/unraid-modernui/theme/dist/modernui.css">';
-const MODERNUI_SCRIPT_TAG     = '<script src="/plugins/unraid-modernui/theme/dist/loader.js"></script>';
+// Inline filemtime() expressions in the injected tags evaluate per-request
+// inside DefaultPageLayout.php (which is a PHP file), turning every cfg save
+// into a fresh URL and busting the browser's stale loader.js cache. Without
+// this, toggling shell=off via the user menu sticks even after the user
+// re-enables it from Settings, because the browser keeps using the cached
+// loader.js with the old dataset attributes baked in.
+const MODERNUI_STYLE_TAG      = '<link rel="stylesheet" href="/plugins/unraid-modernui/theme/dist/modernui.css?<?= @filemtime(\'/usr/local/emhttp/plugins/unraid-modernui/theme/dist/modernui.css\') ?>">';
+const MODERNUI_SCRIPT_TAG     = '<script src="/plugins/unraid-modernui/theme/dist/loader.js?<?= @filemtime(\'/usr/local/emhttp/plugins/unraid-modernui/theme/dist/loader.js\') ?>"></script>';
 
 const MODERNUI_MARK_BEGIN     = '# >>> unraid-modernui begin >>>';
 const MODERNUI_MARK_END       = '# <<< unraid-modernui end <<<';
