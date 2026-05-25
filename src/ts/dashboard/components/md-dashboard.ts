@@ -136,7 +136,8 @@ export class ModernuiDashboard extends LitElement {
     const hasStorage = arrays.length + caches.length + parities.length + disklocations.length > 0;
     const hasCompute = gpus.length + ipmis.length + (processors.length === 0 && memories.length > 0 ? memories.length : 0) > 0;
     const hasWorkloads = dockers.length + vms.length > 0;
-    const hasNetworkPower = interfaces.length + upses.length > 0;
+    const hasNetwork = interfaces.length > 0;
+    const hasPower = upses.length > 0;
     const hasSystem = identities.length + motherboards.length + shares.length + users.length > 0;
     const hasSidebarHero = processors.length > 0;
 
@@ -150,6 +151,11 @@ export class ModernuiDashboard extends LitElement {
                   .state=${processors[0]}
                   .memoryState=${memories[0] ?? null}
                 ></md-processor-card>
+              </md-section>
+            ` : ''}
+            ${hasNetwork ? html`
+              <md-section label="Network">
+                ${interfaces.map((s) => html`<md-interface-card .state=${s}></md-interface-card>`)}
               </md-section>
             ` : ''}
           </aside>
@@ -184,9 +190,8 @@ export class ModernuiDashboard extends LitElement {
                 ${vms.map((s) => html`<md-vms-card .state=${s}></md-vms-card>`)}
               </md-section>
             ` : ''}
-            ${hasNetworkPower ? html`
-              <md-section label="Network & Power">
-                ${interfaces.map((s) => html`<md-interface-card .state=${s}></md-interface-card>`)}
+            ${hasPower ? html`
+              <md-section label="Power">
                 ${upses.map((s) => html`<md-ups-card .state=${s}></md-ups-card>`)}
               </md-section>
             ` : ''}
