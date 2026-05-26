@@ -2,19 +2,19 @@
   "bottom": [
     {
       "name": "dynamix.system.temp",
-      "selector": ".dynamix-system-temp, [class*='system-temp']",
+      "selector": ".dynamix-system-temp, [class*='system-temp'], span:has(i.fa-thermometer)",
       "slot": "cpu-temp",
       "label": "CPU temp"
     },
     {
       "name": "dynamix.system.stats",
-      "selector": ".dynamix-system-stats-power, .power",
+      "selector": ".dynamix-system-stats-power, .power, span:has(i.fa-flash), span:has(i.fa-bolt)",
       "slot": "power",
       "label": "Power"
     },
     {
       "name": "dynamix.ups",
-      "selector": ".nut_status, .nut_battery",
+      "selector": ".nut_status, .nut_battery, [class*='nut'], span:has(i.fa-battery-three-quarters), span:has(i.fa-battery)",
       "slot": "ups",
       "label": "UPS"
     }
@@ -22,12 +22,12 @@
   "topbar": [
     {
       "name": "apcupsd",
-      "selector": "a.apcupsd-power-button, [data-apcupsd]",
+      "selector": "a.apcupsd-power-button, [data-apcupsd], a[href*='apcupsd']",
       "icon": "power"
     },
     {
       "name": "ipmi.tools",
-      "selector": "a.ipmi-tools-button, [data-ipmi-tools]"
+      "selector": "a.ipmi-tools-button, [data-ipmi-tools], a[href*='ipmi']"
     }
   ]
 }

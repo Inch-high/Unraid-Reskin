@@ -106,7 +106,11 @@ export class ShellSidebar extends LitElement {
       composed: true,
     })));
     window.addEventListener('popstate', this._onNav);
-    const bottomBar = document.querySelector('div.statusbar') || document.querySelector('footer');
+    // Unraid 7.3 emits <footer>.footer-left / .footer-right; pre-7.3 uses div.statusbar.
+    // Pick the half's parent so the observer catches both halves' mutations.
+    const bottomBar = document.querySelector('footer .footer-left, footer .footer-right')?.parentElement
+      || document.querySelector('footer')
+      || document.querySelector('div.statusbar');
     this._disposeMirror = startMirror({
       source: bottomBar,
       registry: REGISTRY.bottom,
@@ -145,7 +149,8 @@ export class ShellSidebar extends LitElement {
 
   private _readStockAnchors(): StockAnchor[] {
     // Walk Unraid's hidden top-nav anchors so we pick up plugin-added entries.
-    const nav = document.querySelector('nav.tabs');
+    // Unraid 7.3 renders <div id="menu"> with .nav-item > a[href]; pre-7.3 uses <nav class="tabs">.
+    const nav = document.querySelector('#menu, nav.tabs');
     if (!nav) return [];
     return Array.from(nav.querySelectorAll('a[href]')).map((a) => ({
       href: (a as HTMLAnchorElement).getAttribute('href') || '',
@@ -194,7 +199,10 @@ export class ShellSidebar extends LitElement {
     // Skip layout filler + the array-state row (rendered separately by _renderArrayState).
     const cls = it.node.className || '';
     if (/footer-spacer/.test(cls)) return '';
+    // .footer-left and .footer-right are rendered directly by _renderArrayState /
+    // _renderFooterRight; the mirror only surfaces non-Dynamix plugin children.
     if (/footer-left/.test(cls)) return '';
+    if (/footer-right/.test(cls)) return '';
     const text = it.node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80) || '';
     if (!text) return '';
     if (it.entry) {

@@ -49,7 +49,13 @@ export class ShellNotificationBell extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this._sync();
-    const source = document.getElementById('notifier') || document.querySelector('[data-notifications]') || document.body;
+    // Unraid 7.3 replaces #notifier with the <unraid-standalone-criticalnotifications-*>
+    // Vue web component; pre-7.3 uses #notifier. Fall back to [data-notifications]
+    // or body so we always observe *something*.
+    const source = document.getElementById('notifier')
+      || document.querySelector('unraid-standalone-criticalnotifications, [class*="CriticalNotifications"], [class*="criticalnotifications"]')
+      || document.querySelector('[data-notifications]')
+      || document.body;
     this._observer = new MutationObserver(() => this._sync());
     const isBodyFallback = source === document.body;
     this._observer.observe(source, {
@@ -80,19 +86,36 @@ export class ShellNotificationBell extends LitElement {
   };
 
   private _sync(): void {
-    // Unraid's #notifier has a span.unread (or .total) with a count + children
-    // describing each notification. Be liberal in what we accept.
-    const notifier = document.getElementById('notifier');
-    if (!notifier) {
+    // Pre-7.3: #notifier has span.unread/.total + per-item .notification children.
+    // Unraid 7.3: <unraid-standalone-criticalnotifications-*> Vue component (its
+    // internal badge markup lives in a shadow root we can't reach with
+    // document.querySelector). Best-effort: walk both shapes and read what we can.
+    const legacy = document.getElementById('notifier');
+    const vue = document.querySelector('unraid-standalone-criticalnotifications, [class*="CriticalNotifications"], [class*="criticalnotifications"]');
+    const source = legacy || vue;
+    if (!source) {
       this._unread = 0;
       this._items = [];
       return;
     }
-    const countNode = notifier.querySelector('.unread, .total, [data-count]');
-    const count = parseInt(countNode?.textContent?.trim() || '0', 10);
+
+    const countNode = source.querySelector('.unread, .total, [data-count]');
+    let count = parseInt(countNode?.textContent?.trim() || '', 10);
+    if (!isFinite(count) && vue) {
+      // Vue component: try a `data-count` attribute, then fall back to scanning
+      // the lightDOM text for a leading integer (the badge text in 7.3 is the
+      // numeric count). Returns 0 if we can't find anything sensible.
+      const attr = parseInt(vue.getAttribute('data-count') || vue.getAttribute('count') || '', 10);
+      if (isFinite(attr)) {
+        count = attr;
+      } else {
+        const m = (vue.textContent || '').match(/\b(\d{1,3})\b/);
+        count = m ? parseInt(m[1], 10) : 0;
+      }
+    }
     this._unread = isFinite(count) ? count : 0;
 
-    const items = Array.from(notifier.querySelectorAll('.notification, [data-notification]')).slice(0, 20);
+    const items = Array.from(source.querySelectorAll('.notification, [data-notification]')).slice(0, 20);
     // severity is parsed for future styling (Phase 5+); currently unused in render().
     this._items = items.map((el) => ({
       title: el.querySelector('.subject, .title')?.textContent?.trim() || el.textContent?.trim().slice(0, 80) || '',

@@ -81,22 +81,59 @@ export class ShellTopbar extends LitElement {
   private _disposeMirror: (() => void) | null = null;
   private _pluginRefs = new Map<Element, Ref<HTMLElement>>();
 
+  private _directScanInterval: number | null = null;
+
   connectedCallback(): void {
     super.connectedCallback();
     this._refresh();
     window.addEventListener('popstate', this._refresh);
-    const tilebar = document.querySelector('header.tilebar .tilebar-icons, header.tilebar .icons, header.tilebar');
+    // Unraid 7.3 emits #header with Vue web components; pre-7.3 uses <header class="tilebar">.
+    // Plugin buttons may sit in the Vue header's right region OR be injected
+    // outside the header chrome entirely (the chrome-hide CSS hides the originals
+    // either way, so we mirror by cloning).
+    const tilebar = document.querySelector(
+      '#header [class*="tile-header-right"], unraid-header-action-icons, header.tilebar .tilebar-icons, header.tilebar .icons, header.tilebar'
+    );
     this._disposeMirror = startMirror({
       source: tilebar,
       registry: REGISTRY.topbar,
-      onUpdate: (items) => { this._pluginItems = items; },
+      onUpdate: (items) => { this._pluginItems = this._mergeWithDirectScan(items); },
     });
+    // Doc-wide rescan for plugins whose icons mount outside any known header
+    // chrome (e.g. Vue slots in shadow roots we can't observe directly).
+    this._rescanDirect();
+    this._directScanInterval = window.setInterval(() => this._rescanDirect(), 5000);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('popstate', this._refresh);
     this._disposeMirror?.();
+    if (this._directScanInterval) clearInterval(this._directScanInterval);
+  }
+
+  private _rescanDirect(): void {
+    this._pluginItems = this._mergeWithDirectScan(this._pluginItems);
+  }
+
+  private _mergeWithDirectScan(
+    items: Array<{ entry: PluginEntry | null; node: Element }>,
+  ): Array<{ entry: PluginEntry | null; node: Element }> {
+    const seen = new Set(items.map((it) => it.node));
+    const merged = [...items];
+    for (const entry of REGISTRY.topbar) {
+      try {
+        const matches = document.querySelectorAll(entry.selector);
+        for (const node of matches) {
+          if (seen.has(node)) continue;
+          seen.add(node);
+          merged.push({ entry, node });
+        }
+      } catch {
+        // Invalid / unsupported selector — skip.
+      }
+    }
+    return merged;
   }
 
   private _refresh = (): void => {
