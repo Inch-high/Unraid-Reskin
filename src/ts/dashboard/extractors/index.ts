@@ -12,6 +12,7 @@ import { dockerExtractor } from './docker';
 import { vmsExtractor } from './vms';
 import { interfaceExtractor } from './interface';
 import { upsExtractor } from './ups';
+import { apcupsdExtractor } from './apcupsd';
 import { identityExtractor } from './identity';
 import { motherboardExtractor } from './motherboard';
 import { sharesExtractor } from './shares';
@@ -35,6 +36,9 @@ export const registry: Array<{ name: string; extractor: Extractor<WidgetState> }
   { name: 'docker', extractor: dockerExtractor as Extractor<WidgetState> },
   { name: 'vms', extractor: vmsExtractor as Extractor<WidgetState> },
   { name: 'interface', extractor: interfaceExtractor as Extractor<WidgetState> },
+  // apcupsd before NUT: its matcher requires both #ups_status and #ups_model
+  // spans, so it can't claim the NUT tile by accident.
+  { name: 'apcupsd', extractor: apcupsdExtractor as Extractor<WidgetState> },
   { name: 'ups', extractor: upsExtractor as Extractor<WidgetState> },
   { name: 'motherboard', extractor: motherboardExtractor as Extractor<WidgetState> },
   { name: 'shares', extractor: sharesExtractor as Extractor<WidgetState> },

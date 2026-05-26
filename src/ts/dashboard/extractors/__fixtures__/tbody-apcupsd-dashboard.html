@@ -1,0 +1,48 @@
+<!--
+Cold state of the apcupsd dashboard tile rendered by Unraid 7.x stock.
+Source: emhttp/plugins/dynamix/DashStats.page (the `if ($apcupsd)` block).
+Title and h3 text are POST-translation — Unraid's _() wrapper expanded.
+Live values arrive over the `ups_status` Nchan channel and replace the
+empty span contents below.
+-->
+<tbody title="Power Status">
+    <tr>
+    <td>
+        <span class='tile-header'>
+        <span class='tile-header-left'>
+            <i class='icon-ups f32'></i>
+            <div class='section'>
+                <h3 class='tile-header-main'>Power</h3>
+                <span class="flex flex-row flex-wrap items-center gap-4">
+                    <span class='switch head_gap' id='ups_status_'></span>
+                    <br>
+                    <span class="head_info">
+                        <span>
+                            <i class='ups fa fa-bar-chart'></i>UPS Model:
+                        </span>
+                        <span id='ups_model'></span>
+                    </span>
+                    <span class="switch">
+                        <span>Load:</span>
+                        <span class="head_gap" id='ups_loadpct_'></span>
+                    </span><br>
+                </span>
+            </div>
+        </span>
+        <span class='tile-header-right'>
+            <span class='tile-header-right-controls'>
+                <a href='/Dashboard/Settings/UPSsettings' title="Go to UPS settings">
+                    <i class='fa fa-fw fa-cog control'></i>
+                </a>
+            </span>
+        </span>
+        </span>
+    </td>
+    </tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-plug'></i>UPS status:</span><span id='ups_status'></span></td></tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-bars'></i>UPS Load:</span><span id='ups_loadpct'></span></td></tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-battery'></i>Battery charge:</span><span id='ups_bcharge'></span></td></tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-clock-o'></i>Runtime left:</span><span id='ups_timeleft'></span></td></tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-bolt'></i>Nominal power:</span><span id='ups_nompower'></span></td></tr>
+    <tr><td><span class='w36'><i class='ups fa fa-fw fa-ellipsis-h'></i>Output voltage:</span><span id='ups_outputv'></span></td></tr>
+</tbody>

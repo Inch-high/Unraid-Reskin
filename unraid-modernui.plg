@@ -7,8 +7,8 @@
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY tarball   "&name;-&version;.txz">
-<!ENTITY tarurl    "https://github.com/EXAMPLE/unraid-modernui/releases/download/v&version;/&tarball;">
-<!ENTITY pluginurl "https://raw.githubusercontent.com/EXAMPLE/unraid-modernui/main/&name;.plg">
+<!ENTITY tarurl    "https://github.com/Inch-high/Unraid-Reskin/releases/download/v&version;/&tarball;">
+<!ENTITY pluginurl "https://raw.githubusercontent.com/Inch-high/Unraid-Reskin/main/&name;.plg">
 ]>
 
 <PLUGIN
@@ -18,7 +18,7 @@
   launch="&launch;"
   pluginURL="&pluginurl;"
   min="7.0.0"
-  support="https://github.com/EXAMPLE/unraid-modernui/issues">
+  support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
 ###v0.3.0 (2026-05-25)

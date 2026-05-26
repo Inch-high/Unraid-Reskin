@@ -12,10 +12,25 @@ Two options:
 
 **2. Direct URL** — Unraid → Plugins → Install Plugin → paste:
 ```
-https://raw.githubusercontent.com/EXAMPLE/unraid-modernui/main/unraid-modernui.plg
+https://raw.githubusercontent.com/Inch-high/Unraid-Reskin/main/unraid-modernui.plg
 ```
 
 After install, open **Settings → Theme** to configure.
+
+## Optional plugin dependencies
+
+The base theme (tokens, components, shell) works on any Unraid 7.x install with no extra plugins. Some Modern Dashboard cards pull their data from third-party plugins — install only the ones you want to surface. If a plugin is absent the corresponding card is skipped, the rest of the dashboard renders normally.
+
+| Dashboard card | Required plugin (Community Apps name) |
+|---|---|
+| Disk Location | **Disk Location** |
+| GPU | **GPU Statistics** |
+| IPMI | **IPMI** (ipmi-tools) |
+| UPS | **NUT** (Network UPS Tools) or **APC UPS** (stock apcupsd, configured via Settings → UPS Settings) — either works |
+| Processor → CPU temperature line | **Dynamix System Temperature** |
+| Processor → Total Power line | A power-monitoring plugin (e.g. Dynamix System Statistics with RAPL/IPMI, or PerfMon) |
+
+Built-in cards (Array, Cache, Parity, Memory, Docker, VMs, Interface, Identity, Motherboard, Shares, Users) need nothing extra.
 
 ## Fallback to stock UI (any time, instantly)
 
