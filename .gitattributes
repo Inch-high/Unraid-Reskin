@@ -1,0 +1,42 @@
+# Unraid ships on a Linux box and the webGui parses some files with LF-only
+# heuristics (most notably Unraid's PageBuilder splits .page files on "\n---\n").
+# Force LF for every text file we ship into the .txz so a Windows working tree
+# with core.autocrlf=true can never poison the package.
+
+*               text=auto eol=lf
+
+# Project source (forced LF regardless of detection)
+*.page          text eol=lf
+*.php           text eol=lf
+*.cfg           text eol=lf
+*.plg           text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.scss          text eol=lf
+*.js            text eol=lf
+*.mjs           text eol=lf
+*.ts            text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.sh            text eol=lf
+*.svg           text eol=lf
+*.xml           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+Dockerfile      text eol=lf
+
+# Binary — never touch
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.txz           binary
+*.tar           binary
+*.gz            binary
+*.zip           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary
+*.eot           binary
