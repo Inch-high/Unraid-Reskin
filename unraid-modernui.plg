@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.3.0">
+<!ENTITY version   "0.4.0-beta">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">

@@ -29,7 +29,7 @@ $csrf_token = $var['csrf_token'] ?? '';
 ?>
 <div style="max-width:720px;padding:16px;">
   <h2 style="margin:0 0 8px 0;">Modern UI</h2>
-  <p style="margin:0 0 24px 0;color:#888;">A clean, flat theme for Unraid 7.x. Phase 1: design tokens only — full UI overhaul in later releases.</p>
+  <p style="margin:0 0 24px 0;color:#888;">A clean, flat theme for Unraid 7.x with a rebuilt shell (left sidebar + slim topbar) and Modern Dashboard.</p>
 
   <?php if ($disabled): ?>
   <div style="padding:12px 16px;border-left:4px solid #f59e0b;background:#fff7e6;margin-bottom:16px;">
