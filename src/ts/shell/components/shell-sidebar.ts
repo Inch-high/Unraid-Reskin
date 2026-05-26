@@ -121,17 +121,26 @@ export class ShellSidebar extends LitElement {
     // Unraid 7.3 renders <footer> asynchronously after our mount, so the first
     // render misses the status data. Fire a quick re-render at 250ms (after
     // Vue's typical first paint) so the rows appear immediately, then settle
-    // into the 5s polling cadence.
+    // into the 5s polling cadence. Skip ticks while the tab is hidden and fire
+    // a catch-up render on focus — borrowed from unraid/webgui#2641.
     window.setTimeout(() => this.requestUpdate(), 250);
-    this._arrayInterval = window.setInterval(() => this.requestUpdate(), 5000);
+    this._arrayInterval = window.setInterval(() => {
+      if (!document.hidden) this.requestUpdate();
+    }, 5000);
+    document.addEventListener('visibilitychange', this._onVisibility);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('popstate', this._onNav);
+    document.removeEventListener('visibilitychange', this._onVisibility);
     this._disposeMirror?.();
     if (this._arrayInterval) clearInterval(this._arrayInterval);
   }
+
+  private _onVisibility = (): void => {
+    if (!document.hidden) this.requestUpdate();
+  };
 
   private _onNav = (): void => {
     this._currentPath = window.location.pathname;

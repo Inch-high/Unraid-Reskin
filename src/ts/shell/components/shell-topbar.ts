@@ -100,17 +100,26 @@ export class ShellTopbar extends LitElement {
       onUpdate: (items) => { this._pluginItems = this._mergeWithDirectScan(items); },
     });
     // Doc-wide rescan for plugins whose icons mount outside any known header
-    // chrome (e.g. Vue slots in shadow roots we can't observe directly).
+    // chrome (e.g. Vue slots in shadow roots we can't observe directly). Pause
+    // while the tab is hidden and re-scan on focus — borrowed from unraid/webgui#2641.
     this._rescanDirect();
-    this._directScanInterval = window.setInterval(() => this._rescanDirect(), 5000);
+    this._directScanInterval = window.setInterval(() => {
+      if (!document.hidden) this._rescanDirect();
+    }, 5000);
+    document.addEventListener('visibilitychange', this._onVisibility);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('popstate', this._refresh);
+    document.removeEventListener('visibilitychange', this._onVisibility);
     this._disposeMirror?.();
     if (this._directScanInterval) clearInterval(this._directScanInterval);
   }
+
+  private _onVisibility = (): void => {
+    if (!document.hidden) this._rescanDirect();
+  };
 
   private _rescanDirect(): void {
     this._pluginItems = this._mergeWithDirectScan(this._pluginItems);
