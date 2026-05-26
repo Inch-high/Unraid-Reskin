@@ -2,7 +2,7 @@
 
 A clean, flat, responsive theme for Unraid 7.x. Inspired by TrueNAS SCALE with refined Unraid orange accent.
 
-> **Phase 1 status:** Design-token-only re-tone (dark/light body color, accent, focus rings). Full UI overhaul — sidebar, restyled components, mobile responsive — lands in later phases.
+> **v0.4.0-beta status:** Phase 4 shell (left sidebar + slim topbar) shipping alongside the Phase 3 Modern Dashboard. Plugin proxy targets the Unraid 7.2 DOM; the v0.4.1 follow-up re-sources it for Unraid 7.3 Vue chrome.
 
 ## Install
 

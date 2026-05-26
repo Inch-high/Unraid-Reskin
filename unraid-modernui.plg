@@ -21,6 +21,20 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.4.0-beta (2026-05-26)
+- Phase 4: rebuilt shell — left sidebar + slim topbar replace Unraid's top nav and bottom status bar
+- Sidebar: curated nav with active-page highlight, server-name header, collapsible (preference persists across reloads)
+- Topbar: page breadcrumb (collapses at &lt;640px), notification bell wired to `#notifier`, user menu with About / Stock UI / Logout
+- Plugin proxy: tilebar plugin buttons mirror into the topbar, bottom-bar plugin items mirror into the sidebar status footer — no plugin loses its DOM hooks
+- Responsive: drawer + breadcrumb collapse below 640px for tablet/phone use
+- New Settings → Theme → Shell layout toggle (Modern / Stock) — independent of the Dashboard and master Disable, so you can run modern dashboard with stock chrome (or vice versa)
+- UPS card: now also reads stock apcupsd dashboards (was NUT-only) — supports either Settings → UPS Settings or the NUT plugin
+- Fix: Settings → Theme Save now merges with the existing cfg instead of overwriting fields that weren't in the form — partial-POST data loss is gone
+- Fix: install-time cache-bust on `loader.js` and `modernui.css` (filemtime query string) so theme upgrades take effect immediately
+- Fix: Unraid 7.3 Vue chrome (`#header`, `#menu`) is hidden alongside the legacy `header.tilebar` / `nav.tabs` / `div.statusbar`
+- Polish: Material Design icons in nav rows, UNRAID gradient wordmark, official Docker brand SVG, status orbs colored by health
+- Known limitation: plugin mirror sources are tuned for Unraid 7.2 DOM; v0.4.1 re-sources them for the Unraid 7.3 Vue layout
+
 ###v0.3.0 (2026-05-25)
 - Phase 3: complete /Dashboard rebuild — hero metrics strip (Array · Cache · Workloads · Power), sticky Compute + Network sidebar, grouped Storage / Devices / Workloads / Power / System sections
 - Full-width Disk Location card with landscape drive-bay grid (active / spun-down / empty states)
