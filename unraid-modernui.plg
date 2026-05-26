@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.4.0-beta">
+<!ENTITY version   "0.4.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,11 +21,12 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
-###v0.4.0-beta (2026-05-26)
+###v0.4.0 (2026-05-26)
 - Phase 4: rebuilt shell — left sidebar + slim topbar replace Unraid's top nav and bottom status bar
 - Sidebar: curated nav with active-page highlight, server-name header, collapsible (preference persists across reloads)
-- Topbar: page breadcrumb (collapses at &lt;640px), notification bell wired to `#notifier`, user menu with About / Stock UI / Logout
+- Topbar: page breadcrumb (collapses at &lt;640px), notification bell, user menu with About / Stock UI / Logout
 - Plugin proxy: tilebar plugin buttons mirror into the topbar, bottom-bar plugin items mirror into the sidebar status footer — no plugin loses its DOM hooks
+- Phase 4.1 — Unraid 7.3 Vue chrome support: sidebar status footer extracts the new `&lt;footer&gt;.footer-left/.footer-right` shape (no more generic "Plugin" rows), topbar mirrors `#header .tile-header-right` plus a doc-wide rescan so plugin icons survive even when Vue mounts them outside the header, bell observes `&lt;unraid-standalone-criticalnotifications&gt;`, and the curated nav merge walks the new `#menu` element so plugin-added entries appear
 - Responsive: drawer + breadcrumb collapse below 640px for tablet/phone use
 - New Settings → Theme → Shell layout toggle (Modern / Stock) — independent of the Dashboard and master Disable, so you can run modern dashboard with stock chrome (or vice versa)
 - UPS card: now also reads stock apcupsd dashboards (was NUT-only) — supports either Settings → UPS Settings or the NUT plugin
@@ -33,7 +34,7 @@
 - Fix: install-time cache-bust on `loader.js` and `modernui.css` (filemtime query string) so theme upgrades take effect immediately
 - Fix: Unraid 7.3 Vue chrome (`#header`, `#menu`) is hidden alongside the legacy `header.tilebar` / `nav.tabs` / `div.statusbar`
 - Polish: Material Design icons in nav rows, UNRAID gradient wordmark, official Docker brand SVG, status orbs colored by health
-- Known limitation: plugin mirror sources are tuned for Unraid 7.2 DOM; v0.4.1 re-sources them for the Unraid 7.3 Vue layout
+- Known limitation: plugin-injected buttons mirrored into the topbar lose JS-attached click handlers (cloneNode doesn't carry listeners). Buttons that navigate via `&lt;a href&gt;` (apcupsd) work; others fall back to opening the original via the Stock UI escape hatch.
 
 ###v0.3.0 (2026-05-25)
 - Phase 3: complete /Dashboard rebuild — hero metrics strip (Array · Cache · Workloads · Power), sticky Compute + Network sidebar, grouped Storage / Devices / Workloads / Power / System sections
