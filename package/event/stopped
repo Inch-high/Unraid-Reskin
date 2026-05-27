@@ -1,2 +1,0 @@
-#!/bin/bash
-php /usr/local/emhttp/plugins/unraid-modernui/include/uninstall.php

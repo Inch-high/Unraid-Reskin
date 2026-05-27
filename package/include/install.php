@@ -37,6 +37,19 @@ function modernui_backup_file(string $path): void {
     file_put_contents(MODERNUI_BACKUP_DIR . "/{$basename}.current.sha", $sha);
 }
 
+// True if the layout file is in a "presumed-stock" state — no injected
+// marker block. Used to prevent modernui_install() from re-pointing the
+// SHA backup at our own output when install.php runs a second time
+// (e.g. via dev-mirror after first .plg install). If a previous run
+// already advanced the pointer, the existing pointer file is the only
+// real stock backup we have — leave it alone.
+function modernui_layout_appears_clean(string $path): bool {
+    if (!is_file($path)) return false;
+    $contents = file_get_contents($path);
+    return $contents !== false
+        && strpos($contents, MODERNUI_HTML_MARK_BEGIN) === false;
+}
+
 function modernui_strip_block(string $contents): string {
     $begin = preg_quote(MODERNUI_MARK_BEGIN, '/');
     $end   = preg_quote(MODERNUI_MARK_END, '/');
@@ -138,7 +151,16 @@ function modernui_replace_file(string $target, string $overlaySrc): bool {
         return false;
     }
     if (is_file($target)) {
-        modernui_backup_file($target);
+        // Skip the backup step if the target is already byte-identical to our
+        // overlay — otherwise we'd snapshot our own overlay as the "stock"
+        // backup, and a later uninstall would "restore" the file to our
+        // overlay (with no JS/CSS to back it) instead of Unraid's original.
+        // The existing pointer (if any) is the only real stock backup we have.
+        $overlay_sha = modernui_hash_file($overlaySrc);
+        $target_sha  = modernui_hash_file($target);
+        if ($target_sha !== $overlay_sha) {
+            modernui_backup_file($target);
+        }
     }
     $dir = dirname($target);
     if (!is_dir($dir)) {
@@ -162,7 +184,13 @@ function modernui_replace_file(string $target, string $overlaySrc): bool {
 function modernui_install(): void {
     if (!is_dir(MODERNUI_CFG_DIR)) mkdir(MODERNUI_CFG_DIR, 0755, true);
 
-    modernui_backup_file(MODERNUI_LAYOUT_FILE);
+    // Only refresh the layout backup when the file looks unmodified.
+    // Re-running install.php on an already-injected file would otherwise
+    // snapshot our own output as the "stock" backup and break uninstall's
+    // ability to restore Unraid's real original.
+    if (modernui_layout_appears_clean(MODERNUI_LAYOUT_FILE)) {
+        modernui_backup_file(MODERNUI_LAYOUT_FILE);
+    }
     modernui_strip_dynamix_cfg();
     modernui_inject_script_tag();
 

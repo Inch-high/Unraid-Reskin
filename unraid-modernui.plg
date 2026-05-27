@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.3">
+<!ENTITY version   "0.5.4">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,13 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.4 (2026-05-27)
+- Fix (install): SHA backup pointer no longer tracks our own output. The previous behavior of `modernui_backup_file` unconditionally rewrote `backups/<file>.current.sha` to the live file's SHA, so a second install run on an already-injected layout (or an already-overlaid docker page) snapshotted our own output as the "stock" backup. A later uninstall would then "restore" the file to our injected/overlaid version instead of Unraid's real original — leaving orphan `<link>`/`<script>` tags in the layout and a non-functional `<modernui-docker-page>` mount point on /Docker until the next reboot. `modernui_install()` now only refreshes the layout backup when the file is presumed-clean (no marker block present), and `modernui_replace_file()` only backs up the target when it doesn't already match our overlay byte-for-byte.
+- Fix (lifecycle): removed `event/stopped`, which ran `uninstall.php` on every array stop. Each time the user clicked Stop on the array — or any clean shutdown that hit cmdStop — the chrome stripped out of the live webGui session, snapping the page back to stock UI mid-action. Uninstall now only happens at plugin remove time, as intended.
+- Fix (lifecycle): removed `event/started`, which ran `install.php` on every array start. Redundant with the .plg's install method (runs at boot) and was the most common trigger of the backup-pointer corruption fixed above. The disabled-flag and settings.cfg are still re-read on every boot because the .plg install method runs install.php there.
+- Note (upgrade): if you've been on v0.5.3 or earlier, your existing backup pointer may already track an injected/overlaid version. For the cleanest reset, reboot once before installing v0.5.4 — Unraid will restore stock files from its boot image, and v0.5.4 will then capture truly stock backups. Without a reboot, the upgrade is still safe (uninstall's strip-only fallback handles the layout correctly), but a future uninstall could leave /Docker as our overlay until you reboot.
+- Test: new PHP test `install-backup-guard.test.php` covers `modernui_layout_appears_clean()` and asserts the SHA-compare guard remains in `modernui_replace_file()`.
+
 ###v0.5.3 (2026-05-27)
 - Fix (install): .plg no longer fails Unraid's XML validation. Older changelog entries contained raw ampersands (e.g. "Processor & Memory") and raw HTML-looking literals, which the XML parser rejected with `xmlParseEntityRef: no name` — `plugin install` aborted before any FILE block ran. The CHANGES block is now wrapped in a CDATA section so changelog prose is no longer re-parsed as XML (matches the pattern community.applications.plg and appdata.backup.plg use). Package contents are otherwise identical to v0.5.2.
 

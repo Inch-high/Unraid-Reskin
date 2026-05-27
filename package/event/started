@@ -1,3 +1,0 @@
-#!/bin/bash
-# Unraid plugin lifecycle: fired when the plugin starts.
-php /usr/local/emhttp/plugins/unraid-modernui/include/install.php
