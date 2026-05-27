@@ -9,7 +9,7 @@ export class MdMemoryCard extends LitElement {
     :host { display: block; }
     .pies {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 16px;
       padding: 4px 0;
     }
@@ -52,6 +52,13 @@ export class MdMemoryCard extends LitElement {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .totals {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .totals .used { color: var(--text-primary); font-weight: 500; }
   `;
 
   @property({ type: Object }) state: MemoryState = { kind: 'system', pies: [] };
@@ -63,12 +70,16 @@ export class MdMemoryCard extends LitElement {
           ${this.state.pies.map((p) => {
             const deg = Math.min(360, (p.percentUsed / 100) * 360);
             const gradient = `conic-gradient(var(--mui-accent) 0 ${deg}deg, var(--bg-elevated) ${deg}deg 360deg)`;
+            const showTotals = p.used || p.total;
             return html`
               <div class="pie-wrap" title="${p.detail}">
                 <div class="pie" style="background: ${gradient}">
                   <span class="pct">${p.percentUsed.toFixed(0)}%</span>
                 </div>
                 <div class="label">${p.label}</div>
+                ${showTotals
+                  ? html`<div class="totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
+                  : ''}
               </div>
             `;
           })}

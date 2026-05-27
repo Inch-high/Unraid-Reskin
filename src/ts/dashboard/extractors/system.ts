@@ -31,6 +31,21 @@ function parsePercent(pieDiv: Element, index: number): number {
   return m ? Number(m[1]) : 0;
 }
 
+function parseUsed(pieDiv: Element, index: number): string {
+  // Live updates populate <span class='varN'> with the human used amount, e.g.
+  // "34.1 GiB". Cold fixtures leave this empty.
+  const span = pieDiv.querySelector(`span.var${index}`);
+  return (span?.textContent ?? '').trim();
+}
+
+function parseTotalFromDetail(detail: string): string {
+  // detail looks like "Percent of total used memory (126 GiB)" or
+  // "Percent usage of boot device (60 GiB)". Pull the last parenthesised
+  // group with a size unit.
+  const m = detail.match(/\(([^()]*\b(?:[KMGT]i?B|B)\b[^()]*)\)\s*$/);
+  return m ? m[1].trim() : '';
+}
+
 export const systemExtractor: Extractor<MemoryState> = {
   match: ({ source }) => {
     if (source.querySelector('.tile-system-memory-charts')) return true;
@@ -55,8 +70,10 @@ export const systemExtractor: Extractor<MemoryState> = {
       const idMatch = (pie.id || '').match(/sys(\d+)/);
       const index = idMatch ? Number(idMatch[1]) : pies.length;
       const percentUsed = parsePercent(pie, index);
+      const used = parseUsed(pie, index);
+      const total = parseTotalFromDetail(detail);
 
-      pies.push({ label, percentUsed, detail });
+      pies.push({ label, percentUsed, detail, used, total });
     }
     return {
       kind: 'system',

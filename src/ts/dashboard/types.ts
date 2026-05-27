@@ -115,6 +115,8 @@ export interface MemorySlice {
   label: string;            // "RAM usage", "Boot device", "Log filesystem", "Docker vdisk"
   percentUsed: number;
   detail: string;           // tooltip text "Percent of total used memory (62.6 GiB)"
+  used: string;             // human "34.1 GiB" - read from span.varN sibling of span.sysN
+  total: string;            // human "126 GiB" - parsed from detail's parenthesised tail
 }
 
 export interface MemoryState {

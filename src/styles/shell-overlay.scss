@@ -18,8 +18,14 @@ body.modernui-shell-active {
   // Hide Unraid's chrome — both legacy (tilebar/nav.tabs from 7.0-7.2) and
   // modern (#header/#menu from Unraid 7.3's Vue-based UI). Keep the elements
   // in DOM so anything we mirror (server name, plugin slot) stays polled.
+  //
+  // `nav.tabs` is scoped to direct children of <body> because Unraid reuses
+  // the same class for in-page sub-tab navigation — e.g. /Plugins'
+  // "Installed / Install Plugin" tabs sit inside #displaybox and were getting
+  // clobbered by a blanket nav.tabs rule, which silently removed the
+  // "Install Plugin" option from the new UI.
   header.tilebar,
-  nav.tabs,
+  body > nav.tabs,
   #header,
   #menu {
     display: none !important;

@@ -135,6 +135,13 @@ export class MdProcessorCard extends LitElement {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .pie-totals {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .pie-totals .used { color: var(--text-primary); font-weight: 500; }
   `;
 
   @property({ type: Object }) state: ProcessorState = {
@@ -166,11 +173,18 @@ export class MdProcessorCard extends LitElement {
     const s = this.state;
     const m = this.memoryState;
     const ramPie = m?.pies.find((p) => /ram/i.test(p.label));
+    // RAM in the meta line: prefer "used / total" when we have both readings,
+    // fall back to percent (during initial cold-state render before live values land).
+    const ramMeta = ramPie
+      ? (ramPie.used && ramPie.total
+          ? `RAM ${ramPie.used} / ${ramPie.total}`
+          : `RAM ${Math.round(ramPie.percentUsed)}%`)
+      : null;
     const meta = [
       s.cores > 0 ? `${s.cores} cores` : null,
       s.temperatureC !== null ? `${s.temperatureC} °C` : null,
       s.totalPowerW !== null ? `${s.totalPowerW} W` : null,
-      ramPie ? `RAM ${Math.round(ramPie.percentUsed)}%` : null,
+      ramMeta,
     ]
       .filter(Boolean)
       .join(' · ');
@@ -204,12 +218,16 @@ export class MdProcessorCard extends LitElement {
               ${m.pies.map((p) => {
                 const deg = Math.min(360, (p.percentUsed / 100) * 360);
                 const gradient = `conic-gradient(var(--mui-accent) 0 ${deg}deg, var(--bg-elevated) ${deg}deg 360deg)`;
+                const showTotals = p.used || p.total;
                 return html`
                   <div class="pie-wrap" title="${p.detail}">
                     <div class="pie" style="background: ${gradient}">
                       <span class="pct">${p.percentUsed.toFixed(0)}%</span>
                     </div>
                     <div class="pie-label">${p.label}</div>
+                    ${showTotals
+                      ? html`<div class="pie-totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
+                      : ''}
                   </div>
                 `;
               })}
