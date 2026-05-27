@@ -29,6 +29,12 @@ export class MdDockerRow extends LitElement {
     .row:hover { background: var(--bg-elevated); }
     .row[data-selected] { background: var(--mui-accent-muted); }
     .row[data-stopped] .name { color: var(--text-secondary); }
+    /* 3px accent down the left edge when an update is available.
+       Inset box-shadow (not border-left) so grid alignment stays put — a real
+       border would shift every column 3px right on update rows only. */
+    .row[data-update] {
+      box-shadow: inset 3px 0 0 var(--mui-accent);
+    }
 
     input[type="checkbox"] {
       appearance: none;
@@ -267,7 +273,7 @@ export class MdDockerRow extends LitElement {
                    : 'dot dot-muted';
 
     return html`
-      <div class="row" ?data-selected=${this.selected} ?data-stopped=${c.state === 'stopped'}>
+      <div class="row" ?data-selected=${this.selected} ?data-stopped=${c.state === 'stopped'} ?data-update=${c.updateAvailable}>
         <input type="checkbox" .checked=${this.selected} @change=${() => this._toggleSelect()}>
 
         <span class="icon">
