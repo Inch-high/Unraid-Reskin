@@ -2,6 +2,19 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { icon } from '../icons';
 
+interface NotifyEntry {
+  file: string;
+  show: number;
+  timestamp: string;
+  event: string;
+  subject: string;
+  description: string;
+  importance: string;
+  link: string;
+}
+
+const POLL_MS = 10000;
+
 @customElement('shell-notification-bell')
 export class ShellNotificationBell extends LitElement {
   static styles = css`
@@ -28,49 +41,73 @@ export class ShellNotificationBell extends LitElement {
       border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      width: 320px; max-height: 400px; overflow-y: auto;
-      padding: 8px; display: none; z-index: 100;
+      width: 360px; max-height: 480px; overflow-y: auto;
+      padding: 0;
+      display: none; z-index: 100;
     }
     :host([open]) .popover { display: block; }
     .item {
-      padding: 8px; font-size: 12px; color: var(--text-primary);
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 12px;
+      position: relative;
     }
-    .item:last-child { border-bottom: 0; }
-    .empty { padding: 16px; color: var(--text-secondary); font-size: 12px; text-align: center; }
+    .item:last-of-type { border-bottom: 0; }
+    .item:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
+    .item .subject { font-weight: 500; padding-right: 22px; }
+    .item .desc    { color: var(--text-secondary); font-size: 11px; }
+    .item .meta    { color: var(--text-secondary); font-size: 10px; opacity: 0.7; }
+    .item.alert   .subject { color: #ef4444; }
+    .item.warning .subject { color: #f59e0b; }
+    .dismiss {
+      position: absolute; top: 8px; right: 8px;
+      width: 18px; height: 18px;
+      background: transparent; border: 0; color: var(--text-secondary);
+      cursor: pointer; border-radius: 4px; font-size: 11px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dismiss:hover { background: var(--bg-elev-2, rgba(255,255,255,0.08)); color: var(--text-primary); }
+    .empty { padding: 24px 16px; color: var(--text-secondary); font-size: 12px; text-align: center; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+      font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .archive-all {
+      background: transparent; border: 0; color: var(--accent, #ff8c2f);
+      cursor: pointer; font: inherit; padding: 0;
+    }
+    .archive-all:hover { text-decoration: underline; }
   `;
 
   @state() private _open = false;
-  @state() private _unread = 0;
-  @state() private _items: Array<{ title: string; severity?: string }> = [];
-
-  private _observer: MutationObserver | null = null;
+  @state() private _items: NotifyEntry[] = [];
+  private _pollInterval: number | null = null;
 
   connectedCallback(): void {
     super.connectedCallback();
-    this._sync();
-    // Unraid 7.3 replaces #notifier with the <unraid-standalone-criticalnotifications-*>
-    // Vue web component; pre-7.3 uses #notifier. Fall back to [data-notifications]
-    // or body so we always observe *something*.
-    const source = document.getElementById('notifier')
-      || document.querySelector('unraid-standalone-criticalnotifications, [class*="CriticalNotifications"], [class*="criticalnotifications"]')
-      || document.querySelector('[data-notifications]')
-      || document.body;
-    this._observer = new MutationObserver(() => this._sync());
-    const isBodyFallback = source === document.body;
-    this._observer.observe(source, {
-      childList: true,
-      subtree: !isBodyFallback,
-      characterData: !isBodyFallback,
-    });
+    void this._sync();
+    this._pollInterval = window.setInterval(() => {
+      if (!document.hidden) void this._sync();
+    }, POLL_MS);
+    document.addEventListener('visibilitychange', this._onVisibility);
     document.addEventListener('click', this._onOutside);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    this._observer?.disconnect();
+    if (this._pollInterval) clearInterval(this._pollInterval);
+    document.removeEventListener('visibilitychange', this._onVisibility);
     document.removeEventListener('click', this._onOutside);
   }
+
+  private _onVisibility = (): void => {
+    if (!document.hidden) void this._sync();
+  };
 
   private _onOutside = (e: MouseEvent): void => {
     if (!this.contains(e.target as Node) && !this.shadowRoot?.contains(e.target as Node)) {
@@ -83,54 +120,110 @@ export class ShellNotificationBell extends LitElement {
     e.stopPropagation();
     this._open = !this._open;
     this.toggleAttribute('open', this._open);
+    if (this._open) void this._sync();
   };
 
-  private _sync(): void {
-    // Pre-7.3: #notifier has span.unread/.total + per-item .notification children.
-    // Unraid 7.3: <unraid-standalone-criticalnotifications-*> Vue component (its
-    // internal badge markup lives in a shadow root we can't reach with
-    // document.querySelector). Best-effort: walk both shapes and read what we can.
-    const legacy = document.getElementById('notifier');
-    const vue = document.querySelector('unraid-standalone-criticalnotifications, [class*="CriticalNotifications"], [class*="criticalnotifications"]');
-    const source = legacy || vue;
-    if (!source) {
-      this._unread = 0;
-      this._items = [];
-      return;
-    }
-
-    const countNode = source.querySelector('.unread, .total, [data-count]');
-    let count = parseInt(countNode?.textContent?.trim() || '', 10);
-    if (!isFinite(count) && vue) {
-      // Vue component: try a `data-count` attribute, then fall back to scanning
-      // the lightDOM text for a leading integer (the badge text in 7.3 is the
-      // numeric count). Returns 0 if we can't find anything sensible.
-      const attr = parseInt(vue.getAttribute('data-count') || vue.getAttribute('count') || '', 10);
-      if (isFinite(attr)) {
-        count = attr;
-      } else {
-        const m = (vue.textContent || '').match(/\b(\d{1,3})\b/);
-        count = m ? parseInt(m[1], 10) : 0;
+  /**
+   * Unraid 7.3 dropped the legacy #notifier element entirely — the Vue
+   * components only render markup when a notification is being shown as a
+   * toast. The persistent unread list lives at /tmp/notifications/unread/
+   * and is reachable via Notify.php POST cmd=get (returns JSON array).
+   */
+  private async _sync(): Promise<void> {
+    const csrf = (window as { csrf_token?: string }).csrf_token;
+    if (!csrf) return; // can't POST without it
+    try {
+      const body = new URLSearchParams();
+      body.set('cmd', 'get');
+      body.set('csrf_token', csrf);
+      const r = await fetch('/webGui/include/Notify.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      if (!r.ok) return;
+      const text = (await r.text()).trim();
+      if (!text || text === '[]') {
+        this._items = [];
+        return;
       }
+      const arr = JSON.parse(text) as NotifyEntry[];
+      // Sort newest first by parsing the dd-mm-yyyy HH:MM timestamp.
+      arr.sort((a, b) => this._tsKey(b.timestamp) - this._tsKey(a.timestamp));
+      this._items = arr;
+    } catch {
+      // Network / parse failure — leave existing state alone so a transient
+      // blip doesn't briefly hide a known-unread badge.
     }
-    this._unread = isFinite(count) ? count : 0;
-
-    const items = Array.from(source.querySelectorAll('.notification, [data-notification]')).slice(0, 20);
-    // severity is parsed for future styling (Phase 5+); currently unused in render().
-    this._items = items.map((el) => ({
-      title: el.querySelector('.subject, .title')?.textContent?.trim() || el.textContent?.trim().slice(0, 80) || '',
-      severity: (el.getAttribute('data-severity') || 'info') as string,
-    }));
   }
 
+  private _tsKey(ts: string): number {
+    // Unraid emits "dd-mm-yyyy HH:MM" — convert to YYYYMMDDHHMM for sortable ordering.
+    const m = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+    if (!m) return 0;
+    return parseInt(`${m[3]}${m[2]}${m[1]}${m[4]}${m[5]}`, 10);
+  }
+
+  private async _archive(entry: NotifyEntry, e: Event): Promise<void> {
+    e.preventDefault();
+    e.stopPropagation();
+    const csrf = (window as { csrf_token?: string }).csrf_token;
+    if (!csrf) return;
+    // Optimistic: drop from list immediately so the UI feels snappy.
+    this._items = this._items.filter((it) => it.file !== entry.file);
+    const body = new URLSearchParams();
+    body.set('cmd', 'archive');
+    body.set('file', entry.file);
+    body.set('csrf_token', csrf);
+    try {
+      await fetch('/webGui/include/Notify.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+    } catch {
+      // If the archive failed the next poll will re-add the entry.
+    }
+  }
+
+  private async _archiveAll(e: Event): Promise<void> {
+    e.preventDefault();
+    e.stopPropagation();
+    const snapshot = [...this._items];
+    this._items = [];
+    for (const item of snapshot) {
+      await this._archive(item, new Event('archive-all'));
+    }
+  }
+
+  private _renderItem = (entry: NotifyEntry) => {
+    const importance = (entry.importance || 'normal').toLowerCase();
+    const inner = html`
+      <div class="subject">${entry.subject || entry.event}</div>
+      ${entry.description ? html`<div class="desc">${entry.description}</div>` : ''}
+      <div class="meta">${entry.event} · ${entry.timestamp}</div>
+      <button class="dismiss" type="button" title="Archive" @click=${(e: Event) => this._archive(entry, e)}>${icon('close', 11)}</button>
+    `;
+    return entry.link
+      ? html`<a class="item ${importance}" href=${entry.link}>${inner}</a>`
+      : html`<div class="item ${importance}">${inner}</div>`;
+  };
+
   render() {
+    const count = this._items.length;
     return html`
       <button class="trigger" type="button" @click=${this._toggle} aria-label="Notifications" title="Notifications">${icon('bell', 18)}</button>
-      ${this._unread > 0 ? html`<span class="badge">${this._unread > 99 ? '99+' : this._unread}</span>` : ''}
+      ${count > 0 ? html`<span class="badge">${count > 99 ? '99+' : count}</span>` : ''}
       <div class="popover" role="menu">
-        ${this._items.length === 0
+        ${count === 0
           ? html`<div class="empty">No notifications</div>`
-          : this._items.map((it) => html`<div class="item">${it.title}</div>`)}
+          : html`
+              <div class="header">
+                <span>${count} unread</span>
+                <button class="archive-all" type="button" @click=${(e: Event) => this._archiveAll(e)}>Archive all</button>
+              </div>
+              ${this._items.map((it) => this._renderItem(it))}
+            `}
       </div>
     `;
   }

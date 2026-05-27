@@ -23,6 +23,7 @@ const PATHS: Record<string, string> = {
   flash: 'M7 2v11h3v9l7-12h-4l4-8H7z',
   battery: 'M16.67 4H15V2H9v2H7.33A1.33 1.33 0 006 5.33v15.34c0 .73.6 1.33 1.33 1.33h9.34a1.33 1.33 0 001.33-1.33V5.33C18 4.6 17.4 4 16.67 4z',
   harddisk: 'M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H6m0 2h12v8h-2v2h-2v-2h-4v2H8v-2H6V4z',
+  close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
 };
 
 export function icon(name: string, size = 18): TemplateResult | '' {
