@@ -86,24 +86,39 @@ function parseOverallLoadPct(tbody: HTMLTableSectionElement): number | null {
 
 function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
   const out: CoreLoad[] = [];
-  // Per-core rows have class 'cpu_open' (and also 'cpu_close' in some templates).
+  // First pass: discover the SMT sibling threshold. Linux numbers logical CPUs
+  // such that on an N-core / 2N-thread system, indices 0..N-1 are the primary
+  // threads and N..2N-1 are the SMT siblings. We figure out N by inspecting
+  // each <tr.cpu_open> row's TWO load spans — the larger of the two indices
+  // is the sibling.
   const rows = Array.from(tbody.querySelectorAll('tr.cpu_open, tr.cpu_close'));
+  let smtSiblingMin = Number.POSITIVE_INFINITY;
   for (const row of rows) {
-    const labelSpan = row.querySelector('span.w26');
-    const threadLabel = (labelSpan?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const spanIndices: number[] = [];
+    for (const sp of row.querySelectorAll('span[class*="cpu"].load')) {
+      for (const cls of (sp.className || '').split(/\s+/)) {
+        const im = cls.match(/^cpu(\d+)$/);
+        if (im) { spanIndices.push(Number(im[1])); break; }
+      }
+    }
+    if (spanIndices.length >= 2) {
+      const max = Math.max(...spanIndices);
+      smtSiblingMin = Math.min(smtSiblingMin, max);
+    }
+  }
+  // If we never found a row with 2+ threads, there's no SMT — label everything "CPU N".
+  const hasSmt = Number.isFinite(smtSiblingMin);
 
-    // Each thread is a span with a class like 'cpu0', 'cpu16' (plus 'load' / 'resize').
-    const loadSpans = Array.from(
-      row.querySelectorAll('span[class*="cpu"].load'),
-    );
-    for (const sp of loadSpans) {
+  // Second pass: emit a CoreLoad per logical CPU, labelled per its actual
+  // index. The pair label from Unraid's tile ("CPU 0 - HT 16") is dropped —
+  // it gave both bars in the rendered 2-column row the same name, which made
+  // it impossible to tell which load belonged to which thread.
+  for (const row of rows) {
+    for (const sp of row.querySelectorAll('span[class*="cpu"].load')) {
       let index = -1;
       for (const cls of (sp.className || '').split(/\s+/)) {
         const im = cls.match(/^cpu(\d+)$/);
-        if (im) {
-          index = Number(im[1]);
-          break;
-        }
+        if (im) { index = Number(im[1]); break; }
       }
       if (index < 0) continue;
       // Prefer the live fill width (#cpuN style) over the text — same reason as overall.
@@ -115,6 +130,9 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
         const m = sp.textContent?.match(/(\d+)\s*%/);
         loadPct = m ? Number(m[1]) : 0;
       }
+      const threadLabel = hasSmt && index >= smtSiblingMin
+        ? `HT ${index}`
+        : `CPU ${index}`;
       out.push({ index, threadLabel, loadPct });
     }
   }

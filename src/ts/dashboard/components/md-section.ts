@@ -18,11 +18,14 @@ export class MdSection extends LitElement {
     }
     .grid {
       display: grid;
-      /* Larger minimum so wide layouts (≥1900px frame) settle into 3 evenly
-         spread columns — the typical Compute / Network & Power / System
-         sections fit naturally with no empty trailing cells, and on narrow
-         viewports it gracefully drops to 2 then 1 column. */
-      grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+      /* The min(560px, 100%) idiom: when the section's container (the
+         dashboard's left sidebar at ~458px wide) is narrower than 560px,
+         the per-cell minimum drops to 100% so the grid stays one column
+         instead of forcing a 560px-wide cell that overflows by ~100px and
+         covers the right column's content (the visible "clipping" bug).
+         At ≥560px containers behavior is unchanged — 2 or 3 columns based
+         on width with a 560px target. */
+      grid-template-columns: repeat(auto-fill, minmax(min(560px, 100%), 1fr));
       gap: 16px;
     }
     ::slotted([data-wide]) {
