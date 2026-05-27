@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x with a rebuilt /Dashboard (hero strip, sticky sidebar) plus a left-sidebar + topbar shell. v0.4.1: notification bell wired to Notify.php, design-token collision fixes, visibility-aware polling.",
+  "description": "Clean, flat, responsive theme for Unraid 7.x with a rebuilt /Dashboard (hero strip, sticky sidebar) plus a left-sidebar + topbar shell. v0.4.2: real topbar search, memory totals, plugin sub-tabs restored, collapsed-sidebar group click fix.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.4.1">
+<!ENTITY version   "0.4.2">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,12 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.4.2 (2026-05-27)
+- Feat: real topbar search. Click the magnifier (or press Ctrl/Cmd+K, or `/`) to open a popover that indexes every curated nav entry plus auto-discovered plugin pages. Type to filter, arrow keys to navigate, Enter to jump.
+- Fix: `/Plugins` shows the "Installed Plugins" / "Install Plugin" sub-tabs again. v0.4.1 blanket-hid `nav.tabs` to suppress Unraid's legacy 7.x top navigation, but 7.3 reuses the same class for in-page sub-tab navigation inside `#displaybox`. Scoped the hide rule to `body > nav.tabs` so only the page-level chrome is suppressed.
+- Fix: Modern Dashboard's combined Processor & Memory card now shows used/total (e.g. "34.2 GiB / 126 GiB") under each memory pie and in the card meta, restoring parity with stock Unraid which had this info on the same dashboard tile.
+- Fix: clicking Storage (or any expandable group) with the sidebar collapsed now navigates to the group's first child (Storage → /Main) instead of toggling an invisible dropdown. Added tooltips on collapsed-mode group buttons + leaf links so the bare icons label themselves on hover.
+
 ###v0.4.1 (2026-05-27)
 - Fix: notification bell now reads Unraid 7.3's actual data source. v0.4.0 watched the legacy `#notifier` DOM element which 7.3 removed; the new bell polls Unraid's `Notify.php` (POST `cmd=get`) so unread notifications, their subjects, descriptions, and links actually appear. Per-item archive + "Archive all" header action, sorted newest-first.
 - Fix: brand orange (badge, user-menu avatar, active nav-item highlight) no longer clobbered by Unraid 7.3's tailwind `--accent` HSL-triple convention. Renamed our token references to `--mui-accent` everywhere it matters.
