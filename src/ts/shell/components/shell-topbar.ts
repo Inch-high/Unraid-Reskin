@@ -7,6 +7,7 @@ import { REGISTRY, startMirror, type PluginEntry } from '../plugin-mirror';
 import { icon } from '../icons';
 import './shell-notification-bell';
 import './shell-user-menu';
+import './shell-search';
 
 @customElement('shell-topbar')
 export class ShellTopbar extends LitElement {
@@ -149,19 +150,6 @@ export class ShellTopbar extends LitElement {
     this._crumbs = pathToBreadcrumb(window.location.pathname, CURATED_NAV);
   };
 
-  private _searchToast(): void {
-    // Placeholder per spec — search is reserved for v0.5+.
-    const note = document.createElement('div');
-    note.textContent = 'Search coming soon';
-    Object.assign(note.style, {
-      position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-      background: 'var(--bg-surface, #222)', color: 'var(--text-primary, #fff)',
-      padding: '8px 16px', borderRadius: '6px', zIndex: '2000', fontSize: '13px',
-    });
-    document.body.appendChild(note);
-    setTimeout(() => note.remove(), 1800);
-  }
-
   private _renderPluginItem(it: { entry: PluginEntry | null; node: Element }) {
     let r = this._pluginRefs.get(it.node);
     if (!r) { r = createRef(); this._pluginRefs.set(it.node, r); }
@@ -201,7 +189,7 @@ export class ShellTopbar extends LitElement {
         <div id="modernui-topbar-plugins" class="slot-host">
           ${this._pluginItems.map((it) => this._renderPluginItem(it))}
         </div>
-        <button class="icon-btn" type="button" aria-label="Search" title="Search" @click=${this._searchToast}>${icon('search', 18)}</button>
+        <shell-search></shell-search>
         <shell-notification-bell></shell-notification-bell>
         <shell-user-menu></shell-user-menu>
       </div>
