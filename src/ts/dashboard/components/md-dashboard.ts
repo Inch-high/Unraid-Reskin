@@ -85,6 +85,55 @@ export class ModernuiDashboard extends LitElement {
         top: 16px;
       }
     }
+
+    /* Initial-load skeleton. Renders the moment our overlay mounts so the
+       user sees the dashboard's shape immediately, instead of staring at
+       a blank/stock dashboard while Unraid's Vue chrome and per-tile JS
+       finish their first paint. Replaced as extractors populate the store. */
+    .sk {
+      background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--border-subtle) 50%, var(--bg-elevated) 100%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-sm);
+      animation: dashboard-shimmer 1.2s ease-in-out infinite;
+    }
+    .sk-hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 0 0 16px;
+    }
+    .sk-hero {
+      height: 140px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sk-hero .sk-label { width: 50px; height: 11px; }
+    .sk-hero .sk-big   { width: 110px; height: 28px; margin-top: 8px; }
+    .sk-hero .sk-sub   { width: 80px;  height: 12px; }
+    @media (max-width: 1199px) { .sk-hero-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 767px)  { .sk-hero-grid { grid-template-columns: 1fr; } }
+
+    .sk-section {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .sk-section .sk-section-title { width: 90px; height: 13px; margin-bottom: 12px; }
+    .sk-section .sk-row { height: 18px; margin: 8px 0; }
+    .sk-section .sk-row:nth-child(2) { width: 90%; }
+    .sk-section .sk-row:nth-child(3) { width: 70%; }
+    .sk-section .sk-row:nth-child(4) { width: 80%; }
+
+    @keyframes dashboard-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
   `;
 
   private _store: DashboardStore | null = null;
@@ -114,7 +163,56 @@ export class ModernuiDashboard extends LitElement {
     this._widgets = all;
   }
 
+  /** True while we have no widgets in the store yet. Used to show a
+   *  full-layout skeleton at first paint. Flips false as soon as the first
+   *  extract pass writes anything (the modernui shell does the same dance). */
+  private _isInitialLoading(): boolean {
+    return this._widgets.length === 0;
+  }
+
+  private _renderInitialSkeleton() {
+    return html`
+      <div class="content" aria-busy="true" aria-live="polite">
+        <div class="sk-hero-grid">
+          ${[0, 1, 2, 3].map(() => html`
+            <div class="sk-hero">
+              <div class="sk sk-label"></div>
+              <div class="sk sk-big"></div>
+              <div class="sk sk-sub"></div>
+            </div>
+          `)}
+        </div>
+        <div class="layout">
+          <aside class="sidebar">
+            <div class="sk-section">
+              <div class="sk sk-section-title"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+            </div>
+          </aside>
+          <div class="main">
+            <div class="sk-section">
+              <div class="sk sk-section-title"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+            </div>
+            <div class="sk-section">
+              <div class="sk sk-section-title"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+              <div class="sk sk-row"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   render() {
+    if (this._isInitialLoading()) return this._renderInitialSkeleton();
+
     const widgets = this._widgets;
     const arrays = widgets.filter((w): w is ArrayState => w.kind === 'array');
     const caches = widgets.filter((w): w is CacheState => w.kind === 'cache');

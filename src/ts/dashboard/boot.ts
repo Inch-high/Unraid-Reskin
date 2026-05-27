@@ -13,29 +13,6 @@ export function isDashboardEnabled(doc: Document): boolean {
   return doc.documentElement.dataset.modernuiDashboard !== 'off';
 }
 
-function waitForSource(
-  timeoutMs: number,
-  onReady: () => void,
-  onTimeout: () => void,
-): void {
-  if (collectDashboardTables().length > 0) {
-    onReady();
-    return;
-  }
-  const observer = new MutationObserver(() => {
-    if (collectDashboardTables().length > 0) {
-      observer.disconnect();
-      clearTimeout(timeoutHandle);
-      onReady();
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-  const timeoutHandle = window.setTimeout(() => {
-    observer.disconnect();
-    onTimeout();
-  }, timeoutMs);
-}
-
 function extractAll(store: ReturnType<typeof createStore>): void {
   const tbodies = collectDashboardTbodies();
   const seen = new Set<string>();
@@ -80,49 +57,71 @@ export function boot(): void {
   if (!isDashboardEnabled(document)) return;
   if (!onDashboardPage()) return;
 
-  waitForSource(
-    5000,
-    () => {
-      document.body.classList.add('modernui-dashboard-active');
+  // Mount the overlay IMMEDIATELY rather than waiting for Unraid's Vue to
+  // create <table.dashboard>. Before this change boot blocked on
+  // waitForSource(5000) — the user saw 1-3 seconds of blank/stock dashboard
+  // while Vue mounted, even though all our code was loaded and ready. Now we
+  // render a full layout skeleton at first paint and progressively populate
+  // real widgets as Unraid's data arrives.
+  document.body.classList.add('modernui-dashboard-active');
 
-      // Find or create the mount container
-      const container = document.querySelector('div.frame') || document.body;
-      const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
-      container.appendChild(root);
+  const container = document.querySelector('div.frame') || document.body;
+  const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
+  container.appendChild(root);
 
-      // Wire store
-      const store = createStore();
-      root.setStore(store);
+  const store = createStore();
+  root.setStore(store);
 
-      // Initial sync across all dashboard tables
-      extractAll(store);
+  // First sync: tables may already be in the DOM (server-rendered by Unraid
+  // 7.2-) or absent (Vue-rendered by 7.3). Either way the call is cheap.
+  extractAll(store);
 
-      // Watch every table for live updates (Unraid renders db_box1/2/3)
-      for (const table of collectDashboardTables()) {
-        const obs = createSourceObserver(table, () => extractAll(store), 50);
-        obs.start();
+  // Track the observers we attach so we don't double-bind once tables appear.
+  const observed = new WeakSet<HTMLTableElement>();
+  const attachObservers = (): void => {
+    for (const table of collectDashboardTables()) {
+      if (observed.has(table)) continue;
+      observed.add(table);
+      const obs = createSourceObserver(table, () => extractAll(store), 50);
+      obs.start();
+    }
+  };
+  attachObservers();
+
+  // If no tables yet, wait for Vue to mount them (scoped to div.content rather
+  // than document.body so we don't run querySelectorAll on every node Vue
+  // creates during mount — ~10× fewer observer fires on a fresh page load).
+  if (collectDashboardTables().length === 0) {
+    const sourceScope = document.querySelector('div.content') || document.body;
+    const tablesObserver = new MutationObserver(() => {
+      if (collectDashboardTables().length > 0) {
+        tablesObserver.disconnect();
+        extractAll(store);
+        attachObservers();
       }
+    });
+    tablesObserver.observe(sourceScope, { childList: true, subtree: true });
+    // Give up after 10s. Beyond that the dashboard genuinely has no source —
+    // user-visible skeleton stays so it's clear something's wrong rather than
+    // looking like a deliberately empty page.
+    window.setTimeout(() => tablesObserver.disconnect(), 10_000);
+  }
 
-      // Safety-net periodic refresh. The MutationObserver above catches DOM
-      // changes when Unraid actively rewrites a tbody, but in 7.3 some legacy
-      // dashboard widgets (notably the UPS tbody) stop receiving live DOM
-      // updates while the modern <footer> chrome continues to refresh. Without
-      // this, the Power hero card would stay frozen at first-paint values.
-      //
-      // Narrowed to UPS/VMs/Docker via extractLive() — the static widgets
-      // (identity, motherboard, shares, users) don't need polling and the
-      // others already update via the observer reliably. Cadence matches the
-      // sidebar's existing 5s interval. Pauses while hidden, catches up on
-      // focus (cf. webgui#2641).
-      window.setInterval(() => {
-        if (!document.hidden) extractLive(store);
-      }, 5000);
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) extractLive(store);
-      });
-    },
-    () => {
-      console.warn('[modernui-dashboard] source not found; leaving stock UI');
-    },
-  );
+  // Safety-net periodic refresh. The MutationObserver above catches DOM
+  // changes when Unraid actively rewrites a tbody, but in 7.3 some legacy
+  // dashboard widgets (notably the UPS tbody) stop receiving live DOM
+  // updates while the modern <footer> chrome continues to refresh. Without
+  // this, the Power hero card would stay frozen at first-paint values.
+  //
+  // Narrowed to UPS/VMs/Docker via extractLive() — the static widgets
+  // (identity, motherboard, shares, users) don't need polling and the
+  // others already update via the observer reliably. Cadence matches the
+  // sidebar's existing 5s interval. Pauses while hidden, catches up on
+  // focus (cf. webgui#2641).
+  window.setInterval(() => {
+    if (!document.hidden) extractLive(store);
+  }, 5000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) extractLive(store);
+  });
 }
