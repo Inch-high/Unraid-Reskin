@@ -56,6 +56,8 @@ export interface DockerStore {
   isCollapsed(folderId: string): boolean;
   /** Lit components use this to know whether they should be collapsed. */
   getCollapseDefault(): 'expanded' | 'collapsed';
+  /** Whether the Show Stats toggle is on — controls the per-row stats line and collapsed-folder sums. */
+  getShowStats(): boolean;
 
   setState(state: DockerPageState): void;
   applyDelta(delta: DockerDelta): void;
@@ -67,6 +69,7 @@ export interface DockerStore {
   /** Toggle a folder's collapsed state and persist. Pass 'ungrouped' for the Ungrouped section. */
   toggleCollapsed(folderId: string): void;
   setCollapseDefault(d: 'expanded' | 'collapsed'): void;
+  setShowStats(on: boolean): void;
 
   subscribe(fn: Listener): () => void;
 }
@@ -81,6 +84,7 @@ export function createDockerStore(): DockerStore {
   // overrides — the standard "default + override" pattern.
   let explicitToggles: Set<string> = loadCollapsedFromStorage();
   let collapseDefault: 'expanded' | 'collapsed' = 'expanded';
+  let showStats = false;
   const listeners = new Set<Listener>();
 
   const notify = (): void => {
@@ -92,6 +96,7 @@ export function createDockerStore(): DockerStore {
     getFilters: () => filters,
     getSelection: () => selection,
     getCollapseDefault: () => collapseDefault,
+    getShowStats: () => showStats,
     isCollapsed(folderId) {
       const isInToggles = explicitToggles.has(folderId);
       // explicit toggle FLIPS the default. So:
@@ -190,6 +195,12 @@ export function createDockerStore(): DockerStore {
     setCollapseDefault(d) {
       if (collapseDefault === d) return;
       collapseDefault = d;
+      notify();
+    },
+
+    setShowStats(on) {
+      if (showStats === on) return;
+      showStats = on;
       notify();
     },
 

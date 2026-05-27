@@ -97,6 +97,7 @@ function modernui_generate_loader_js(bool $disabled): void {
     $sidebar   = $settings['sidebar']   ?? 'expanded';
     $docker    = $settings['docker']    ?? 'on';
     $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
+    $dockerShowStats = $settings['docker_show_stats'] ?? 'off';
     // When enabled, lazy-load the dashboard + docker bundles too. Each one
     // page-detects internally and exits early off-route — adding them here
     // costs ~5 KB gzipped per route guard. Keeping them out of the main
@@ -119,6 +120,7 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "r.dataset.modernuiSidebar=" . json_encode($sidebar) . ";\n"
         . "r.dataset.modernuiDocker=" . json_encode($docker) . ";\n"
         . "r.dataset.modernuiDockerFolderDefault=" . json_encode($dockerFolderDefault) . ";\n"
+        . "r.dataset.modernuiDockerStats=" . json_encode($dockerShowStats) . ";\n"
         . "var s=document.createElement('script');\n"
         . "s.src='/plugins/unraid-modernui/theme/dist/" . $target . "';\n"
         . "document.head.appendChild(s);\n"

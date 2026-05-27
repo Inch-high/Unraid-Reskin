@@ -36,7 +36,12 @@ export interface LiveSubscription {
 
 export interface LiveSubscriptionOptions {
   url: string;
-  parse: (raw: string) => DockerDelta | null;
+  /**
+   * Parse one nchan payload into zero or more deltas. The /sub/dockerload
+   * message is multi-line (one container per line), so a single payload
+   * often yields N deltas — hence the array return.
+   */
+  parse: (raw: string) => DockerDelta[];
   onDelta: (d: DockerDelta) => void;
   /** Called once each time the tab becomes visible after being hidden. */
   resync: () => Promise<void> | void;
@@ -59,10 +64,12 @@ export function createLiveSubscription(opts: LiveSubscriptionOptions): LiveSubsc
   const handleMessage = (raw: unknown): void => {
     if (doc.hidden) return;             // drop silently while hidden
     if (typeof raw !== 'string') return;
-    const delta = opts.parse(raw);
-    if (!delta) return;
-    processed++;
-    opts.onDelta(delta);
+    const deltas = opts.parse(raw);
+    if (!deltas || deltas.length === 0) return;
+    for (const d of deltas) {
+      processed++;
+      opts.onDelta(d);
+    }
   };
   sub.on('message', handleMessage as (...a: unknown[]) => void);
 

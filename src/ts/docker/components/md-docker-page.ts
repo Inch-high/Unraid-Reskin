@@ -10,6 +10,8 @@ import {
   saveFolders as saveFoldersRemote,
   saveTags as saveTagsRemote,
   saveSetting,
+  checkForUpdates,
+  fetchSnapshot,
   openWebUi,
   openLogs,
   openConsole,
@@ -83,6 +85,8 @@ export class ModernuiDockerPage extends LitElement {
       font: 500 13px var(--font-sans);
     }
     .btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .btn:disabled { opacity: 0.6; cursor: progress; }
+    .btn:disabled:hover { background: transparent; color: var(--text-secondary); }
     .btn-primary { background: var(--mui-accent); color: #fff; border-color: var(--mui-accent); }
     .btn-primary:hover { background: var(--mui-accent-hover); border-color: var(--mui-accent-hover); color: #fff; }
 
@@ -103,6 +107,7 @@ export class ModernuiDockerPage extends LitElement {
   @state() private _tick = 0;   // re-render trigger
   @state() private _showFolderModal = false;
   @state() private _showTagModal = false;
+  @state() private _checkingUpdates = false;
 
   setStore(store: DockerStore): void {
     this._unsubscribe?.();
@@ -214,6 +219,61 @@ export class ModernuiDockerPage extends LitElement {
     catch (err) { console.warn('[modernui-docker] failed to persist folder default:', err); }
   };
 
+  private _runCheckForUpdates = async (): Promise<void> => {
+    if (!this._store || this._checkingUpdates) return;
+    this._checkingUpdates = true;
+    try {
+      await checkForUpdates();
+      // Refresh snapshot so the new updateAvailable flags propagate.
+      const snap = await fetchSnapshot();
+      this._store.setState({
+        containers: snap.containers,
+        folders: snap.folders,
+        tags: snap.tags,
+        tagAssignments: snap.tagAssignments,
+      });
+    } catch (err) {
+      console.warn('[modernui-docker] check-for-updates failed:', err);
+      alert(`Check for updates failed: ${(err as Error).message}`);
+    } finally {
+      this._checkingUpdates = false;
+    }
+  };
+
+  private _runUpdateSelected = async (): Promise<void> => {
+    if (!this._store) return;
+    const selected = Array.from(this._store.getSelection());
+    if (selected.length === 0) return;
+    // Confirm — updating pulls a new image and recreates the container, can be slow.
+    if (!confirm(`Update ${selected.length} container${selected.length === 1 ? '' : 's'}? Each will be pulled + recreated.`)) return;
+    this._checkingUpdates = true;
+    try {
+      await executeBulk(selected, 'update');
+      // Refresh snapshot — uptime + updateAvailable both should change for updated ones.
+      const snap = await fetchSnapshot();
+      this._store.setState({
+        containers: snap.containers,
+        folders: snap.folders,
+        tags: snap.tags,
+        tagAssignments: snap.tagAssignments,
+      });
+      this._store.clearSelection();
+    } catch (err) {
+      console.warn('[modernui-docker] bulk update failed:', err);
+    } finally {
+      this._checkingUpdates = false;
+    }
+  };
+
+  private _handleShowStats = async (e: Event): Promise<void> => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ on: boolean }>;
+    this._store.setShowStats(ce.detail.on);
+    document.documentElement.dataset.modernuiDockerStats = ce.detail.on ? 'on' : 'off';
+    try { await saveSetting('docker_show_stats', ce.detail.on ? 'on' : 'off'); }
+    catch (err) { console.warn('[modernui-docker] failed to persist show_stats:', err); }
+  };
+
   private async _saveFolders(e: Event): Promise<void> {
     if (!this._store) return;
     const ce = e as CustomEvent<{ folders: DockerFolder[] }>;
@@ -261,6 +321,7 @@ export class ModernuiDockerPage extends LitElement {
            @docker-filters=${this._handleFilters}
            @docker-toggle-folder=${this._handleToggleFolder}
            @docker-folder-default=${this._handleFolderDefault}
+           @docker-show-stats=${this._handleShowStats}
            @docker-edit-folder=${() => { this._showFolderModal = true; }}
            @docker-save-folders=${(e: Event) => this._saveFolders(e)}
            @docker-save-tags=${(e: Event) => this._saveTags(e)}
@@ -278,6 +339,15 @@ export class ModernuiDockerPage extends LitElement {
             </p>
           </div>
           <div class="actions">
+            ${selection.size > 0 ? html`
+              <button class="btn" ?disabled=${this._checkingUpdates} @click=${this._runUpdateSelected}>
+                ${icon('update')} ${this._checkingUpdates ? 'Updating…' : `Update selected (${selection.size})`}
+              </button>
+            ` : html`
+              <button class="btn" ?disabled=${this._checkingUpdates} @click=${this._runCheckForUpdates}>
+                ${icon('update')} ${this._checkingUpdates ? 'Checking…' : 'Check for updates'}
+              </button>
+            `}
             <button class="btn" @click=${() => { this._showTagModal = true; }}>${icon('tag')} Manage Tags</button>
             <button class="btn" @click=${() => { this._showFolderModal = true; }}>${icon('folder')} Manage Folders</button>
             <a class="btn btn-primary" href="/Docker/AddContainer">${icon('plus')} Add Container</a>
@@ -290,6 +360,7 @@ export class ModernuiDockerPage extends LitElement {
           .tags=${state.tags}
           .tagAssignments=${state.tagAssignments}
           .folderDefault=${this._store?.getCollapseDefault() ?? 'expanded'}
+          .showStats=${this._store?.getShowStats() ?? false}
         ></md-docker-toolbar>
 
         ${total === 0 ? html`
@@ -312,6 +383,7 @@ export class ModernuiDockerPage extends LitElement {
               .tagAssignments=${state.tagAssignments}
               .selection=${selection}
               ?collapsed=${this._store?.isCollapsed(key) ?? false}
+              ?showStats=${this._store?.getShowStats() ?? false}
             ></md-docker-folder-section>
           `;
         })}

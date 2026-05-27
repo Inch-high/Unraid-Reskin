@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { DockerContainerFull, DockerTag } from '../types';
 import { icon } from '../icons';
+import { formatBytes, formatPercent, formatMac } from '../format';
 
 // Single container row. Stateless — the parent owns selection state and
 // dispatches actions via the bubbling 'docker-action' / 'docker-toggle-select'
@@ -86,6 +87,28 @@ export class MdDockerRow extends LitElement {
       margin-left: 4px;
       vertical-align: middle;
     }
+
+    /* Stats line — only visible when showStats=true. Sits below the image
+       inside .main so columns remain stable; mono font for tabular alignment. */
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 3px;
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .stats .stat strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-family: var(--font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 10px;
+      margin-right: 4px;
+    }
+    .stats .stat.mac { letter-spacing: -0.02em; }
 
     .tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .tag {
@@ -180,6 +203,7 @@ export class MdDockerRow extends LitElement {
   @property({ type: Array })  assignedTagIds: string[] = [];
   @property({ type: Boolean }) selected = false;
   @property({ type: Boolean }) menuOpen = false;
+  @property({ type: Boolean }) showStats = false;
 
   private _portsText(): string {
     if (this.container.ports.length === 0) return '—';
@@ -255,6 +279,16 @@ export class MdDockerRow extends LitElement {
         <div class="main">
           <div class="name">${c.name}</div>
           <div class="image">${c.image}${c.updateAvailable ? html`<span class="badge-update">update</span>` : nothing}</div>
+          ${this.showStats ? html`
+            <div class="stats">
+              ${c.state === 'started' || c.state === 'paused' ? html`
+                <span class="stat"><strong>CPU</strong>${formatPercent(c.cpuPct)}</span>
+                <span class="stat"><strong>RAM</strong>${formatBytes(c.memBytes)}</span>
+              ` : nothing}
+              <span class="stat"><strong>VDisk</strong>${formatBytes(c.vdiskBytes)}</span>
+              ${c.macAddress ? html`<span class="stat mac"><strong>MAC</strong>${formatMac(c.macAddress)}</span>` : nothing}
+            </div>
+          ` : nothing}
         </div>
 
         <div class="tags">${this._renderTagChips()}</div>

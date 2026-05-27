@@ -98,6 +98,7 @@ export class MdDockerToolbar extends LitElement {
   @property({ type: Array }) tags: DockerTag[] = [];
   @property({ type: Object }) tagAssignments: Record<string, string[]> = {};
   @property({ type: String }) folderDefault: 'expanded' | 'collapsed' = 'expanded';
+  @property({ type: Boolean }) showStats = false;
 
   private _setQuery(e: Event): void {
     const v = (e.target as HTMLInputElement).value;
@@ -140,6 +141,13 @@ export class MdDockerToolbar extends LitElement {
     }));
   }
 
+  private _toggleStats(): void {
+    this.dispatchEvent(new CustomEvent<{ on: boolean }>('docker-show-stats', {
+      detail: { on: !this.showStats },
+      bubbles: true, composed: true,
+    }));
+  }
+
   render() {
     const f = this.filters;
     const total = this.containers.length;
@@ -176,6 +184,12 @@ export class MdDockerToolbar extends LitElement {
           </div>
         ` : nothing}
         <span class="spacer"></span>
+        <div class="group">
+          <span class="label">Stats</span>
+          <button class="chip" ?data-active=${this.showStats} @click=${this._toggleStats}>
+            ${this.showStats ? 'On' : 'Off'}
+          </button>
+        </div>
         <div class="group">
           <span class="label">Folders</span>
           <div class="segmented" role="group" aria-label="Folder default state">

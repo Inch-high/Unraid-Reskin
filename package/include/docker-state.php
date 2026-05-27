@@ -48,9 +48,22 @@ function modernui_docker_state(): array {
                 if (isset($ct['Name'])) $byName[$ct['Name']] = $ct;
             }
 
+            // Fetch container sizes in one call. /containers/json?size=true walks each
+            // container's RW layer — moderately expensive, so we batch it once.
+            $sizes = modernui_fetch_sizes($client);
+
+            // Fetch live CPU% and memory usage in one shell-out. Same command
+            // Unraid's nchan worker uses (see dynamix.docker.manager/nchan/docker_load).
+            // Populates the snapshot so users see stats immediately instead of
+            // waiting for the first nchan delta to arrive.
+            $stats = modernui_fetch_docker_stats();
+
             foreach ((array)$info as $name => $row) {
                 $container = $byName[$name] ?? [];
-                $containers[] = modernui_normalize_container((string)$name, (array)$row, (array)$container);
+                $shortId = substr((string)($container['Id'] ?? ''), 0, 12);
+                $vdisk = $sizes[$shortId] ?? null;
+                $stat = $stats[$shortId] ?? null;
+                $containers[] = modernui_normalize_container((string)$name, (array)$row, (array)$container, $vdisk, $stat);
             }
         } catch (Throwable $e) {
             error_log('[modernui] docker-state error: ' . $e->getMessage());
@@ -69,10 +82,77 @@ function modernui_docker_state(): array {
     ];
 }
 
+// Walks /containers/json?size=true and returns map of {shortId => SizeRw bytes}.
+// One docker socket call covers all containers (vs. N inspect calls). Errors are
+// swallowed because the size column is non-critical — if it fails, vdisk shows —.
+function modernui_fetch_sizes(DockerClient $client): array {
+    try {
+        $json = $client->getDockerJSON('/containers/json?all=true&size=true');
+        if (!is_array($json)) return [];
+        $out = [];
+        foreach ($json as $row) {
+            if (!isset($row['Id'])) continue;
+            $out[substr((string)$row['Id'], 0, 12)] = (int)($row['SizeRw'] ?? 0);
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+// Parse a docker-style size string like "25.34MiB" or "1.5GiB" into bytes.
+// MiB/GiB/TiB use 1024 base; KB/MB/GB use 1000 base — matches Docker CLI.
+function modernui_parse_size_string(string $s): int {
+    $s = trim($s);
+    if (!preg_match('/^([\d.]+)\s*([A-Za-z]*)$/', $s, $m)) return 0;
+    $val = (float)$m[1];
+    $unit = strtoupper($m[2] ?: 'B');
+    $multipliers = [
+        'B'  => 1,
+        'KB' => 1000,           'KIB' => 1024,
+        'MB' => 1000 ** 2,      'MIB' => 1024 ** 2,
+        'GB' => 1000 ** 3,      'GIB' => 1024 ** 3,
+        'TB' => 1000 ** 4,      'TIB' => 1024 ** 4,
+    ];
+    return (int)round($val * ($multipliers[$unit] ?? 1));
+}
+
+// Map of shortId => ['cpu' => float|null, 'mem' => int|null] using `docker stats`.
+// Stopped containers don't appear in output. Errors return empty map.
+function modernui_fetch_docker_stats(): array {
+    $out = @shell_exec("docker stats --no-stream --format='{{.ID}};{{.CPUPerc}};{{.MemUsage}}' 2>/dev/null");
+    if (!is_string($out) || $out === '') return [];
+    $result = [];
+    foreach (explode("\n", trim($out)) as $line) {
+        $parts = explode(';', $line);
+        if (count($parts) < 3) continue;
+        $shortId = trim($parts[0]);
+        if ($shortId === '') continue;
+        $cpu = (float)str_replace('%', '', trim($parts[1]));
+        // MemUsage is "X.XXMiB / Y.YYGiB" — used / limit. Take the used part.
+        $memUsed = trim(explode('/', $parts[2])[0] ?? '');
+        $memBytes = modernui_parse_size_string($memUsed);
+        $result[$shortId] = ['cpu' => $cpu, 'mem' => $memBytes];
+    }
+    return $result;
+}
+
+// Pull a usable MAC address from the Networks dict. Containers attached to a
+// custom bridge or br0.* have one network with a MacAddress; host/none mode has
+// no MAC. Returns null when the field is absent.
+function modernui_extract_mac(array $networks): ?string {
+    foreach ($networks as $net) {
+        if (!is_array($net)) continue;
+        $mac = $net['MacAddress'] ?? '';
+        if (is_string($mac) && $mac !== '') return strtolower($mac);
+    }
+    return null;
+}
+
 // Build a single typed container record by merging getAllInfo() row + the matching
 // getDockerContainers() entry. The "info" row has icon/url/autostart/template/updated;
-// "ct" has Image/Status/Id/Ports/NetworkMode.
-function modernui_normalize_container(string $name, array $info, array $ct): array {
+// "ct" has Image/Status/Id/Ports/NetworkMode/Networks. $stat is from `docker stats`.
+function modernui_normalize_container(string $name, array $info, array $ct, ?int $vdisk = null, ?array $stat = null): array {
     $running = !empty($info['running']) || !empty($ct['Running']);
     $paused  = !empty($info['paused'])  || !empty($ct['Paused']);
     $state   = $paused ? 'paused' : ($running ? 'started' : 'stopped');
@@ -91,8 +171,10 @@ function modernui_normalize_container(string $name, array $info, array $ct): arr
         'state'           => $state,
         'autostart'       => (bool)($info['autostart'] ?? false),
         'uptime'          => $uptime,
-        'cpuPct'          => null,                          // arrives via nchan deltas, never the snapshot
-        'memBytes'        => null,
+        'cpuPct'          => $stat['cpu'] ?? null,           // snapshot value; deltas refresh live
+        'memBytes'        => $stat['mem'] ?? null,
+        'vdiskBytes'      => $vdisk,                        // bytes; null when /containers?size=true is unavailable
+        'macAddress'      => modernui_extract_mac((array)($ct['Networks'] ?? [])),
         'webuiUrl'        => $info['url'] ?? null,
         'iconUrl'         => (string)($info['icon'] ?? '/plugins/dynamix.docker.manager/images/question.png'),
         'ports'           => modernui_normalize_ports((array)($ct['Ports'] ?? []), (string)($info['url'] ?? '')),

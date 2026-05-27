@@ -31,7 +31,7 @@ describe('createLiveSubscription', () => {
     const onDelta = vi.fn();
     createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => ({ name: 'x', cpuPct: 5 }),
+      parse: () => [{ name: 'x', cpuPct: 5 }],
       onDelta,
       resync: vi.fn(),
     });
@@ -45,7 +45,7 @@ describe('createLiveSubscription', () => {
     const onDelta = vi.fn();
     const sub = createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => ({ name: 'x', cpuPct: 5 }),
+      parse: () => [{ name: 'x', cpuPct: 5 }],
       onDelta,
       resync: vi.fn(),
     });
@@ -61,7 +61,7 @@ describe('createLiveSubscription', () => {
     const resync = vi.fn().mockResolvedValue(undefined);
     createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => null,
+      parse: () => [],
       onDelta: vi.fn(),
       resync,
     });
@@ -75,7 +75,7 @@ describe('createLiveSubscription', () => {
     const resync = vi.fn();
     createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => null,
+      parse: () => [],
       onDelta: vi.fn(),
       resync,
     });
@@ -89,7 +89,7 @@ describe('createLiveSubscription', () => {
     const onDelta = vi.fn();
     const sub = createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => ({ name: 'x' }),
+      parse: () => [{ name: 'x' }],
       onDelta,
       resync: vi.fn(),
     });
@@ -101,7 +101,7 @@ describe('createLiveSubscription', () => {
     const resync = vi.fn();
     const sub = createLiveSubscription({
       url: '/sub/dockerload',
-      parse: () => null,
+      parse: () => [],
       onDelta: vi.fn(),
       resync,
     });

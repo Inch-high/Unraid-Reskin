@@ -3,7 +3,7 @@ import { fetchSnapshot } from './actions';
 import { createLiveSubscription } from './lifecycle';
 import './components/md-docker-page';
 import type { ModernuiDockerPage } from './components/md-docker-page';
-import type { DockerDelta, DockerContainerState } from './types';
+import type { DockerDelta } from './types';
 
 // Page detection. The .page Title="Docker Containers" lives at /Docker.
 // Stock Docker also has subpages (/Docker/AddContainer, /Docker/UpdateContainer)
@@ -17,46 +17,85 @@ export function isDockerPageEnabled(doc: Document): boolean {
   return doc.documentElement.dataset.modernuiDocker !== 'off';
 }
 
+// Parse a docker-style size string like "25.34MiB" or "1.5GiB" into bytes.
+// Matches the format `docker stats --format='{{.MemUsage}}'` produces; MiB/GiB
+// use 1024 base, MB/GB use 1000 base per Docker CLI conventions.
+const SIZE_RX = /^([\d.]+)\s*([A-Za-z]*)$/;
+const SIZE_MULT: Record<string, number> = {
+  '': 1, B: 1,
+  KB: 1000, KIB: 1024,
+  MB: 1_000_000, MIB: 1024 ** 2,
+  GB: 1_000_000_000, GIB: 1024 ** 3,
+  TB: 1_000_000_000_000, TIB: 1024 ** 4,
+};
+function parseSize(s: string): number | undefined {
+  const m = SIZE_RX.exec(s.trim());
+  if (!m) return undefined;
+  const mult = SIZE_MULT[m[2].toUpperCase()] ?? 1;
+  const n = parseFloat(m[1]) * mult;
+  return Number.isFinite(n) ? Math.round(n) : undefined;
+}
+
 // Build a parser that closes over the store so it can resolve container id -> name.
-// The /sub/dockerload payload is undocumented and varies by Unraid version — we
-// accept the common shapes and drop anything we can't read. The snapshot
-// endpoint is authoritative; deltas only animate cpu/mem/state between snapshots.
-function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: string) => DockerDelta | null {
+// The /sub/dockerload payload format (per dynamix.docker.manager/nchan/docker_load):
+//
+//   shortid;CPUPerc;MemUsage
+//   shortid;CPUPerc;MemUsage
+//   ...
+//
+// where MemUsage is "X.XXMiB / Y.YYGiB" (used / limit). One message contains
+// every running container in one newline-separated batch.
+function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: string) => DockerDelta[] {
   return (raw: string) => {
-    if (typeof raw !== 'string' || raw.length === 0) return null;
-    // Try JSON first (some Unraid versions wrap)
-    if (raw.startsWith('{')) {
+    if (typeof raw !== 'string' || raw.length === 0) return [];
+
+    // JSON wrapper (some Unraid versions / future use)
+    if (raw.startsWith('{') || raw.startsWith('[')) {
       try {
-        const data = JSON.parse(raw) as Partial<DockerDelta> & { id?: string };
-        if (typeof data.name === 'string') return data as DockerDelta;
-        if (typeof data.id === 'string') {
-          const c = store.getState().containers.find((x) => x.id.startsWith(data.id!) || x.id === data.id);
-          if (!c) return null;
-          return {
-            name: c.name,
-            state: data.state,
-            cpuPct: data.cpuPct,
-            memBytes: data.memBytes,
-            uptime: data.uptime,
-            updateAvailable: data.updateAvailable,
-          };
-        }
-        return null;
-      } catch { return null; }
+        const data = JSON.parse(raw);
+        const arr = Array.isArray(data) ? data : [data];
+        return arr.flatMap((d) => {
+          if (typeof d?.name === 'string') return [d as DockerDelta];
+          if (typeof d?.id === 'string') {
+            const c = resolveById(store, d.id);
+            return c ? [{ name: c.name, ...d } as DockerDelta] : [];
+          }
+          return [];
+        });
+      } catch { return []; }
     }
-    // Fall back to semicolon: "id;running;cpu;mem"
-    const parts = raw.split(';');
-    if (parts.length < 2) return null;
-    const id = parts[0];
-    const c = store.getState().containers.find((x) => x.id.startsWith(id) || x.id === id);
-    if (!c) return null;
-    const running = parts[1] === '1' || parts[1] === 'true' || parts[1] === 'started';
-    const state: DockerContainerState = running ? 'started' : 'stopped';
-    const cpuPct = parts.length > 2 ? parseFloat(parts[2]) : undefined;
-    const memBytes = parts.length > 3 ? parseInt(parts[3], 10) : undefined;
-    return { name: c.name, state, cpuPct: Number.isFinite(cpuPct!) ? cpuPct : undefined,
-             memBytes: Number.isFinite(memBytes!) ? memBytes : undefined };
+
+    // Newline-delimited "id;cpu;mem" — the docker_load nchan worker shape.
+    const out: DockerDelta[] = [];
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const parts = trimmed.split(';');
+      if (parts.length < 3) continue;
+      const id = parts[0].trim();
+      const c = resolveById(store, id);
+      if (!c) continue;
+      const cpuRaw = parts[1].replace('%', '').trim();
+      const cpuPct = cpuRaw === '' ? undefined : parseFloat(cpuRaw);
+      const memUsed = parts[2].split('/')[0]?.trim() ?? '';
+      const memBytes = parseSize(memUsed);
+      out.push({
+        name: c.name,
+        cpuPct: Number.isFinite(cpuPct!) ? cpuPct : undefined,
+        memBytes,
+      });
+    }
+    return out;
   };
+}
+
+function resolveById(store: ReturnType<typeof createDockerStore>, id: string): { name: string } | null {
+  if (!id) return null;
+  const list = store.getState().containers;
+  for (const c of list) {
+    if (c.id === id || c.id.startsWith(id) || id.startsWith(c.id)) return c;
+  }
+  return null;
 }
 
 export async function boot(): Promise<void> {
@@ -73,6 +112,12 @@ export async function boot(): Promise<void> {
   const defaultFolderState = document.documentElement.dataset.modernuiDockerFolderDefault;
   if (defaultFolderState === 'collapsed' || defaultFolderState === 'expanded') {
     store.setCollapseDefault(defaultFolderState);
+  }
+  // "Show stats" — populates CPU/RAM/VDisk/MAC lines on each row and sums on
+  // collapsed folder headers. Default off because /containers/json?size=true
+  // walks each container's RW layer (cheap-ish but not free at boot time).
+  if (document.documentElement.dataset.modernuiDockerStats === 'on') {
+    store.setShowStats(true);
   }
 
   // Mount immediately so the page paints (loading state) before fetch resolves.

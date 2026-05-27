@@ -93,6 +93,16 @@ export async function saveTags(tags: DockerTag[], assignments: Record<string, st
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
+// Trigger Unraid's "check for updates" on every image. The server walks each
+// image's RepoDigest against the remote manifest, takes a while; resolves only
+// once done. Caller should re-fetch the snapshot afterwards.
+export async function checkForUpdates(): Promise<void> {
+  const res = await postUrlEncoded('/plugins/unraid-modernui/include/docker-check-updates.php', {});
+  if (!res.ok) throw new Error(`check-updates ${res.status}`);
+  const json = await res.json() as { ok: boolean; error?: string };
+  if (!json.ok) throw new Error(json.error ?? 'check failed');
+}
+
 // =========================================================================
 // Settings persistence — partial POST to the shared theme save endpoint.
 // save.php merges incoming keys over the existing settings.cfg, so we only

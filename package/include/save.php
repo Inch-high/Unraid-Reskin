@@ -15,6 +15,7 @@ function modernui_validate_settings(array $input): array {
         'shell'                 => 'on',
         'docker'                => 'on',
         'docker_folder_default' => 'expanded',
+        'docker_show_stats'     => 'off',
     ];
     $allowed = [
         'mode'                  => ['system', 'dark', 'light'],
@@ -26,6 +27,7 @@ function modernui_validate_settings(array $input): array {
         'shell'                 => ['on', 'off'],
         'docker'                => ['on', 'off'],
         'docker_folder_default' => ['expanded', 'collapsed'],
+        'docker_show_stats'     => ['on', 'off'],
     ];
 
     $out = $defaults;

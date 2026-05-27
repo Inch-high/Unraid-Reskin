@@ -17,6 +17,8 @@ const mkContainer = (overrides: Partial<DockerContainerFull> = {}): DockerContai
   uptime: '1h',
   cpuPct: null,
   memBytes: null,
+  vdiskBytes: null,
+  macAddress: null,
   webuiUrl: null,
   iconUrl: '/x.png',
   ports: [],
@@ -231,6 +233,25 @@ describe('collapse state — default + explicit toggle', () => {
     // Simulate a filter-driven re-render: same containers, different filter.
     store.setState({ containers: [], folders: [], tags: [], tagAssignments: {} });
     expect(store.isCollapsed('f-media')).toBe(true);
+  });
+});
+
+describe('showStats flag', () => {
+  it('defaults off and toggles via setShowStats', () => {
+    const store = createDockerStore();
+    expect(store.getShowStats()).toBe(false);
+    store.setShowStats(true);
+    expect(store.getShowStats()).toBe(true);
+  });
+
+  it('only notifies subscribers when the flag actually changes', () => {
+    const store = createDockerStore();
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.setShowStats(true);
+    store.setShowStats(true);   // no-op
+    store.setShowStats(false);
+    expect(calls).toBe(2);
   });
 });
 

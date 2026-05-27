@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { DockerContainerFull, DockerFolder, DockerTag } from '../types';
 import { icon, type IconName } from '../icons';
+import { formatBytes, formatPercent } from '../format';
 import './md-docker-row';
 
 @customElement('md-docker-folder-section')
@@ -37,6 +38,30 @@ export class MdDockerFolderSection extends LitElement {
     .name { font-weight: 600; font-size: 14px; }
     .meta { color: var(--text-secondary); font-size: 12px; margin-left: 4px; }
 
+    /* Summed stats shown in the folder header — only when the folder is
+       collapsed AND showStats=true. Helps users see resource consumption
+       per logical group without expanding everything. */
+    .sums {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: 12px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border-subtle);
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .sums .sum strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-family: var(--font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 10px;
+      margin-right: 4px;
+    }
+
     .actions { display: flex; gap: 4px; }
     .icon-btn {
       width: 32px; height: 32px;
@@ -69,6 +94,7 @@ export class MdDockerFolderSection extends LitElement {
   // Controlled: parent owns the collapsed state (via store) so it survives
   // re-renders triggered by filter changes. Toggle emits 'docker-toggle-folder'.
   @property({ type: Boolean, reflect: true }) collapsed = false;
+  @property({ type: Boolean }) showStats = false;
 
   private _iconName(): IconName {
     const raw = (this.folder?.icon ?? 'folder') as IconName;
@@ -101,6 +127,22 @@ export class MdDockerFolderSection extends LitElement {
     }));
   }
 
+  private _sumStats(): { cpu: number | null; ram: number | null; vdisk: number | null } {
+    let cpu = 0, cpuCount = 0;
+    let ram = 0, ramCount = 0;
+    let vdisk = 0, vdiskCount = 0;
+    for (const c of this.containers) {
+      if (typeof c.cpuPct === 'number' && Number.isFinite(c.cpuPct)) { cpu += c.cpuPct; cpuCount++; }
+      if (typeof c.memBytes === 'number' && Number.isFinite(c.memBytes)) { ram += c.memBytes; ramCount++; }
+      if (typeof c.vdiskBytes === 'number' && Number.isFinite(c.vdiskBytes)) { vdisk += c.vdiskBytes; vdiskCount++; }
+    }
+    return {
+      cpu: cpuCount > 0 ? cpu : null,
+      ram: ramCount > 0 ? ram : null,
+      vdisk: vdiskCount > 0 ? vdisk : null,
+    };
+  }
+
   render() {
     const running = this.containers.filter((c) => c.state === 'started').length;
     const total = this.containers.length;
@@ -109,6 +151,11 @@ export class MdDockerFolderSection extends LitElement {
     const bg = `${color}2e`; // ~18% alpha
     const allSelected = total > 0 && this.containers.every((c) => this.selection.has(c.name));
 
+    // Sums shown only when collapsed + stats — saves the user from expanding
+    // each folder just to see "how much is this folder using". Excludes
+    // stopped containers from CPU/RAM (their values are null anyway).
+    const sums = this.collapsed && this.showStats ? this._sumStats() : null;
+
     return html`
       <header class="head">
         <button class="toggle" @click=${this._toggle}>
@@ -116,6 +163,13 @@ export class MdDockerFolderSection extends LitElement {
           <span class="folder-icon" style="background:${bg};color:${color}">${icon(this._iconName(), 16)}</span>
           <span class="name">${name}</span>
           <span class="meta">${total} container${total === 1 ? '' : 's'} · ${running} running</span>
+          ${sums ? html`
+            <span class="sums">
+              <span class="sum"><strong>CPU</strong>${formatPercent(sums.cpu)}</span>
+              <span class="sum"><strong>RAM</strong>${formatBytes(sums.ram)}</span>
+              <span class="sum"><strong>VDisk</strong>${formatBytes(sums.vdisk)}</span>
+            </span>
+          ` : ''}
         </button>
         <div class="actions">
           ${total > 0 ? html`
@@ -137,6 +191,7 @@ export class MdDockerFolderSection extends LitElement {
               .tags=${this.allTags}
               .assignedTagIds=${this.tagAssignments[c.name] ?? []}
               ?selected=${this.selection.has(c.name)}
+              ?showStats=${this.showStats}
             ></md-docker-row></li>
           `)}
         </ul>

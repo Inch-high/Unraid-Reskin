@@ -22,6 +22,8 @@ export interface DockerContainerFull {
   uptime: string | null;        // "3d 12h" — null when stopped
   cpuPct: number | null;        // null until first nchan delta lands
   memBytes: number | null;
+  vdiskBytes: number | null;    // SizeRw — RW layer size from docker inspect --size
+  macAddress: string | null;    // first network's MAC; null for host/none
   webuiUrl: string | null;      // resolved by getAllInfo()
   iconUrl: string;              // resolved by getAllInfo() — pre-cached path
   ports: DockerContainerPort[];
