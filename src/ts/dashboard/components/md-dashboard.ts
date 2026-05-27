@@ -63,6 +63,12 @@ export class ModernuiDashboard extends LitElement {
       padding: 16px 24px 48px;
       box-sizing: border-box;
     }
+    /* Mobile: 24px horizontal padding eats ~48px of viewport on a phone.
+       Tighten and trim the bottom padding a touch since the page already
+       has plenty of breathing room at the bottom from card spacing. */
+    @media (max-width: 640px) {
+      .content { padding: 12px 12px 24px; }
+    }
     .layout {
       /* Default single-column flow (mobile / narrow viewports). On wide
          viewports a media query promotes us to a sticky sidebar + main grid. */

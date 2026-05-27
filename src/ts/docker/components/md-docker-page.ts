@@ -44,6 +44,22 @@ export class ModernuiDockerPage extends LitElement {
       width: 100%;
       box-sizing: border-box;
     }
+    /* Mobile: 24px of padding eats nearly 50px of horizontal viewport on a
+       phone — tighten to 12px so cards/rows have real estate to breathe. */
+    @media (max-width: 640px) {
+      .content { padding: 16px 12px; }
+      .head { gap: 12px; margin-bottom: 16px; }
+      .head h1 { font-size: 20px; }
+      .head .sub { font-size: 12px; }
+      .actions {
+        /* On mobile, action buttons wrap into a row at the top of the
+           folder/tag/add stack. Stretch each button to the same width so
+           they read as a group rather than mismatched widths from text. */
+        width: 100%;
+        gap: 6px;
+      }
+      .actions .btn { flex: 1 1 auto; min-width: 0; justify-content: center; }
+    }
 
     .head {
       display: flex; align-items: flex-end; justify-content: space-between;

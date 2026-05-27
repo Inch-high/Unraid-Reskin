@@ -71,9 +71,17 @@ export class ShellTopbar extends LitElement {
       .hamburger { display: inline-flex; }
     }
     @media (max-width: 639px) {
+      :host { padding: 0 8px; gap: 6px; }
       .breadcrumb { font-size: 12px; }
       .breadcrumb a:not(:last-child) { display: none; }
       .breadcrumb .sep { display: none; }
+      /* Hide the plugin-mirror slot on narrow phones — the per-plugin icons
+         can crowd the topbar past the available width once the breadcrumb
+         trims to a single segment. The icons stay clickable from the
+         sidebar footer status rows. */
+      #modernui-topbar-plugins { display: none; }
+      .right { gap: 0; }
+      .icon-btn { width: 30px; }
     }
   `;
 

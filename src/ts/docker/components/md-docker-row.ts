@@ -202,6 +202,23 @@ export class MdDockerRow extends LitElement {
       .row { grid-template-columns: 28px 40px 1fr 110px 90px; }
       .tags, .uptime { display: none; }
     }
+    /* Mobile: drop the state pill column (the icon already carries the
+       running/stopped color cue via the dot we add inside .icon below), keep
+       the actions narrow. Reduces row to checkbox + icon + name/image +
+       compact actions — the bare-minimum touchable layout. */
+    @media (max-width: 540px) {
+      .row {
+        grid-template-columns: 24px 36px 1fr auto;
+        gap: 8px;
+        padding: 10px 10px;
+      }
+      .state-badge { display: none; }
+      .icon { width: 36px; height: 36px; }
+      /* The "more" kebab is enough on a phone — webui/restart/start can ride
+         in the menu. Show only the kebab when space is tight. */
+      .actions .icon-btn:not(:last-child) { display: none; }
+      .menu { right: 0; min-width: 200px; }
+    }
   `;
 
   @property({ type: Object }) container!: DockerContainerFull;

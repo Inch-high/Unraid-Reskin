@@ -23,6 +23,7 @@ export class ShellUserMenu extends LitElement {
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       min-width: 240px;
+      max-width: calc(100vw - 16px);
       padding: 8px;
       display: none;
       z-index: 100;

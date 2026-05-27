@@ -50,6 +50,16 @@ export class MdDockerFolderModal extends LitElement {
     .head .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 
     .body { display: grid; grid-template-columns: 280px 1fr; min-height: 0; flex: 1; }
+    /* Mobile: the two-pane layout would compress the aside into useless
+       width. Stack aside above editor; cap aside height so the editor stays
+       reachable without scrolling past a long folder list. */
+    @media (max-width: 720px) {
+      .body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(140px, 35vh) 1fr;
+      }
+      .aside { border-right: 0; border-bottom: 1px solid var(--border-subtle); }
+    }
     .aside {
       border-right: 1px solid var(--border-subtle);
       display: flex; flex-direction: column;

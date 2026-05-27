@@ -49,7 +49,9 @@ export class ShellNotificationBell extends LitElement {
       border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      width: 360px; max-height: 480px; overflow-y: auto;
+      width: min(360px, calc(100vw - 32px));
+      max-width: calc(100vw - 16px);
+      max-height: 480px; overflow-y: auto;
       padding: 0;
       display: none; z-index: 100;
     }

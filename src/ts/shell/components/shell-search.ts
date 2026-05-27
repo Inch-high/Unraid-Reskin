@@ -46,7 +46,11 @@ export class ShellSearch extends LitElement {
     .trigger:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
     .popover {
       position: absolute; top: calc(100% + 6px); right: 0;
-      width: 340px;
+      /* Clamp to viewport so the popover never overflows a narrow phone
+         screen. 16px of breathing room at each edge stops it from kissing
+         the viewport edge on rotation. */
+      width: min(340px, calc(100vw - 32px));
+      max-width: calc(100vw - 16px);
       background: var(--bg-surface, #1a1a1a);
       border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       border-radius: 8px;

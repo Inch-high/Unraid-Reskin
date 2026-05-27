@@ -42,6 +42,15 @@ export class MdDockerTagModal extends LitElement {
     .head .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 
     .body { display: grid; grid-template-columns: 280px 1fr; min-height: 0; flex: 1; }
+    /* Mobile: stack aside above editor, same treatment as the folder modal —
+       the two-pane layout compresses both panes uselessly under ~720px. */
+    @media (max-width: 720px) {
+      .body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(140px, 35vh) 1fr;
+      }
+      .aside { border-right: 0 !important; border-bottom: 1px solid var(--border-subtle); }
+    }
     .aside {
       border-right: 1px solid var(--border-subtle);
       display: flex; flex-direction: column;

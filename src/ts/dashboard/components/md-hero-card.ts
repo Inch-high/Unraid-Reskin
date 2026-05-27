@@ -73,6 +73,17 @@ export class MdHeroCard extends LitElement {
       min-width: 56px;
     }
 
+    /* Mobile: pull the headline number down so a 5-digit value (e.g.
+       "1234 W") doesn't push the visual ring off the side and trigger a
+       horizontal scroll on a narrow phone. The twin layout below already
+       column-stacks on narrow widths via its own flex rules. */
+    @media (max-width: 480px) {
+      .body { padding: 16px; min-height: 120px; gap: 12px; }
+      .big { font-size: 24px; }
+      .visual { min-width: 44px; }
+      .visual ::slotted(*) { width: 40px; height: 40px; }
+    }
+
     /* Twin-stat layout (e.g. Workloads with separate Containers + VMs).
        Two stats sit at opposite ends of the card with their icon on the
        outer edge, number+label on the inner edge. */
