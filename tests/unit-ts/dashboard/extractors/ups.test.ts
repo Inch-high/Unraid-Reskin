@@ -139,4 +139,62 @@ describe('upsExtractor', () => {
     expect(result?.nominalPowerW).toBeNull();
     expect(result?.loadW).toBeNull();
   });
+
+  describe('Unraid 7.3 footer override', () => {
+    // The legacy UPS tbody stops receiving live updates in 7.3 — the new
+    // <footer> .footer-right chrome carries the live wattage and battery
+    // percentage instead. The extractor must prefer footer values when they
+    // exist, so the Power hero card doesn't get stuck reporting a stale
+    // load% × nominal product (e.g. "300W" forever on a 300W UPS).
+
+    function setupFooter(text: string): HTMLElement {
+      const footer = document.createElement('footer');
+      footer.innerHTML = `<div class="footer-right">${text}</div>`;
+      document.body.appendChild(footer);
+      return footer;
+    }
+
+    function teardownFooter(footer: HTMLElement | null): void {
+      footer?.remove();
+    }
+
+    it('prefers footer watts over tbody-computed loadW', () => {
+      const tbody = loadFixture('tblUPSNUTDash.html');
+      // Tbody says 20% × 1500W = 300W. Footer says 187W live. Footer wins.
+      populate(tbody, { loadpct: '20 %', nompower: '1500 W (1500 VA)' });
+      const footer = setupFooter('65°C 60°C 187 W (1500 VA) 76 %');
+      try {
+        const result = upsExtractor.extract({ source: tbody });
+        expect(result?.loadW).toBe(187);
+        expect(result?.batteryChargePct).toBe(76);
+        expect(result?.nominalPowerW).toBe(1500);
+      } finally {
+        teardownFooter(footer);
+      }
+    });
+
+    it('back-computes loadPct from footer watts when tbody loadPct is absent', () => {
+      // If Unraid 7.3 stopped writing .nut_loadpct but still has .nut_nompower
+      // (which is static metadata), we can recover load% from footer watts.
+      const tbody = loadFixture('tblUPSNUTDash.html');
+      populate(tbody, { nompower: '1000 W (1500 VA)' });
+      const footer = setupFooter('250 W 90 %');
+      try {
+        const result = upsExtractor.extract({ source: tbody });
+        expect(result?.loadW).toBe(250);
+        expect(result?.loadPct).toBe(25); // 250 / 1000
+      } finally {
+        teardownFooter(footer);
+      }
+    });
+
+    it('falls back to tbody values when no footer is present', () => {
+      const tbody = loadFixture('tblUPSNUTDash.html');
+      populate(tbody, { loadpct: '20 %', bcharge: '100 %', nompower: '1500 W (1500 VA)' });
+      // Don't set up a footer; existing test environment has none by default.
+      const result = upsExtractor.extract({ source: tbody });
+      expect(result?.loadW).toBe(300); // tbody fallback: 20% × 1500
+      expect(result?.batteryChargePct).toBe(100);
+    });
+  });
 });
