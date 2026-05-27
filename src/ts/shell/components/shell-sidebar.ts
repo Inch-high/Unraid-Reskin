@@ -72,6 +72,45 @@ export class ShellSidebar extends LitElement {
       border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       padding: 8px 0;
     }
+
+    /* Sidebar default toggle. Expanded sidebar shows a labeled segmented pill
+       so the user knows what the setting controls. Collapsed sidebar shrinks
+       to a single chevron icon to fit the narrow rail. */
+    .default-toggle {
+      margin: 8px 12px 4px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .default-toggle .label {
+      font: 600 10px var(--font-sans, system-ui);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .segmented {
+      flex: 1;
+      display: inline-flex;
+      background: var(--bg-elev-1, rgba(255,255,255,0.04));
+      border-radius: 9999px;
+      padding: 2px;
+      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+    }
+    .segmented button {
+      flex: 1;
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      height: 22px; padding: 0 8px;
+      background: transparent;
+      border: 0; cursor: pointer;
+      border-radius: 9999px;
+      color: var(--text-secondary);
+      font: 500 11px var(--font-sans, system-ui);
+    }
+    .segmented button:hover { color: var(--text-primary); }
+    .segmented button[data-active] {
+      background: var(--mui-accent, #ff8c2f);
+      color: #fff;
+    }
+
     .collapse-toggle {
       width: 100%;
       background: transparent;
@@ -80,15 +119,35 @@ export class ShellSidebar extends LitElement {
       padding: 8px;
       cursor: pointer;
       font: inherit;
+      display: inline-flex; align-items: center; justify-content: center;
     }
     .collapse-toggle:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
+    /* Rotate one chevron rather than swapping icons — swap forces a re-render
+       mid-transition and causes a brief flash. Rotation glides with the width. */
+    .collapse-toggle .chev {
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    :host-context(body.modernui-shell-collapsed) .collapse-toggle .chev {
+      transform: rotate(180deg);
+    }
+
+    :host-context(body.modernui-shell-collapsed) .default-toggle { display: none; }
     :host-context(body.modernui-shell-collapsed) .name { display: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .collapse-toggle .chev { transition: none; }
+    }
   `;
 
   @state() private _serverName = '';
   @state() private _nav: NavItem[] = [];
   @state() private _currentPath = '/';
   @state() private _collapsed = false;
+  // Saved default — what the sidebar will be set to on next page load.
+  // Tracked separately from _collapsed so the pill can preview the saved
+  // preference without flipping the live state.
+  @state() private _savedDefault: 'expanded' | 'collapsed' = 'expanded';
   @state() private _statusItems: Array<{ entry: PluginEntry | null; node: Element }> = [];
   private _disposeMirror: (() => void) | null = null;
   private _arrayInterval: number | null = null;
@@ -99,6 +158,7 @@ export class ShellSidebar extends LitElement {
     this._nav = buildNav(this._readStockAnchors());
     this._currentPath = window.location.pathname;
     this._collapsed = document.documentElement.dataset.modernuiSidebar === 'collapsed';
+    this._savedDefault = this._collapsed ? 'collapsed' : 'expanded';
     if (this._collapsed) document.body.classList.add('modernui-shell-collapsed');
     queueMicrotask(() => this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
       detail: { collapsed: this._collapsed },
@@ -167,16 +227,29 @@ export class ShellSidebar extends LitElement {
     }));
   }
 
+  // Chevron toggle: flips the live sidebar AND saves so the new state
+  // persists. This is the "I want this changed right now" affordance.
   private _toggleCollapsed = async (): Promise<void> => {
-    this._collapsed = !this._collapsed;
-    document.body.classList.toggle('modernui-shell-collapsed', this._collapsed);
-    document.documentElement.dataset.modernuiSidebar = this._collapsed ? 'collapsed' : 'expanded';
-    await this._persistCollapsed(this._collapsed);
+    const next = !this._collapsed;
+    this._collapsed = next;
+    document.body.classList.toggle('modernui-shell-collapsed', next);
+    document.documentElement.dataset.modernuiSidebar = next ? 'collapsed' : 'expanded';
+    this._savedDefault = next ? 'collapsed' : 'expanded';
+    await this._persistCollapsed(next);
     this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
-      detail: { collapsed: this._collapsed },
+      detail: { collapsed: next },
       bubbles: true,
       composed: true,
     }));
+  };
+
+  // Pill click: saves the preference for future page loads WITHOUT collapsing
+  // or expanding the sidebar in the current session. Lets the user say
+  // "next time I load, I want it like X" without disrupting their current view.
+  private _setDefault = async (target: 'expanded' | 'collapsed'): Promise<void> => {
+    if (this._savedDefault === target) return;
+    this._savedDefault = target;
+    await this._persistCollapsed(target === 'collapsed');
   };
 
   private async _persistCollapsed(collapsed: boolean): Promise<void> {
@@ -272,8 +345,17 @@ export class ShellSidebar extends LitElement {
         ${this._renderArrayState()}
         ${this._renderFooterRight()}
         ${this._statusItems.map((it) => this._renderStatus(it))}
+        ${this._collapsed ? '' : html`
+          <div class="default-toggle" title="Sidebar state used on next page load. Use the chevron below to collapse now.">
+            <span class="label">Default</span>
+            <div class="segmented" role="group" aria-label="Sidebar default state on next page load">
+              <button ?data-active=${this._savedDefault === 'expanded'} @click=${() => this._setDefault('expanded')}>Expanded</button>
+              <button ?data-active=${this._savedDefault === 'collapsed'} @click=${() => this._setDefault('collapsed')}>Collapsed</button>
+            </div>
+          </div>
+        `}
         <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed} aria-label=${this._collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          ${icon(this._collapsed ? 'chevron-right' : 'chevron-left', 18)}
+          <span class="chev">${icon('chevron-left', 18)}</span>
         </button>
       </div>
     `;

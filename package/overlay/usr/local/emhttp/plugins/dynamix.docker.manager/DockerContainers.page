@@ -1,0 +1,64 @@
+Menu="Docker:1"
+Title="Docker Containers"
+Tag="cubes"
+Cond="is_file('/var/run/dockerd.pid')"
+Markdown="false"
+Nchan="docker_load"
+Tabs="false"
+---
+<?PHP
+/* Modern UI replacement for dynamix.docker.manager/DockerContainers.page
+ *
+ * Renders an empty mount point — the front-end bundle (modernui-docker.js)
+ * mounts <modernui-docker-page>, fetches /plugins/unraid-modernui/include/docker-state.php
+ * for an initial snapshot, then subscribes to Unraid's nchan /sub/dockerload
+ * for live deltas. No blocking server-side work, no <script> injection,
+ * no per-render filesystem scans.
+ *
+ * Safe mode: install.php records the original file's SHA. upgrade.php
+ * verifies on disks_mounted; on mismatch, it restores the stock file and
+ * writes /boot/config/plugins/unraid-modernui/safemode. We detect that flag
+ * here and avoid mounting our shell so the user sees stock UI.
+ */
+
+$modernui_safemode = is_file('/boot/config/plugins/unraid-modernui/safemode');
+$modernui_disabled = is_file('/boot/config/plugins/unraid-modernui/disabled');
+
+if ($modernui_safemode || $modernui_disabled):
+?>
+<div style="padding:24px;color:#888;font-family:system-ui,sans-serif;">
+  <h2 style="margin:0 0 8px;">Docker</h2>
+  <p>Modern UI Docker page is currently disabled. Stock UI was not available because this
+  page file has been replaced by the Modern UI plugin. To restore the stock UI, uninstall
+  Modern UI from Plugins, or open Settings &rarr; Theme and click Disable.</p>
+</div>
+<?PHP else: ?>
+<!-- Modern UI Docker page mount point. Hydrated by modernui-docker.js. -->
+<div id="modernui-docker-root" data-modernui-docker="mounted"></div>
+<noscript>
+  <p style="padding:24px;color:#888;font-family:system-ui,sans-serif;">
+    Modern UI Docker page requires JavaScript. Append <code>?modernui=off</code> to the URL for stock UI.
+  </p>
+</noscript>
+<script>
+// Stubs for globals that community plugins (folder.view2 et al) expect from
+// Unraid's stock DockerContainers.page. We replaced that page wholesale, so
+// those plugins crash with ReferenceError when the globals are missing.
+// Explicit window.x assignment (vs. `function x(){}`) so the stubs are still
+// reachable from deferred scripts that capture references at module-eval time.
+window.listview   = window.listview   || function(){};
+window.loadlist   = window.loadlist   || function(){};
+window.dockersort = window.dockersort || function(){};
+window.showHide   = window.showHide   || function(){};
+window.autoStart  = window.autoStart  || function(){};
+window.showPopup  = window.showPopup  || function(){};
+window.docker     = window.docker     || [];
+window.allmenu    = window.allmenu    || [];
+// dockerload is the nchan WebSocket subscriber the stock page creates.
+// folder.view2 calls .on() on it. Provide a no-op shim with the same method.
+window.dockerload = window.dockerload || (function(){
+  var noop = function(){};
+  return { on: noop, start: noop, stop: noop, addEventListener: noop, removeEventListener: noop, dispatchEvent: function(){ return true; } };
+})();
+</script>
+<?PHP endif; ?>

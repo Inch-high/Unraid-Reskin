@@ -46,9 +46,18 @@ body.modernui-shell-active {
   padding-top: var(--shell-topbar-height);
   box-sizing: border-box;
 
+  // Page content glides in lockstep with the sidebar width animation in
+  // modernui-shell.ts (same 180ms cubic-bezier). Without this, the body
+  // padding snaps while the sidebar animates — visible flicker on toggle.
+  transition: padding-left 180ms cubic-bezier(0.2, 0, 0, 1);
+
   // Make sure the page content scrolls inside the padded region, not under
   // our fixed topbar/sidebar.
   min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.modernui-shell-active { transition: none; }
 }
 
 // While the sidebar is collapsed, narrow the padding.

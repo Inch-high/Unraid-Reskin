@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>ModernUI · Docker · Tag Manager (mock)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="./mock.css">
+</head>
+<body>
+
+<!-- Dim background hint of the docker page underneath -->
+<div class="shell" style="filter:saturate(.6) opacity(.45);pointer-events:none;">
+  <aside class="sidebar"><div class="sidebar-head"><div class="logo"></div><div><div class="server-name">HL15Rack</div></div></div></aside>
+  <main class="main"><div class="topbar"><div class="breadcrumb">Docker</div></div>
+  <section class="page">
+    <header class="page-head"><div><h1>Docker</h1></div></header>
+  </section>
+  </main>
+</div>
+
+<!-- =============================================================
+     Tag Manager modal
+     ============================================================= -->
+<div class="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title">
+
+    <header class="modal-head">
+      <div>
+        <h2 id="tag-modal-title">Manage Docker Tags</h2>
+        <p>Tags are cross-cutting · a container can carry many · stored in <code style="color:var(--mui-accent)">docker-tags.json</code></p>
+      </div>
+      <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg></button>
+    </header>
+
+    <div class="modal-body">
+      <div class="split">
+
+        <!-- LEFT: tag list -->
+        <aside class="split-aside">
+          <h3>Tags · 6</h3>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(34,197,94,.18);color:var(--success)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" data-color="success" style="margin-left:-4px">gpu</span>
+            <span class="count">3</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(59,130,246,.18);color:var(--info)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" data-color="info" style="margin-left:-4px">vpn</span>
+            <span class="count">2</span>
+          </div>
+
+          <div class="aside-row active">
+            <span class="swatch" style="background:rgba(245,158,11,.18);color:var(--warning)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" data-color="warning" style="margin-left:-4px">external</span>
+            <span class="count">6</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(239,68,68,.18);color:var(--danger)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" data-color="danger" style="margin-left:-4px">arr-stack</span>
+            <span class="count">5</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(167,139,250,.18);color:#a78bfa">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" style="margin-left:-4px;background:rgba(167,139,250,.18);color:#a78bfa">media</span>
+            <span class="count">9</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:var(--bg-elevated);color:var(--text-muted)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="tag" data-color="muted" style="margin-left:-4px">experimental</span>
+            <span class="count">2</span>
+          </div>
+
+          <button class="aside-add">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            New tag
+          </button>
+        </aside>
+
+        <!-- RIGHT: edit + per-container assignment for the selected tag -->
+        <div class="split-main">
+
+          <div class="field" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label>Tag name</label>
+              <input type="text" value="external">
+            </div>
+            <div>
+              <label>Color</label>
+              <div class="swatch-row">
+                <span class="swatch-pick" style="background:#22c55e"></span>
+                <span class="swatch-pick" style="background:#3b82f6"></span>
+                <span class="swatch-pick selected" style="background:#f59e0b"></span>
+                <span class="swatch-pick" style="background:#ef4444"></span>
+                <span class="swatch-pick" style="background:#a78bfa"></span>
+                <span class="swatch-pick" style="background:#14b8a6"></span>
+                <span class="swatch-pick" style="background:#ec4899"></span>
+                <span class="swatch-pick" style="background:#6b7280"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Assignments · 6 containers carry <span class="tag" data-color="warning" style="vertical-align:middle">external</span></label>
+
+            <!-- Search/filter for the assignment table -->
+            <div class="search" style="margin-bottom:10px">
+              <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>
+              <input type="text" placeholder="Filter containers...">
+            </div>
+
+            <div class="tag-assign-table">
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/plex.png" alt=""></span>
+                  <span class="ct-name">binhex-plexpass</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="success">gpu</span>
+                  <span class="tag" data-color="warning">external</span>
+                  <span class="tag" style="background:rgba(167,139,250,.15);color:#a78bfa">media</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon">CF</span>
+                  <span class="ct-name">cloudflareddns</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="warning">external</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/nginx-proxy-manager.png" alt=""></span>
+                  <span class="ct-name">Nginx-Proxy-Manager-Official</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="warning">external</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/cloudflare.png" alt=""></span>
+                  <span class="ct-name">Unraid-Cloudflared-Tunnel</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="warning">external</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/seerr.png" alt=""></span>
+                  <span class="ct-name">binhex-seerr</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="warning">external</span>
+                  <span class="tag" style="background:rgba(167,139,250,.15);color:#a78bfa">media</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row">
+                <input type="checkbox" checked>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/sabnzbd.png" alt=""></span>
+                  <span class="ct-name">binhex-sabnzbd</span>
+                </div>
+                <div class="ct-tags">
+                  <span class="tag" data-color="warning">external</span>
+                  <span class="tag" data-color="danger">arr-stack</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row" style="opacity:.7">
+                <input type="checkbox">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/grafana.png" alt=""></span>
+                  <span class="ct-name">Grafana</span>
+                </div>
+                <div class="ct-tags">
+                  <span style="color:var(--text-muted);font-size:12px;">— no tags —</span>
+                </div>
+              </div>
+
+              <div class="tag-assign-row" style="opacity:.7">
+                <input type="checkbox">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/homepage.png" alt=""></span>
+                  <span class="ct-name">homepage</span>
+                </div>
+                <div class="ct-tags">
+                  <span style="color:var(--text-muted);font-size:12px;">— no tags —</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-foot">
+      <span class="hint">⌘S saves · tag changes apply instantly to <span class="tag" data-color="warning">external</span> filter on the main page</span>
+      <div class="right">
+        <button class="btn btn-ghost">Delete tag</button>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<aside class="mock-legend">
+  <h3>Tag manager · notes</h3>
+  <ul>
+    <li>Tags are independent of folders — a container can be in 0–1 folder AND have 0–N tags.</li>
+    <li>Persisted to <code>docker-tags.json</code> as <code>{tags, assignments}</code>.</li>
+    <li>Per-row chips also editable from the main page via the kebab menu.</li>
+    <li>Deleting a tag removes all assignments — confirmation modal lists affected count.</li>
+  </ul>
+</aside>
+
+</body>
+</html>

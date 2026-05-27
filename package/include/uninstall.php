@@ -27,7 +27,11 @@ function modernui_uninstall(): void {
     modernui_strip_dynamix_cfg();
     // Restore the layout file from its SHA-keyed backup (or strip our markers if backup is missing)
     modernui_restore_from_backup(MODERNUI_LAYOUT_FILE, 'modernui_strip_html_block');
-    // We keep MODERNUI_CFG_DIR (settings.cfg + disabled flag) so a reinstall remembers prefs.
+    // Restore Unraid's docker manager page from backup. Fallback is a no-op
+    // (no strip needed — our overlay file replaced the original wholesale).
+    modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn($s) => $s);
+    // We keep MODERNUI_CFG_DIR (settings.cfg + disabled flag + docker-*.json)
+    // so a reinstall remembers prefs and user-curated folders/tags survive.
     // The .plg remove block deletes the plugin payload itself.
 }
 

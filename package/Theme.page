@@ -20,6 +20,8 @@ $zebra     = $settings['zebra']     ?? '0';
 $rmotion   = $settings['reduced_motion'] ?? 'auto';
 $dashboard = $settings['dashboard'] ?? 'on';
 $shell     = $settings['shell']     ?? 'on';
+$docker    = $settings['docker']    ?? 'on';
+$dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
 
 // Unraid's auto_prepend_file (/usr/local/emhttp/webGui/include/local_prepend.php)
 // rejects any POST without a matching csrf_token by calling exit; with no body.
@@ -65,16 +67,21 @@ $csrf_token = $var['csrf_token'] ?? '';
     </fieldset>
 
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
+      <legend>Docker page layout</legend>
+      <?= modernui_radio('docker', 'on',  'Modern', $docker) ?>
+      <?= modernui_radio('docker', 'off', 'Stock',  $docker) ?>
+      <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
+        Replace <code>/Docker</code> with a clean management UI: folders, tags, search, filters, bulk actions. Stock backend (start/stop/edit/remove endpoints, nchan live stream) is reused — only the page is ours. Folder &amp; tag data lives in <code>/boot/config/plugins/unraid-modernui/docker-*.json</code> and survives reboots.
+      </p>
+    </fieldset>
+
+
+    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Density</legend>
       <?= modernui_radio('density', 'comfortable', 'Comfortable', $density) ?>
       <?= modernui_radio('density', 'compact',     'Compact',     $density) ?>
     </fieldset>
 
-    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
-      <legend>Sidebar default</legend>
-      <?= modernui_radio('sidebar', 'expanded',  'Expanded',  $sidebar) ?>
-      <?= modernui_radio('sidebar', 'collapsed', 'Collapsed', $sidebar) ?>
-    </fieldset>
 
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Table zebra stripes</legend>

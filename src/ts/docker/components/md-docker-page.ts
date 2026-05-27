@@ -1,0 +1,340 @@
+import { LitElement, html, css, nothing } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import type { DockerStore } from '../store';
+import { filterContainers, groupContainers, filtersToQuery } from '../store';
+import type { DockerFolder, DockerTag } from '../types';
+import { icon } from '../icons';
+import {
+  executeContainer,
+  executeBulk,
+  saveFolders as saveFoldersRemote,
+  saveTags as saveTagsRemote,
+  saveSetting,
+  openWebUi,
+  openLogs,
+  openConsole,
+  openEdit,
+  type DockerAction,
+} from '../actions';
+import type { DockerRowActionDetail } from './md-docker-row';
+import type { BulkAction } from './md-docker-bulk-bar';
+import './md-docker-toolbar';
+import './md-docker-folder-section';
+import './md-docker-bulk-bar';
+import './md-docker-folder-modal';
+import './md-docker-tag-modal';
+
+@customElement('modernui-docker-page')
+export class ModernuiDockerPage extends LitElement {
+  static styles = css`
+    :host {
+      display: block;
+      width: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+    .content {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .head h1 { margin: 0 0 4px 0; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+    .head .sub {
+      margin: 0;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    .head .sub strong { color: var(--text-primary); font-weight: 600; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+      background: var(--bg-elevated);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-success { background: var(--success); }
+    .dot-danger  { background: var(--danger); }
+    .dot-info    { background: var(--info); }
+    .sep { color: var(--text-muted); }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 12px;
+      background: transparent;
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font: 500 13px var(--font-sans);
+    }
+    .btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .btn-primary { background: var(--mui-accent); color: #fff; border-color: var(--mui-accent); }
+    .btn-primary:hover { background: var(--mui-accent-hover); border-color: var(--mui-accent-hover); color: #fff; }
+
+    .empty {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-default);
+      border-radius: var(--radius-md);
+    }
+    .empty strong { display: block; font-size: 16px; color: var(--text-primary); margin-bottom: 4px; }
+  `;
+
+  private _store: DockerStore | null = null;
+  private _unsubscribe: (() => void) | null = null;
+
+  @state() private _tick = 0;   // re-render trigger
+  @state() private _showFolderModal = false;
+  @state() private _showTagModal = false;
+
+  setStore(store: DockerStore): void {
+    this._unsubscribe?.();
+    this._store = store;
+    this._unsubscribe = store.subscribe(() => { this._tick++; });
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._unsubscribe?.();
+  }
+
+  private async _handleAction(e: CustomEvent<DockerRowActionDetail>): Promise<void> {
+    if (!this._store) return;
+    const { container, action } = e.detail;
+    const state = this._store.getState();
+    const c = state.containers.find((x) => x.name === container);
+    if (!c) return;
+
+    switch (action) {
+      case 'webui':   openWebUi(c); return;
+      case 'logs':    openLogs(c);  return;
+      case 'console': openConsole(c); return;
+      case 'edit':    openEdit(c);  return;
+      case 'remove':
+        if (!confirm(`Remove container "${c.name}"? Templates are kept; you can re-add from Add Container.`)) return;
+        await executeContainer(c.name, 'remove');
+        return;
+      case 'update':
+        await executeContainer(c.name, 'update');
+        return;
+      case 'start':
+      case 'stop':
+      case 'restart':
+      case 'pause':
+      case 'resume': {
+        const map: Record<string, DockerAction> = {
+          start: 'start', stop: 'stop', restart: 'restart',
+          pause: 'pause', resume: 'start',
+        };
+        await executeContainer(c.name, map[action]);
+        return;
+      }
+    }
+  }
+
+  private async _handleBulk(e: CustomEvent<{ action: BulkAction }>): Promise<void> {
+    if (!this._store) return;
+    const selected = Array.from(this._store.getSelection());
+    if (selected.length === 0) return;
+    const a = e.detail.action;
+
+    if (a === 'clear') { this._store.clearSelection(); return; }
+
+    if (a === 'remove') {
+      if (!confirm(`Remove ${selected.length} container${selected.length === 1 ? '' : 's'}? Templates are kept.`)) return;
+      await executeBulk(selected, 'remove');
+      this._store.clearSelection();
+      return;
+    }
+
+    const map: Record<Exclude<BulkAction, 'clear' | 'remove'>, DockerAction> = {
+      start: 'start', stop: 'stop', restart: 'restart', update: 'update',
+    };
+    await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove'>]);
+  }
+
+  private _handleToggleSelect = (e: Event): void => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ container: string }>;
+    this._store.toggleSelection(ce.detail.container);
+  };
+
+  private _handleFolderSelect = (e: Event): void => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ folderId: string | null; containerNames: string[] }>;
+    // Toggle: if all in this folder are selected, deselect all; else select all.
+    const sel = this._store.getSelection();
+    const allSelected = ce.detail.containerNames.every((n) => sel.has(n));
+    for (const n of ce.detail.containerNames) {
+      const has = sel.has(n);
+      if (allSelected && has) this._store.toggleSelection(n);
+      else if (!allSelected && !has) this._store.toggleSelection(n);
+    }
+  };
+
+  private _handleFilters = (e: Event): void => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<typeof this._store extends DockerStore ? ReturnType<DockerStore['getFilters']> : never>;
+    this._store.setFilters(ce.detail);
+    // Sync URL so views are bookmarkable.
+    const url = window.location.pathname + filtersToQuery(this._store.getFilters());
+    window.history.replaceState(null, '', url);
+  };
+
+  private _handleToggleFolder = (e: Event): void => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ folderId: string }>;
+    this._store.toggleCollapsed(ce.detail.folderId);
+  };
+
+  private _handleFolderDefault = async (e: Event): Promise<void> => {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ value: 'expanded' | 'collapsed' }>;
+    // Immediate UI update; PHP persistence is best-effort in the background.
+    this._store.setCollapseDefault(ce.detail.value);
+    document.documentElement.dataset.modernuiDockerFolderDefault = ce.detail.value;
+    try { await saveSetting('docker_folder_default', ce.detail.value); }
+    catch (err) { console.warn('[modernui-docker] failed to persist folder default:', err); }
+  };
+
+  private async _saveFolders(e: Event): Promise<void> {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ folders: DockerFolder[] }>;
+    try {
+      await saveFoldersRemote(ce.detail.folders);
+      this._store.setFolders(ce.detail.folders);
+      this._showFolderModal = false;
+    } catch (err) {
+      alert(`Save failed: ${(err as Error).message}`);
+    }
+  }
+
+  private async _saveTags(e: Event): Promise<void> {
+    if (!this._store) return;
+    const ce = e as CustomEvent<{ tags: DockerTag[]; assignments: Record<string, string[]> }>;
+    try {
+      await saveTagsRemote(ce.detail.tags, ce.detail.assignments);
+      this._store.setTags(ce.detail.tags, ce.detail.assignments);
+      this._showTagModal = false;
+    } catch (err) {
+      alert(`Save failed: ${(err as Error).message}`);
+    }
+  }
+
+  render() {
+    if (!this._store) return html`<div class="content"><p class="empty">Loading…</p></div>`;
+    const state = this._store.getState();
+    const filters = this._store.getFilters();
+    const selection = this._store.getSelection();
+
+    const filtered = filterContainers(state, filters);
+    const groups = groupContainers(filtered, state.folders);
+
+    const total = state.containers.length;
+    const running = state.containers.filter((c) => c.state === 'started').length;
+    const stopped = total - running;
+    const withUpdates = state.containers.filter((c) => c.updateAvailable).length;
+
+    return html`
+      <div class="content"
+           @docker-action=${(e: CustomEvent<DockerRowActionDetail>) => this._handleAction(e)}
+           @docker-toggle-select=${this._handleToggleSelect}
+           @docker-select-folder=${this._handleFolderSelect}
+           @docker-bulk=${(e: CustomEvent<{ action: BulkAction }>) => this._handleBulk(e)}
+           @docker-filters=${this._handleFilters}
+           @docker-toggle-folder=${this._handleToggleFolder}
+           @docker-folder-default=${this._handleFolderDefault}
+           @docker-edit-folder=${() => { this._showFolderModal = true; }}
+           @docker-save-folders=${(e: Event) => this._saveFolders(e)}
+           @docker-save-tags=${(e: Event) => this._saveTags(e)}
+           @docker-modal-close=${() => { this._showFolderModal = false; this._showTagModal = false; }}>
+
+        <header class="head">
+          <div>
+            <h1>Docker</h1>
+            <p class="sub">
+              <span><strong>${total}</strong> containers</span>
+              <span class="sep">·</span>
+              <span class="pill"><span class="dot dot-success"></span> ${running} running</span>
+              ${stopped > 0 ? html`<span class="pill"><span class="dot dot-danger"></span> ${stopped} stopped</span>` : nothing}
+              ${withUpdates > 0 ? html`<span class="pill"><span class="dot dot-info"></span> ${withUpdates} update${withUpdates === 1 ? '' : 's'} available</span>` : nothing}
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn" @click=${() => { this._showTagModal = true; }}>${icon('tag')} Manage Tags</button>
+            <button class="btn" @click=${() => { this._showFolderModal = true; }}>${icon('folder')} Manage Folders</button>
+            <a class="btn btn-primary" href="/Docker/AddContainer">${icon('plus')} Add Container</a>
+          </div>
+        </header>
+
+        <md-docker-toolbar
+          .filters=${filters}
+          .containers=${state.containers}
+          .tags=${state.tags}
+          .tagAssignments=${state.tagAssignments}
+          .folderDefault=${this._store?.getCollapseDefault() ?? 'expanded'}
+        ></md-docker-toolbar>
+
+        ${total === 0 ? html`
+          <div class="empty">
+            <strong>No containers</strong>
+            Add one from Community Apps, or use the Add Container button above.
+          </div>
+        ` : groups.length === 0 ? html`
+          <div class="empty">
+            <strong>No containers match your filters</strong>
+            Clear filters or change the search query.
+          </div>
+        ` : groups.map((g) => {
+          const key = g.folderId ?? 'ungrouped';
+          return html`
+            <md-docker-folder-section
+              .folder=${g.folder}
+              .containers=${g.containers}
+              .allTags=${state.tags}
+              .tagAssignments=${state.tagAssignments}
+              .selection=${selection}
+              ?collapsed=${this._store?.isCollapsed(key) ?? false}
+            ></md-docker-folder-section>
+          `;
+        })}
+
+        ${selection.size > 0 ? html`
+          <md-docker-bulk-bar .selectedCount=${selection.size}></md-docker-bulk-bar>
+        ` : nothing}
+
+        ${this._showFolderModal ? html`
+          <md-docker-folder-modal
+            .folders=${state.folders}
+            .containers=${state.containers}
+          ></md-docker-folder-modal>
+        ` : nothing}
+
+        ${this._showTagModal ? html`
+          <md-docker-tag-modal
+            .tags=${state.tags}
+            .assignments=${state.tagAssignments}
+            .containers=${state.containers}
+          ></md-docker-tag-modal>
+        ` : nothing}
+      </div>
+    `;
+  }
+}

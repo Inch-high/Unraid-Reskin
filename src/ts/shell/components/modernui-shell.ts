@@ -46,6 +46,7 @@ export class ModernuiShell extends LitElement {
       background: var(--bg-surface);
       border-right: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       box-sizing: border-box;
+      transition: width 180ms cubic-bezier(0.2, 0, 0, 1);
     }
     .topbar {
       pointer-events: auto;
@@ -57,6 +58,7 @@ export class ModernuiShell extends LitElement {
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
       box-sizing: border-box;
+      transition: left 180ms cubic-bezier(0.2, 0, 0, 1);
     }
     :host([collapsed]) .sidebar { width: var(--shell-sidebar-width-collapsed); }
     :host([collapsed]) .topbar { left: var(--shell-sidebar-width-collapsed); }
@@ -79,7 +81,7 @@ export class ModernuiShell extends LitElement {
       :host([drawer-open]) .scrim { display: block; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .sidebar { transition: none; }
+      .sidebar, .topbar { transition: none; }
     }
   `;
 

@@ -5,8 +5,10 @@ const MODERNUI_PLUGIN_NAME    = 'unraid-modernui';
 const MODERNUI_DYNAMIX_CFG    = '/boot/config/plugins/dynamix/dynamix.cfg';
 const MODERNUI_CFG_DIR        = '/boot/config/plugins/unraid-modernui';
 const MODERNUI_BACKUP_DIR     = '/usr/local/emhttp/plugins/unraid-modernui/backups';
+const MODERNUI_OVERLAY_DIR    = '/usr/local/emhttp/plugins/unraid-modernui/overlay';
 // Discovered in Task 7 Step 0 — verify on Unraid 7.x box if changed in a future release.
 const MODERNUI_LAYOUT_FILE    = '/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout.php';
+const MODERNUI_DOCKER_PAGE    = '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page';
 // Inline filemtime() expressions in the injected tags evaluate per-request
 // inside DefaultPageLayout.php (which is a PHP file), turning every cfg save
 // into a fresh URL and busting the browser's stale loader.js cache. Without
@@ -93,11 +95,21 @@ function modernui_generate_loader_js(bool $disabled): void {
     $dashboard = $settings['dashboard'] ?? 'on';
     $shell     = $settings['shell']     ?? 'on';
     $sidebar   = $settings['sidebar']   ?? 'expanded';
-    $extraScript = $disabled
-        ? ''
-        : "var d=document.createElement('script');\n"
-          . "d.src='/plugins/unraid-modernui/theme/dist/modernui-dashboard.js';\n"
-          . "document.head.appendChild(d);\n";
+    $docker    = $settings['docker']    ?? 'on';
+    $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
+    // When enabled, lazy-load the dashboard + docker bundles too. Each one
+    // page-detects internally and exits early off-route — adding them here
+    // costs ~5 KB gzipped per route guard. Keeping them out of the main
+    // bundle keeps /Main, /Settings etc. lighter.
+    $extraScript = '';
+    if (!$disabled) {
+        $extraScript .= "var d=document.createElement('script');\n"
+                      . "d.src='/plugins/unraid-modernui/theme/dist/modernui-dashboard.js';\n"
+                      . "document.head.appendChild(d);\n";
+        $extraScript .= "var dk=document.createElement('script');\n"
+                      . "dk.src='/plugins/unraid-modernui/theme/dist/modernui-docker.js';\n"
+                      . "document.head.appendChild(dk);\n";
+    }
     $loader = "(function(){\n"
         . "var r=document.documentElement;\n"
         . "r.dataset.modernuiMode=" . json_encode($mode) . ";\n"
@@ -105,6 +117,8 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "r.dataset.modernuiDashboard=" . json_encode($dashboard) . ";\n"
         . "r.dataset.modernuiShell=" . json_encode($shell) . ";\n"
         . "r.dataset.modernuiSidebar=" . json_encode($sidebar) . ";\n"
+        . "r.dataset.modernuiDocker=" . json_encode($docker) . ";\n"
+        . "r.dataset.modernuiDockerFolderDefault=" . json_encode($dockerFolderDefault) . ";\n"
         . "var s=document.createElement('script');\n"
         . "s.src='/plugins/unraid-modernui/theme/dist/" . $target . "';\n"
         . "document.head.appendChild(s);\n"
@@ -114,12 +128,49 @@ function modernui_generate_loader_js(bool $disabled): void {
     file_put_contents($loaderPath, $loader, LOCK_EX);
 }
 
+// Replace an Unraid file with our overlay copy. Backs up the original by SHA
+// first, so uninstall (and safe-mode recovery) can restore byte-identically.
+function modernui_replace_file(string $target, string $overlaySrc): bool {
+    if (!is_file($overlaySrc)) {
+        echo "Modern UI: WARNING — overlay source missing: {$overlaySrc}\n";
+        return false;
+    }
+    if (is_file($target)) {
+        modernui_backup_file($target);
+    }
+    $dir = dirname($target);
+    if (!is_dir($dir)) {
+        echo "Modern UI: WARNING — target directory missing: {$dir} (plugin not installed?)\n";
+        return false;
+    }
+    // Atomic replace via tmp + rename so a half-written file can never serve.
+    $tmp = $target . '.modernui.tmp';
+    if (!@copy($overlaySrc, $tmp)) {
+        echo "Modern UI: WARNING — copy to {$tmp} failed\n";
+        return false;
+    }
+    if (!@rename($tmp, $target)) {
+        @unlink($tmp);
+        echo "Modern UI: WARNING — atomic rename of {$tmp} -> {$target} failed\n";
+        return false;
+    }
+    return true;
+}
+
 function modernui_install(): void {
     if (!is_dir(MODERNUI_CFG_DIR)) mkdir(MODERNUI_CFG_DIR, 0755, true);
 
     modernui_backup_file(MODERNUI_LAYOUT_FILE);
     modernui_strip_dynamix_cfg();
     modernui_inject_script_tag();
+
+    // Replace the docker manager's page file with our mount-point shell.
+    // The backend (DockerContainers.php, Events.php, nchan workers) stays
+    // stock — only the .page front-end is ours.
+    modernui_replace_file(
+        MODERNUI_DOCKER_PAGE,
+        MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page'
+    );
 
     $disabled = modernui_is_disabled(MODERNUI_CFG_DIR);
     modernui_generate_loader_js($disabled);

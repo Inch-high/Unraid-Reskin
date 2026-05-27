@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>ModernUI · Docker · Folder Manager (mock)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="./mock.css">
+</head>
+<body>
+
+<!-- Dim background hint of the docker page underneath -->
+<div class="shell" style="filter:saturate(.6) opacity(.45);pointer-events:none;">
+  <aside class="sidebar"><div class="sidebar-head"><div class="logo"></div><div><div class="server-name">HL15Rack</div></div></div></aside>
+  <main class="main"><div class="topbar"><div class="breadcrumb">Docker</div></div>
+  <section class="page">
+    <header class="page-head"><div><h1>Docker</h1></div></header>
+  </section>
+  </main>
+</div>
+
+<!-- =============================================================
+     Folder Manager modal — opened from page header
+     ============================================================= -->
+<div class="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title">
+
+    <header class="modal-head">
+      <div>
+        <h2 id="folder-modal-title">Manage Docker Folders</h2>
+        <p>Folders are stored in <code style="color:var(--mui-accent)">/boot/config/plugins/unraid-modernui/docker-folders.json</code> · written atomically on save</p>
+      </div>
+      <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg></button>
+    </header>
+
+    <div class="modal-body">
+      <div class="split">
+
+        <!-- LEFT: folder list -->
+        <aside class="split-aside">
+          <h3>Folders · 6</h3>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(255,140,47,.18);color:var(--mui-accent)">
+              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14"/></svg>
+            </span>
+            <span>Media</span>
+            <span class="count">11</span>
+          </div>
+
+          <div class="aside-row active">
+            <span class="swatch" style="background:rgba(59,130,246,.18);color:var(--info)">
+              <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M2 8.82a16 16 0 0 1 20 0"/></svg>
+            </span>
+            <span>Network</span>
+            <span class="count">8</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(34,197,94,.18);color:var(--success)">
+              <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 17l4-4 4 2 5-7"/></svg>
+            </span>
+            <span>Monitoring</span>
+            <span class="count">6</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(167,139,250,.18);color:#a78bfa">
+              <svg viewBox="0 0 24 24"><path d="M4 20V4h12l4 4v12z"/><path d="M4 8h12"/></svg>
+            </span>
+            <span>Books</span>
+            <span class="count">5</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:rgba(239,68,68,.18);color:var(--danger)">
+              <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/></svg>
+            </span>
+            <span>AI</span>
+            <span class="count">2</span>
+          </div>
+
+          <div class="aside-row">
+            <span class="swatch" style="background:var(--bg-elevated);color:var(--text-muted)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/></svg>
+            </span>
+            <span>Utility</span>
+            <span class="count">12</span>
+          </div>
+
+          <button class="aside-add">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            New folder
+          </button>
+
+          <h3>System</h3>
+          <div class="aside-row" style="cursor:default;opacity:.7">
+            <span class="swatch" style="background:var(--bg-elevated);color:var(--text-muted)">
+              <svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM3 7l4-4h10l4 4"/></svg>
+            </span>
+            <span>Ungrouped</span>
+            <span class="count">3</span>
+          </div>
+        </aside>
+
+        <!-- RIGHT: edit pane for selected folder (Network) -->
+        <div class="split-main">
+
+          <div class="field">
+            <label>Folder name</label>
+            <input type="text" value="Network">
+          </div>
+
+          <div class="field">
+            <label>Color</label>
+            <div class="swatch-row">
+              <span class="swatch-pick" style="background:#ff8c2f"></span>
+              <span class="swatch-pick selected" style="background:#3b82f6"></span>
+              <span class="swatch-pick" style="background:#22c55e"></span>
+              <span class="swatch-pick" style="background:#a78bfa"></span>
+              <span class="swatch-pick" style="background:#ef4444"></span>
+              <span class="swatch-pick" style="background:#f59e0b"></span>
+              <span class="swatch-pick" style="background:#14b8a6"></span>
+              <span class="swatch-pick" style="background:#6b7280"></span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Icon</label>
+            <div class="icon-row">
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14"/></svg></span>
+              <span class="icon-pick selected"><svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M2 8.82a16 16 0 0 1 20 0M8.5 16.43a6 6 0 0 1 7 0"/><circle cx="12" cy="20" r="1"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 17l4-4 4 2 5-7"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><path d="M4 20V4h12l4 4v12z"/><path d="M4 8h12"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="10"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg></span>
+              <span class="icon-pick"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Containers · drag between columns to assign</label>
+            <div class="members">
+              <div class="members-col">
+                <h4>In Network <span class="count">8</span></h4>
+                <ul class="members-list">
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/adguard-home.png" alt=""></span>
+                    <span class="name">AdGuard-Home</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon">CF</span>
+                    <span class="name">cloudflareddns</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/nginx-proxy-manager.png" alt=""></span>
+                    <span class="name">Nginx-Proxy-Manager-Official</span>
+                    <span class="state-dot" style="background:var(--danger)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/smokeping.png" alt=""></span>
+                    <span class="name">smokeping</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/speedtest-tracker.png" alt=""></span>
+                    <span class="name">speedtest-tracker</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/cloudflare.png" alt=""></span>
+                    <span class="name">Unraid-Cloudflared-Tunnel</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/adguard-home.png" alt=""></span>
+                    <span class="name">adguardhome-sync</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/unifi.png" alt=""></span>
+                    <span class="name">UniFi-Poller</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                </ul>
+              </div>
+              <div class="members-col">
+                <h4>Available <span class="count">39</span></h4>
+                <ul class="members-list">
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/homepage.png" alt=""></span>
+                    <span class="name">homepage</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/it-tools.png" alt=""></span>
+                    <span class="name">it-tools</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/grafana.png" alt=""></span>
+                    <span class="name">Grafana</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/prometheus.png" alt=""></span>
+                    <span class="name">prometheus</span>
+                    <span class="state-dot" style="background:var(--success)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/syncthing.png" alt=""></span>
+                    <span class="name">syncthing</span>
+                    <span class="state-dot" style="background:var(--danger)"></span>
+                  </li>
+                  <li class="member">
+                    <span class="mini-icon"><img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/clamav.png" alt=""></span>
+                    <span class="name">ClamAV</span>
+                    <span class="state-dot" style="background:var(--danger)"></span>
+                  </li>
+                  <li class="member" style="opacity:.6">
+                    <span class="mini-icon">…</span>
+                    <span class="name">33 more</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-foot">
+      <span class="hint">⌘S saves · changes are written atomically</span>
+      <div class="right">
+        <button class="btn btn-ghost">Delete folder</button>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<aside class="mock-legend">
+  <h3>Folder manager · notes</h3>
+  <ul>
+    <li>Persisted to <code>docker-folders.json</code> on save (atomic <code>LOCK_EX</code>).</li>
+    <li>"Ungrouped" is system — never editable, no delete.</li>
+    <li>Drag containers between left/right columns to reassign.</li>
+    <li>Deleting a folder returns its containers to Ungrouped — none deleted.</li>
+    <li>Migration from folder.view2 fills this list on first run.</li>
+  </ul>
+</aside>
+
+</body>
+</html>
