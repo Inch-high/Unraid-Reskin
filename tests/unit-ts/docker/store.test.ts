@@ -245,6 +245,145 @@ describe('collapse state — default + explicit toggle', () => {
   });
 });
 
+describe('updating state', () => {
+  // localStorage bleed between tests would have one test's marked container
+  // hydrated into another's fresh store. Wipe it before each run.
+  beforeEach(() => { try { localStorage.removeItem('modernui-docker-updating'); } catch {} });
+
+  it('markUpdating flags containers and notifies once per batch', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.markUpdating(['plex', 'sonarr']);
+    expect(store.getUpdating().has('plex')).toBe(true);
+    expect(store.getUpdating().has('sonarr')).toBe(true);
+    expect(calls).toBe(1);
+  });
+
+  it('markUpdating is idempotent — no notify when nothing changes', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markUpdating(['plex']);
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.markUpdating(['plex']);
+    expect(calls).toBe(0);
+  });
+
+  it('clears entries when the container id rotates (recreated post-pull)', () => {
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'old-id', updateAvailable: true });
+    store.setState(s);
+    store.markUpdating(['plex']);
+    expect(store.getUpdating().has('plex')).toBe(true);
+
+    const next = sampleState();
+    next.containers[0] = mkContainer({ name: 'plex', id: 'new-id', updateAvailable: false });
+    store.setState(next);
+    expect(store.getUpdating().has('plex')).toBe(false);
+  });
+
+  it('clears entries when updateAvailable flips true→false (id unchanged path)', () => {
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'same-id', updateAvailable: true });
+    store.setState(s);
+    store.markUpdating(['plex']);
+    const next = sampleState();
+    next.containers[0] = mkContainer({ name: 'plex', id: 'same-id', updateAvailable: false });
+    store.setState(next);
+    expect(store.getUpdating().has('plex')).toBe(false);
+  });
+
+  it('does NOT clear while updateAvailable is still true and id unchanged', () => {
+    // Snapshot poll fires before docker finishes the recreate. We must keep
+    // the row in the updating state — clearing too early would whiplash the UI.
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'abc', updateAvailable: true });
+    store.setState(s);
+    store.markUpdating(['plex']);
+    // Same snapshot again — nothing changed
+    store.setState({ ...s, containers: [...s.containers] });
+    expect(store.getUpdating().has('plex')).toBe(true);
+  });
+
+  it('clearUpdating drops a single entry', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markUpdating(['plex', 'sonarr']);
+    store.clearUpdating('plex');
+    expect(store.getUpdating().has('plex')).toBe(false);
+    expect(store.getUpdating().has('sonarr')).toBe(true);
+  });
+
+  it('clearUpdating is a no-op when name was not marked', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.clearUpdating('plex');
+    expect(calls).toBe(0);
+  });
+
+  it('clears when the container vanishes from the snapshot', () => {
+    // E.g. user removed the container while the update was in flight; we
+    // shouldn't dangle the updating set against a non-existent name.
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markUpdating(['radarr']);
+    const next = sampleState();
+    next.containers = next.containers.filter((c) => c.name !== 'radarr');
+    store.setState(next);
+    expect(store.getUpdating().has('radarr')).toBe(false);
+  });
+
+  it('persists across store recreate (refresh / nav-away scenario)', () => {
+    const store1 = createDockerStore();
+    store1.setState(sampleState());
+    store1.markUpdating(['plex']);
+    // Tab refresh — new store reads the same localStorage.
+    const store2 = createDockerStore();
+    expect(store2.getUpdating().has('plex')).toBe(true);
+  });
+
+  it('clearUpdating wipes storage so refresh doesnt resurrect cleared entries', () => {
+    const store1 = createDockerStore();
+    store1.setState(sampleState());
+    store1.markUpdating(['plex']);
+    store1.clearUpdating('plex');
+    const store2 = createDockerStore();
+    expect(store2.getUpdating().has('plex')).toBe(false);
+  });
+
+  it('reconcile clears completed updates from storage too', () => {
+    const store1 = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'old-id', updateAvailable: true });
+    store1.setState(s);
+    store1.markUpdating(['plex']);
+    // Simulate the update completing while away — next snapshot has new id.
+    const next = sampleState();
+    next.containers[0] = mkContainer({ name: 'plex', id: 'new-id', updateAvailable: false });
+    store1.setState(next);
+    // Refresh — storage should have been wiped by the reconcile path.
+    const store2 = createDockerStore();
+    expect(store2.getUpdating().size).toBe(0);
+  });
+
+  it('drops entries older than the watchdog window on rehydrate', () => {
+    // Manually write a stale entry (6 minutes ago) to localStorage. Without
+    // the load-time filter, this zombie would sit there for the full poll
+    // cycle before reconcileUpdating's timeout cleaned it up.
+    const stale = { plex: { startedAt: Date.now() - 6 * 60_000, prevId: 'abc', prevUpdateAvailable: true } };
+    localStorage.setItem('modernui-docker-updating', JSON.stringify(stale));
+    const store = createDockerStore();
+    expect(store.getUpdating().has('plex')).toBe(false);
+  });
+});
+
 describe('showStats flag', () => {
   it('defaults off and toggles via setShowStats', () => {
     const store = createDockerStore();

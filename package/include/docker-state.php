@@ -156,9 +156,14 @@ function modernui_normalize_container(string $name, array $info, array $ct, ?int
     $paused  = !empty($info['paused'])  || !empty($ct['Paused']);
     $state   = $paused ? 'paused' : ($running ? 'started' : 'stopped');
 
-    // "updated" is emitted as the STRING "true"/"false" — `!empty("false")` is true,
-    // so we'd flag every container as having an update. Compare to "true" explicitly.
-    $updateAvailable = ($info['updated'] ?? null) === 'true';
+    // DockerUpdate's "updated" field is a STRING with inverted naming: 'true'
+    // means local digest matches remote (= up-to-date, NO update needed),
+    // 'false' means digests differ (= update available). Stock UI's switch in
+    // DockerContainers.php encodes this: case 0 ('true') → "up-to-date",
+    // case 1 ('false') → "update ready / apply update". Match that polarity
+    // here — otherwise every container that's current would show "Update
+    // available" and freshly-pulled images would never clear the badge.
+    $updateAvailable = ($info['updated'] ?? null) === 'false';
 
     // Status is "Up 3 days (healthy)" / "Exited (0) 2 days ago" — usable as-is.
     $uptime = $running ? ($ct['Status'] ?? null) : null;

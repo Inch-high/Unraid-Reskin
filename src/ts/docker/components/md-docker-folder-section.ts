@@ -52,6 +52,28 @@ export class MdDockerFolderSection extends LitElement {
       border-radius: var(--radius-full);
     }
     .updates-pill svg { width: 12px; height: 12px; }
+    /* "N updating" pill — same shape as updates-pill but uses --info colors
+       and a tiny spinner so users with collapsed folders see an in-flight
+       update too. Sits next to (or instead of) the pending-update pill. */
+    .updating-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-left: 8px;
+      padding: 2px 8px;
+      font: 600 11px var(--font-sans);
+      color: var(--info);
+      background: rgba(59,130,246,.15);
+      border-radius: var(--radius-full);
+    }
+    .updating-pill .sp {
+      width: 10px; height: 10px;
+      border: 1.5px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: md-docker-sp 0.7s linear infinite;
+    }
+    @keyframes md-docker-sp {
+      to { transform: rotate(360deg); }
+    }
 
     /* Summed stats shown in the folder header — only when the folder is
        collapsed AND showStats=true. Helps users see resource consumption
@@ -106,6 +128,9 @@ export class MdDockerFolderSection extends LitElement {
   @property({ type: Array }) allTags: DockerTag[] = [];
   @property({ type: Object }) tagAssignments: Record<string, string[]> = {};
   @property({ type: Object }) selection: Set<string> = new Set();
+  // Live set of container names with an update-in-flight. Threaded down to
+  // each row so it can render the "Updating…" pill + disable buttons.
+  @property({ type: Object }) updating: Set<string> = new Set();
   // Controlled: parent owns the collapsed state (via store) so it survives
   // re-renders triggered by filter changes. Toggle emits 'docker-toggle-folder'.
   @property({ type: Boolean, reflect: true }) collapsed = false;
@@ -161,7 +186,8 @@ export class MdDockerFolderSection extends LitElement {
   render() {
     const running = this.containers.filter((c) => c.state === 'started').length;
     const total = this.containers.length;
-    const updates = this.containers.filter((c) => c.updateAvailable).length;
+    const updates = this.containers.filter((c) => c.updateAvailable && !this.updating.has(c.name)).length;
+    const inFlight = this.containers.filter((c) => this.updating.has(c.name)).length;
     const name = this.folder?.name ?? 'Ungrouped';
     const color = this._color();
     const bg = `${color}2e`; // ~18% alpha
@@ -179,6 +205,11 @@ export class MdDockerFolderSection extends LitElement {
           <span class="folder-icon" style="background:${bg};color:${color}">${icon(this._iconName(), 16)}</span>
           <span class="name">${name}</span>
           <span class="meta">${total} container${total === 1 ? '' : 's'} · ${running} running</span>
+          ${inFlight > 0 ? html`
+            <span class="updating-pill" title="${inFlight} container${inFlight === 1 ? '' : 's'} in this folder ${inFlight === 1 ? 'is' : 'are'} currently being updated">
+              <span class="sp"></span> ${inFlight} updating
+            </span>
+          ` : nothing}
           ${updates > 0 ? html`
             <span class="updates-pill" title="${updates} container${updates === 1 ? '' : 's'} in this folder ${updates === 1 ? 'has' : 'have'} an update available">
               ${icon('update', 12)} ${updates} update${updates === 1 ? '' : 's'}
@@ -212,6 +243,7 @@ export class MdDockerFolderSection extends LitElement {
               .tags=${this.allTags}
               .assignedTagIds=${this.tagAssignments[c.name] ?? []}
               ?selected=${this.selection.has(c.name)}
+              ?updating=${this.updating.has(c.name)}
               ?showStats=${this.showStats}
             ></md-docker-row></li>
           `)}

@@ -7,6 +7,15 @@ import type { DockerContainerFull, DockerFolder, DockerTag, DockerFoldersFile, D
 export type DockerAction = 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update';
 
 const EVENTS_ENDPOINT = '/plugins/dynamix.docker.manager/include/Events.php';
+// Events.php has no `update` case — POSTing action=update there returns
+// {"error":"Unknown action 'update'"} and the container is NEVER updated. The
+// stock UI bypasses Events.php for update entirely: it shells out to a
+// long-running PHP CLI script (`update_container <name1>*<name2>...`) launched
+// detached via StartCommand.php. The script stops, pulls a fresh image, and
+// recreates the container(s) serially. Output streams over the `docker` nchan
+// channel; we ignore it and rely on docker-state.php polling to detect
+// completion.
+const START_COMMAND_ENDPOINT = '/webGui/include/StartCommand.php';
 const SAVE_FOLDERS    = '/plugins/unraid-modernui/include/save-docker-folders.php';
 const SAVE_TAGS       = '/plugins/unraid-modernui/include/save-docker-tags.php';
 
@@ -27,7 +36,37 @@ async function postUrlEncoded(url: string, body: Record<string, string>): Promis
 }
 
 export async function executeContainer(container: string, action: DockerAction): Promise<void> {
+  // update_container is a long-running CLI script, not an Events.php verb —
+  // route it through the dedicated helper instead of the (404-equivalent)
+  // default Events.php path.
+  if (action === 'update') {
+    await updateContainers([container]);
+    return;
+  }
   await postUrlEncoded(EVENTS_ENDPOINT, { action, container });
+}
+
+// Trigger updates for one or more containers via Unraid's StartCommand.php +
+// update_container script. The script splits its single argv[1] on '*', so we
+// join the names that way (after URL-encoding each one to survive both the
+// form-body decode and the script's rawurldecode()). One detached worker
+// processes the full list serially.
+//
+// IMPORTANT: StartCommand.php pgrep-matches on the script's binary path, not
+// its args — so two concurrent POSTs would race and only the first would
+// actually start. Always batch into a single call rather than firing one POST
+// per container.
+//
+// Returns the PID string from StartCommand.php (or '0' if no worker was
+// started, e.g. another update is already in flight). The page ignores the
+// PID and watches docker-state.php for completion signals — kept here for
+// future "abort" UX.
+export async function updateContainers(names: string[]): Promise<string> {
+  if (names.length === 0) return '0';
+  const cmd = 'update_container ' + names.map(encodeURIComponent).join('*');
+  const res = await postUrlEncoded(START_COMMAND_ENDPOINT, { cmd, start: '0' });
+  if (!res.ok) throw new Error(`update_container ${res.status}`);
+  return (await res.text()).trim();
 }
 
 // Bulk: concurrency-capped to avoid stampeding dockerd on large selections.

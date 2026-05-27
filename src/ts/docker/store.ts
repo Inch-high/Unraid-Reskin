@@ -61,6 +61,8 @@ export interface DockerStore {
   /** True until the first setState() resolves. Lets the page render a skeleton
    *  instead of the "No containers" empty state during the initial fetch window. */
   isLoading(): boolean;
+  /** Live set of containers currently being updated (image pull + recreate in flight). */
+  getUpdating(): Set<string>;
 
   setState(state: DockerPageState): void;
   applyDelta(delta: DockerDelta): void;
@@ -73,8 +75,73 @@ export interface DockerStore {
   toggleCollapsed(folderId: string): void;
   setCollapseDefault(d: 'expanded' | 'collapsed'): void;
   setShowStats(on: boolean): void;
+  /** Flag one or more containers as "update in flight". Snapshot completion is
+   *  auto-detected on the next setState() — see UpdateProbe. Idempotent. */
+  markUpdating(names: string[]): void;
+  /** Explicit clear — e.g. after the bulk-update timeout fires. */
+  clearUpdating(name: string): void;
 
   subscribe(fn: Listener): () => void;
+}
+
+// Per-name baseline captured at markUpdating(). Used by setState() to decide
+// when an in-flight update has completed: container's docker id changes when
+// it's recreated, and updateAvailable flips from true→false once the new image
+// is in place. Either signal clears the entry. The startedAt timestamp drives
+// the hard 5-min watchdog so a stalled pull (or a snapshot endpoint that never
+// reports the change) doesn't leave the row spinning forever.
+interface UpdateProbe {
+  startedAt: number;
+  prevId: string;
+  prevUpdateAvailable: boolean;
+}
+const UPDATE_TIMEOUT_MS = 5 * 60_000;
+
+// Persist active updating probes across reloads. update_container runs as a
+// detached PHP CLI worker on the server (minutes-long for some images), so
+// refreshing the page or navigating away mid-update used to wipe the
+// "Updating…" UI even though the work continued server-side. We save the
+// probe map to localStorage and reload it in createDockerStore() so the next
+// page load picks the state back up; reconcileUpdating() then handles
+// completion detection on the next snapshot (or the 5-min watchdog clears
+// anything truly stale).
+const UPDATING_STORAGE_KEY = 'modernui-docker-updating';
+
+function loadUpdatingFromStorage(): Map<string, UpdateProbe> {
+  try {
+    const raw = localStorage.getItem(UPDATING_STORAGE_KEY);
+    if (!raw) return new Map();
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return new Map();
+    const now = Date.now();
+    const out = new Map<string, UpdateProbe>();
+    for (const [name, p] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!p || typeof p !== 'object') continue;
+      const probe = p as Partial<UpdateProbe>;
+      const startedAt = typeof probe.startedAt === 'number' ? probe.startedAt : 0;
+      // Drop probes already past the watchdog window — saves carrying obvious
+      // zombies into the new session just to immediately discard them.
+      if (now - startedAt > UPDATE_TIMEOUT_MS) continue;
+      out.set(name, {
+        startedAt,
+        prevId: typeof probe.prevId === 'string' ? probe.prevId : '',
+        prevUpdateAvailable: probe.prevUpdateAvailable === true,
+      });
+    }
+    return out;
+  } catch { return new Map(); }
+}
+
+function saveUpdatingToStorage(probes: Map<string, UpdateProbe>): void {
+  try {
+    if (probes.size === 0) {
+      localStorage.removeItem(UPDATING_STORAGE_KEY);
+      return;
+    }
+    const obj: Record<string, UpdateProbe> = {};
+    for (const [k, v] of probes) obj[k] = v;
+    localStorage.setItem(UPDATING_STORAGE_KEY, JSON.stringify(obj));
+  } catch { /* quota — silent best-effort */ }
 }
 
 export function createDockerStore(): DockerStore {
@@ -89,10 +156,44 @@ export function createDockerStore(): DockerStore {
   let collapseDefault: 'expanded' | 'collapsed' = 'expanded';
   let showStats = false;
   let loading = true;
+  // Updating probes hydrate from localStorage so a refresh mid-update preserves
+  // the "Updating…" UI. The Set is rebuilt from the same source so getUpdating()
+  // matches updateProbes' keys exactly.
+  const updateProbes = loadUpdatingFromStorage();
+  let updating: Set<string> = new Set(updateProbes.keys());
   const listeners = new Set<Listener>();
 
   const notify = (): void => {
     for (const l of listeners) l();
+  };
+
+  // Walk every in-flight update probe against the latest snapshot. Any probe
+  // whose container has been recreated (id change), whose updateAvailable flag
+  // has flipped true→false, whose container has vanished, or whose timeout has
+  // elapsed, is cleared. Mutates `updating` in place; caller must already be
+  // committed to a notify() since callers always notify after a state change.
+  const reconcileUpdating = (next: DockerPageState): boolean => {
+    if (updateProbes.size === 0) return false;
+    const now = Date.now();
+    let changed = false;
+    for (const [name, probe] of [...updateProbes]) {
+      const c = next.containers.find((x) => x.name === name);
+      const done =
+        !c ||
+        (probe.prevId !== '' && c.id !== '' && c.id !== probe.prevId) ||
+        (probe.prevUpdateAvailable && !c.updateAvailable) ||
+        now - probe.startedAt > UPDATE_TIMEOUT_MS;
+      if (done) {
+        updateProbes.delete(name);
+        updating.delete(name);
+        changed = true;
+      }
+    }
+    if (changed) {
+      updating = new Set(updating);
+      saveUpdatingToStorage(updateProbes);
+    }
+    return changed;
   };
 
   return {
@@ -102,6 +203,7 @@ export function createDockerStore(): DockerStore {
     getCollapseDefault: () => collapseDefault,
     getShowStats: () => showStats,
     isLoading: () => loading,
+    getUpdating: () => updating,
     isCollapsed(folderId) {
       const isInToggles = explicitToggles.has(folderId);
       // explicit toggle FLIPS the default. So:
@@ -126,6 +228,7 @@ export function createDockerStore(): DockerStore {
         }
       }
       if (changed) selection = new Set(selection);
+      reconcileUpdating(next);
       notify();
     },
 
@@ -207,6 +310,43 @@ export function createDockerStore(): DockerStore {
     setShowStats(on) {
       if (showStats === on) return;
       showStats = on;
+      notify();
+    },
+
+    markUpdating(names) {
+      let changed = false;
+      const now = Date.now();
+      for (const name of names) {
+        if (updateProbes.has(name)) continue;
+        const c = state.containers.find((x) => x.name === name);
+        // No matching container yet (e.g. first snapshot still pending) — still
+        // mark, but with an empty prevId so we only fall back on the
+        // updateAvailable→false signal or the timeout.
+        updateProbes.set(name, {
+          startedAt: now,
+          prevId: c?.id ?? '',
+          prevUpdateAvailable: c?.updateAvailable ?? true,
+        });
+        if (!updating.has(name)) {
+          updating.add(name);
+          changed = true;
+        }
+      }
+      if (changed) {
+        updating = new Set(updating);
+        saveUpdatingToStorage(updateProbes);
+        notify();
+      }
+    },
+
+    clearUpdating(name) {
+      if (!updateProbes.has(name) && !updating.has(name)) return;
+      updateProbes.delete(name);
+      if (updating.has(name)) {
+        updating.delete(name);
+        updating = new Set(updating);
+      }
+      saveUpdatingToStorage(updateProbes);
       notify();
     },
 

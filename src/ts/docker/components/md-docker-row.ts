@@ -29,11 +29,31 @@ export class MdDockerRow extends LitElement {
     .row:hover { background: var(--bg-elevated); }
     .row[data-selected] { background: var(--mui-accent-muted); }
     .row[data-stopped] .name { color: var(--text-secondary); }
-    /* 3px accent down the left edge when an update is available.
+    /* Update available: 4px accent bar + warm tint across the row.
        Inset box-shadow (not border-left) so grid alignment stays put — a real
-       border would shift every column 3px right on update rows only. */
+       border would shift every column 4px right on update rows only.
+       Background is layered behind hover/selected via linear-gradient so all
+       three visual states compose cleanly. */
     .row[data-update] {
-      box-shadow: inset 3px 0 0 var(--mui-accent);
+      background: linear-gradient(90deg, rgba(255,140,47,.10) 0%, rgba(255,140,47,.04) 38%, transparent 100%);
+      box-shadow: inset 4px 0 0 var(--mui-accent);
+    }
+    .row[data-update]:hover {
+      background: linear-gradient(90deg, rgba(255,140,47,.14) 0%, rgba(255,140,47,.06) 38%, var(--bg-elevated) 100%);
+    }
+    /* Updating: blue info accent bar + subtle pulsing tint so the in-flight
+       row reads as distinct from "update is available but not started yet". */
+    .row[data-updating] {
+      background: linear-gradient(90deg, rgba(59,130,246,.10) 0%, rgba(59,130,246,.04) 38%, transparent 100%);
+      box-shadow: inset 4px 0 0 var(--info);
+      animation: md-docker-row-pulse 1.6s ease-in-out infinite;
+    }
+    .row[data-updating]:hover {
+      background: linear-gradient(90deg, rgba(59,130,246,.14) 0%, rgba(59,130,246,.06) 38%, var(--bg-elevated) 100%);
+    }
+    @keyframes md-docker-row-pulse {
+      0%, 100% { box-shadow: inset 4px 0 0 var(--info); }
+      50%      { box-shadow: inset 4px 0 0 rgba(59,130,246,.55); }
     }
 
     input[type="checkbox"] {
@@ -81,18 +101,46 @@ export class MdDockerRow extends LitElement {
       color: var(--text-muted);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* "Update available" inline pill — sits beside the image text. Uses the
+       brand accent (orange) so it visually ties to the row's left bar; the
+       small icon helps the user spot it without reading the text. */
     .badge-update {
-      display: inline-block;
-      font: 600 9px var(--font-sans);
+      display: inline-flex; align-items: center; gap: 4px;
+      font: 600 10px var(--font-sans);
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--info);
-      background: rgba(59,130,246,.15);
-      padding: 1px 6px;
+      color: var(--mui-accent);
+      background: var(--mui-accent-muted);
+      border: 1px solid rgba(255,140,47,.4);
+      padding: 1px 7px 1px 5px;
       border-radius: var(--radius-full);
-      margin-left: 4px;
+      margin-left: 6px;
       vertical-align: middle;
     }
+    .badge-update svg { width: 11px; height: 11px; }
+    /* "Updating…" inline pill — replaces the update-available badge while the
+       update is in flight. Spinner conveys progress; info color reuses the
+       row's blue accent so the pill matches the left bar. */
+    .badge-updating {
+      display: inline-flex; align-items: center; gap: 5px;
+      font: 600 10px var(--font-sans);
+      letter-spacing: 0.04em;
+      color: var(--info);
+      background: rgba(59,130,246,.15);
+      border: 1px solid rgba(59,130,246,.4);
+      padding: 1px 8px 1px 6px;
+      border-radius: var(--radius-full);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge-updating .sp {
+      width: 10px; height: 10px;
+      border: 1.5px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: md-docker-row-sp 0.7s linear infinite;
+    }
+    @keyframes md-docker-row-sp { to { transform: rotate(360deg); } }
 
     /* Stats line — only visible when showStats=true. Sits below the image
        inside .main so columns remain stable; mono font for tabular alignment. */
@@ -144,11 +192,22 @@ export class MdDockerRow extends LitElement {
     .state-stopped { background: rgba(239,68,68,.15); color: var(--danger); }
     .state-paused  { background: rgba(245,158,11,.15); color: var(--warning); }
     .state-unknown { background: var(--bg-elevated); color: var(--text-muted); }
+    /* In-flight update — uses --info to match the row's pulse accent. The
+       spinner takes the place of the colored dot used by other states. */
+    .state-updating { background: rgba(59,130,246,.18); color: var(--info); }
     .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .dot-success { background: var(--success); }
     .dot-danger  { background: var(--danger); }
     .dot-warning { background: var(--warning); }
     .dot-muted   { background: var(--text-muted); }
+    .state-badge .sp {
+      width: 10px; height: 10px;
+      border: 1.5px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: md-docker-row-sp 0.7s linear infinite;
+      flex-shrink: 0;
+    }
 
     .actions { display: flex; gap: 2px; justify-content: flex-end; position: relative; }
     .icon-btn {
@@ -166,6 +225,11 @@ export class MdDockerRow extends LitElement {
     .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-default); }
     .icon-btn-success:hover { color: var(--success); border-color: rgba(34,197,94,.4); }
     .icon-btn-warn:hover    { color: var(--warning); border-color: rgba(245,158,11,.4); }
+    .icon-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .icon-btn:disabled:hover { background: transparent; color: var(--text-secondary); border-color: transparent; }
 
     /* Action menu popover */
     .menu {
@@ -192,6 +256,8 @@ export class MdDockerRow extends LitElement {
     }
     .menu button:hover { background: var(--bg-base); color: var(--text-primary); }
     .menu button.danger:hover { color: var(--danger); }
+    .menu button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .menu button:disabled:hover { background: transparent; color: var(--text-secondary); }
     .menu .divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
 
     @media (max-width: 1100px) {
@@ -227,6 +293,9 @@ export class MdDockerRow extends LitElement {
   @property({ type: Boolean }) selected = false;
   @property({ type: Boolean }) menuOpen = false;
   @property({ type: Boolean }) showStats = false;
+  // True while the container is being updated (image pulled + recreated).
+  // Owned by the page (DockerStore.updating set); the row only renders the UI.
+  @property({ type: Boolean }) updating = false;
 
   private _portsText(): string {
     if (this.container.ports.length === 0) return '—';
@@ -283,14 +352,26 @@ export class MdDockerRow extends LitElement {
 
   render() {
     const c = this.container;
-    const stateClass = `state-badge state-${c.state}`;
+    // Updating wins the visual state-badge slot: while a pull+recreate is in
+    // flight the container is being torn down + restarted, so the
+    // started/stopped pill is transient and misleading.
+    const stateClass = this.updating
+      ? 'state-badge state-updating'
+      : `state-badge state-${c.state}`;
     const dotClass = c.state === 'started' ? 'dot dot-success'
                    : c.state === 'paused' ? 'dot dot-warning'
                    : c.state === 'stopped' ? 'dot dot-danger'
                    : 'dot dot-muted';
+    // Hide the "update available" affordance while the update is mid-flight —
+    // it just answered the user's question, so showing it again is noise.
+    const showUpdateBadge = c.updateAvailable && !this.updating;
 
     return html`
-      <div class="row" ?data-selected=${this.selected} ?data-stopped=${c.state === 'stopped'} ?data-update=${c.updateAvailable}>
+      <div class="row"
+           ?data-selected=${this.selected}
+           ?data-stopped=${c.state === 'stopped'}
+           ?data-update=${showUpdateBadge}
+           ?data-updating=${this.updating}>
         <input type="checkbox" .checked=${this.selected} @change=${() => this._toggleSelect()}>
 
         <span class="icon">
@@ -301,7 +382,13 @@ export class MdDockerRow extends LitElement {
 
         <div class="main">
           <div class="name">${c.name}</div>
-          <div class="image">${c.image}${c.updateAvailable ? html`<span class="badge-update">update</span>` : nothing}</div>
+          <div class="image">${c.image}
+            ${this.updating
+              ? html`<span class="badge-updating" title="Image pull + container recreate in progress"><span class="sp"></span>Updating…</span>`
+              : showUpdateBadge
+                ? html`<span class="badge-update" title="A newer image is available — click ⋮ → Update to apply">${icon('update', 11)}Update available</span>`
+                : nothing}
+          </div>
           ${this.showStats ? html`
             <div class="stats">
               ${c.state === 'started' || c.state === 'paused' ? html`
@@ -320,38 +407,40 @@ export class MdDockerRow extends LitElement {
 
         <div class="uptime">${c.uptime ?? '—'}</div>
 
-        <span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>
+        ${this.updating
+          ? html`<span class=${stateClass}><span class="sp"></span> Updating</span>`
+          : html`<span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>`}
 
         <div class="actions">
           ${c.webuiUrl ? html`
-            <button class="icon-btn" title="Open WebUI" @click=${() => this._emit('webui')}>${icon('external')}</button>
+            <button class="icon-btn" title="Open WebUI" ?disabled=${this.updating} @click=${() => this._emit('webui')}>${icon('external')}</button>
           ` : nothing}
           ${c.state === 'started' ? html`
-            <button class="icon-btn icon-btn-warn" title="Restart" @click=${() => this._emit('restart')}>${icon('restart')}</button>
+            <button class="icon-btn icon-btn-warn" title=${this.updating ? 'Update in progress' : 'Restart'} ?disabled=${this.updating} @click=${() => this._emit('restart')}>${icon('restart')}</button>
           ` : html`
-            <button class="icon-btn icon-btn-success" title="Start" @click=${() => this._emit('start')}>${icon('play')}</button>
+            <button class="icon-btn icon-btn-success" title=${this.updating ? 'Update in progress' : 'Start'} ?disabled=${this.updating} @click=${() => this._emit('start')}>${icon('play')}</button>
           `}
           <button class="icon-btn" title="More" @click=${this._toggleMenu}>${icon('kebab')}</button>
 
           ${this.menuOpen ? html`
             <div class="menu" @click=${(e: Event) => e.stopPropagation()}>
               ${c.state === 'started' ? html`
-                <button @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
-                <button @click=${() => this._emit('pause')}>${icon('pause')} Pause</button>
+                <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
+                <button ?disabled=${this.updating} @click=${() => this._emit('pause')}>${icon('pause')} Pause</button>
               ` : c.state === 'paused' ? html`
-                <button @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
-                <button @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
+                <button ?disabled=${this.updating} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
+                <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
               ` : html`
-                <button @click=${() => this._emit('start')}>${icon('play')} Start</button>
+                <button ?disabled=${this.updating} @click=${() => this._emit('start')}>${icon('play')} Start</button>
               `}
-              <button @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
+              <button ?disabled=${this.updating} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
               <div class="divider"></div>
               <button @click=${() => this._emit('logs')}>${icon('logs')} Logs</button>
               <button @click=${() => this._emit('console')}>${icon('console')} Console</button>
               <button @click=${() => this._emit('edit')}>${icon('edit')} Edit</button>
-              ${c.updateAvailable ? html`<button @click=${() => this._emit('update')}>${icon('update')} Check for update</button>` : nothing}
+              ${c.updateAvailable && !this.updating ? html`<button @click=${() => this._emit('update')}>${icon('update')} Update now</button>` : nothing}
               <div class="divider"></div>
-              <button class="danger" @click=${() => this._emit('remove')}>${icon('trash')} Remove</button>
+              <button class="danger" ?disabled=${this.updating} @click=${() => this._emit('remove')}>${icon('trash')} Remove</button>
             </div>
           ` : nothing}
         </div>

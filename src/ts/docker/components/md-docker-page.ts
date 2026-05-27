@@ -7,6 +7,7 @@ import { icon } from '../icons';
 import {
   executeContainer,
   executeBulk,
+  updateContainers,
   saveFolders as saveFoldersRemote,
   saveTags as saveTagsRemote,
   saveSetting,
@@ -162,11 +163,21 @@ export class ModernuiDockerPage extends LitElement {
   @state() private _showTagModal = false;
   @state() private _checkingUpdates = false;
   private _checkPollHandle: number | null = null;
+  // Single shared poll handle for "an update is in flight somewhere". One poll
+  // services all in-flight container updates regardless of how many were
+  // started — bulk updates and individual updates share the same cadence.
+  private _updatePollHandle: number | null = null;
 
   setStore(store: DockerStore): void {
     this._unsubscribe?.();
     this._store = store;
     this._unsubscribe = store.subscribe(() => { this._tick++; });
+    // If the store hydrated probes from localStorage (refresh / nav-away
+    // during an in-flight update), kick the poll back into life so the UI
+    // can clear them when the snapshot confirms completion.
+    if (store.getUpdating().size > 0) {
+      this._startUpdatePoll();
+    }
   }
 
   disconnectedCallback(): void {
@@ -175,6 +186,10 @@ export class ModernuiDockerPage extends LitElement {
     if (this._checkPollHandle !== null) {
       window.clearTimeout(this._checkPollHandle);
       this._checkPollHandle = null;
+    }
+    if (this._updatePollHandle !== null) {
+      window.clearTimeout(this._updatePollHandle);
+      this._updatePollHandle = null;
     }
   }
 
@@ -195,7 +210,15 @@ export class ModernuiDockerPage extends LitElement {
         await executeContainer(c.name, 'remove');
         return;
       case 'update':
-        await executeContainer(c.name, 'update');
+        this._store.markUpdating([c.name]);
+        this._startUpdatePoll();
+        try { await executeContainer(c.name, 'update'); }
+        catch (err) {
+          // Surface to the user — the row would otherwise stay in "Updating…"
+          // until the 5-min watchdog kicks in. Clear immediately on failure.
+          this._store.clearUpdating(c.name);
+          console.warn('[modernui-docker] update failed:', err);
+        }
         return;
       case 'start':
       case 'stop':
@@ -227,10 +250,25 @@ export class ModernuiDockerPage extends LitElement {
       return;
     }
 
-    const map: Record<Exclude<BulkAction, 'clear' | 'remove'>, DockerAction> = {
-      start: 'start', stop: 'stop', restart: 'restart', update: 'update',
+    if (a === 'update') {
+      // update_container runs serially against a single PID — use the joined
+      // form instead of executeBulk, which would race against pgrep-by-path.
+      this._store.markUpdating(selected);
+      this._startUpdatePoll();
+      try { await updateContainers(selected); }
+      catch (err) {
+        for (const n of selected) this._store.clearUpdating(n);
+        console.warn('[modernui-docker] bulk update failed:', err);
+      }
+      return;
+    }
+    const map: Record<Exclude<BulkAction, 'clear' | 'remove' | 'update'>, DockerAction> = {
+      start: 'start', stop: 'stop', restart: 'restart',
     };
-    await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove'>]);
+    try { await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update'>]); }
+    catch (err) {
+      console.warn('[modernui-docker] bulk action failed:', err);
+    }
   }
 
   private _handleToggleSelect = (e: Event): void => {
@@ -357,28 +395,57 @@ export class ModernuiDockerPage extends LitElement {
     this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
   }
 
+  // Per-container update poll. Cadence is 4s — enough for a typical image pull
+  // + recreate to surface in the snapshot, infrequent enough to not hammer the
+  // docker socket via docker-state.php. One poll loop services every in-flight
+  // update; it self-terminates as soon as the store's updating set drains
+  // (auto-cleared by reconcileUpdating() on each setState).
+  private static readonly UPDATE_POLL_INTERVAL_MS = 4000;
+
+  private _startUpdatePoll(): void {
+    if (this._updatePollHandle !== null) return; // already running
+    const tick = async (): Promise<void> => {
+      this._updatePollHandle = null;
+      if (!this._store) return;
+      if (this._store.getUpdating().size === 0) return; // all done
+      if (document.hidden) {
+        this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
+        return;
+      }
+      try {
+        const snap = await fetchSnapshot({ withStats: this._store.getShowStats() });
+        // setState() in the store triggers reconcileUpdating(), which clears
+        // any container whose id rotated or whose updateAvailable went false.
+        this._store.setState({
+          containers: snap.containers,
+          folders: snap.folders,
+          tags: snap.tags,
+          tagAssignments: snap.tagAssignments,
+        });
+      } catch (err) {
+        console.warn('[modernui-docker] update poll snapshot failed:', err);
+      }
+      if (this._store.getUpdating().size > 0) {
+        this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
+      }
+    };
+    this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
+  }
+
   private _runUpdateSelected = async (): Promise<void> => {
     if (!this._store) return;
     const selected = Array.from(this._store.getSelection());
     if (selected.length === 0) return;
     // Confirm — updating pulls a new image and recreates the container, can be slow.
     if (!confirm(`Update ${selected.length} container${selected.length === 1 ? '' : 's'}? Each will be pulled + recreated.`)) return;
-    this._checkingUpdates = true;
+    this._store.markUpdating(selected);
+    this._store.clearSelection();
+    this._startUpdatePoll();
     try {
-      await executeBulk(selected, 'update');
-      // Refresh snapshot — uptime + updateAvailable both should change for updated ones.
-      const snap = await fetchSnapshot();
-      this._store.setState({
-        containers: snap.containers,
-        folders: snap.folders,
-        tags: snap.tags,
-        tagAssignments: snap.tagAssignments,
-      });
-      this._store.clearSelection();
+      await updateContainers(selected);
     } catch (err) {
+      for (const n of selected) this._store.clearUpdating(n);
       console.warn('[modernui-docker] bulk update failed:', err);
-    } finally {
-      this._checkingUpdates = false;
     }
   };
 
@@ -527,6 +594,7 @@ export class ModernuiDockerPage extends LitElement {
               .allTags=${state.tags}
               .tagAssignments=${state.tagAssignments}
               .selection=${selection}
+              .updating=${this._store?.getUpdating() ?? new Set()}
               ?collapsed=${this._store?.isCollapsed(key) ?? false}
               ?showStats=${this._store?.getShowStats() ?? false}
             ></md-docker-folder-section>
