@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import type { DisklocationState, DiskSlot, ArrayState, CacheState, ParityState } from '../types';
+import type { DisklocationState, DisklocationGroup, DiskSlot, ArrayState, CacheState, ParityState } from '../types';
 import './md-card';
 import './md-array-card';
 import './md-cache-card';
@@ -10,19 +10,22 @@ import './md-parity-card';
 export class MdDisklocationCard extends LitElement {
   static styles = css`
     :host { display: block; }
+    /* One .row per user-defined group. grid-template-columns is set inline
+       per-group from the extracted column count, so a 4×1 NVMe row renders
+       as 4 columns and a 15×1 HDD row as 15 columns. Compact groups (≤6
+       columns) get a max cell width so single NVMe drives don't span the
+       whole card. */
     .row {
       display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 1fr;
       gap: 6px;
       margin: 0 0 10px;
     }
-    .row.nvme {
-      grid-auto-columns: minmax(0, 60px);
-      justify-content: end;
+    .row.compact {
       gap: 4px;
+      justify-content: end;
       margin-bottom: 8px;
     }
+    .row.compact .slot { font-size: 11px; aspect-ratio: 3 / 1; }
     .row-label {
       font-size: 10px;
       letter-spacing: 0.08em;
@@ -60,10 +63,6 @@ export class MdDisklocationCard extends LitElement {
       background: var(--bg-elevated);
       border: 1px dashed var(--border-default);
       color: var(--text-muted);
-    }
-    .row.nvme .slot {
-      aspect-ratio: 3 / 1;
-      font-size: 11px;
     }
     .status {
       font-size: 10px;
@@ -182,26 +181,43 @@ export class MdDisklocationCard extends LitElement {
     return parts.join(' · ');
   }
 
+  // Compact threshold — groups with this many columns or fewer get the smaller
+  // slot aspect ratio (the "NVMe row" look) so a 4-bay NVMe header doesn't
+  // span the full card width. Above this, slots use the wider landscape aspect
+  // that suits the typical row of 8-16 HDD bays.
+  private static readonly COMPACT_COLUMNS_MAX = 6;
+
   render() {
     const { assignedCount, totalCount, groups } = this.state;
     const meta = `${assignedCount} / ${totalCount} bays`;
-    const sortedGroups = groups.map((g) => [...g].sort((a, b) => a.position - b.position));
-    const hddGroup = sortedGroups.length > 0
-      ? sortedGroups.reduce((a, b) => (b.length > a.length ? b : a))
-      : [];
-    const otherGroups = sortedGroups.filter((g) => g !== hddGroup);
+    // Render in the order the plugin emitted (= user's vertical order).
+    // Each group is sorted by tray position so reordering within a group via
+    // the plugin's locations.json is honored. Group NAMES and COLUMN COUNTS
+    // are read from the rendered DOM (see disklocation extractor) — we no
+    // longer guess "biggest group is HDDs" or label things "NVMe / SSD"
+    // when the user named them otherwise.
+    const sorted: DisklocationGroup[] = groups.map((g) => ({
+      ...g,
+      slots: [...g.slots].sort((a, b) => a.position - b.position),
+    }));
     const hasDetails = !!this.arrayState || this.cacheStates.length > 0 || !!this.parityState;
 
     return html`
       <md-card cardTitle="Disk Location" meta=${meta}>
-        ${otherGroups.map((g) => html`
-          <div class="row-label">NVMe / SSD</div>
-          <div class="row nvme">${g.map((s) => this._renderSlot(s))}</div>
-        `)}
-        ${hddGroup.length > 0 ? html`
-          <div class="row-label">Drive Bays</div>
-          <div class="row">${hddGroup.map((s) => this._renderSlot(s))}</div>
-        ` : ''}
+        ${sorted.map((g) => {
+          const compact = g.columns <= MdDisklocationCard.COMPACT_COLUMNS_MAX;
+          const cols = Math.max(1, g.columns);
+          // Inline grid-template-columns honors the user's chosen N — repeat()
+          // doesn't break on the wider 15-bay row because Lit interpolates the
+          // number into the style string verbatim.
+          const gridStyle = `grid-template-columns: repeat(${cols}, minmax(0, 1fr))`;
+          return html`
+            <div class="row-label">${g.name || 'Bays'}</div>
+            <div class="row ${compact ? 'compact' : ''}" style=${gridStyle}>
+              ${g.slots.map((s) => this._renderSlot(s))}
+            </div>
+          `;
+        })}
         ${assignedCount < totalCount ? html`
           <div class="summary">${totalCount - assignedCount} bay${totalCount - assignedCount === 1 ? '' : 's'} empty</div>
         ` : ''}

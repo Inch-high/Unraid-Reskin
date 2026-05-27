@@ -84,15 +84,27 @@ export interface DiskSlot {
   inlineBgColor: string | null; // The inline background-color of the slot box, if any
 }
 
+export interface DisklocationGroup {
+  /** User-defined group name (from disklocation plugin's groups.json — e.g.
+   *  "NVMEs", "HDDs", "Backup pool"). Empty string if the plugin didn't
+   *  render a label for this tier. */
+  name: string;
+  /** Number of columns in the user-defined grid (from groups.json grid_columns;
+   *  reflected in the DOM as N `auto` tokens in `grid-template-columns`).
+   *  We honor this so an 8×2 layout doesn't render as a single row of 16. */
+  columns: number;
+  slots: DiskSlot[];
+}
+
 export interface DisklocationState {
   kind: 'disklocation';
   assignedCount: number;       // "14 of 19 drives assigned" → 14
   totalCount: number;          // → 19
-  // The disklocation plugin emits one .grid-container per physical tier
-  // (e.g. HL15Rack: top container = 4 NVMe slots, bottom container = 15
-  // HDD bays). Order preserved as in the source DOM so consumers can render
-  // each tier in its own row.
-  groups: DiskSlot[][];
+  // The disklocation plugin emits one .grid-container per physical tier with
+  // a user-defined name + column count. Order preserved as in the source DOM
+  // so consumers render each tier in the same vertical sequence the user laid
+  // them out.
+  groups: DisklocationGroup[];
 }
 
 export interface CoreLoad {

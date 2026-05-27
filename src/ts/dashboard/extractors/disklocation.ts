@@ -1,4 +1,4 @@
-import type { DisklocationState, DiskSlot, DiskSlotColor, DiskSlotState } from '../types';
+import type { DisklocationState, DisklocationGroup, DiskSlot, DiskSlotColor, DiskSlotState } from '../types';
 import type { Extractor } from './unknown';
 
 function parseHeaderCounts(tbody: HTMLTableSectionElement): { assignedCount: number; totalCount: number } {
@@ -63,17 +63,53 @@ function parseInlineBgColor(slotEl: Element): string | null {
   return m ? m[1].trim() : null;
 }
 
+// Read the user-defined group name from the wrapper preceding the
+// .grid-container. The plugin renders:
+//   <div style="float: left;">
+//     <div style="text-align: center;"><b>NVMEs</b></div>
+//     <div class="grid-container" style="grid-template-columns: auto auto auto auto;">
+//       ...
+// We climb to the wrapper, find its first <b>, and read its text. Returns ''
+// when the plugin didn't emit a label (older versions or unnamed groups).
+function parseGroupName(container: Element): string {
+  const wrapper = container.parentElement;
+  if (!wrapper) return '';
+  // Walk wrapper's direct children — the label div is the sibling preceding
+  // the .grid-container. Skip the grid-container itself.
+  for (const child of Array.from(wrapper.children)) {
+    if (child === container) continue;
+    const b = child.querySelector('b');
+    if (b && b.textContent) return b.textContent.trim();
+  }
+  return '';
+}
+
+// Count `auto` (or any track value) tokens in `grid-template-columns`. The
+// plugin emits one `auto` per user-defined column — that's how we recover
+// grid_columns from groups.json without reading the JSON file. Falls back
+// to 1 (single column) when the style is missing or unparseable.
+function parseGroupColumns(container: Element): number {
+  const style = container.getAttribute('style') ?? '';
+  const m = style.match(/grid-template-columns\s*:\s*([^;]+)/i);
+  if (!m) return 1;
+  // Trim, collapse whitespace, split on spaces. Each token is one column.
+  const tokens = m[1].trim().split(/\s+/).filter(Boolean);
+  return tokens.length > 0 ? tokens.length : 1;
+}
+
 export const disklocationExtractor: Extractor<DisklocationState> = {
   match: ({ source }) => source.id === 'tblDiskLocation',
   extract: ({ source }) => {
     const { assignedCount, totalCount } = parseHeaderCounts(source);
 
-    // One .grid-container per physical tier (NVMe row + HDD bays on HL15).
-    // Keep them as separate groups so the card can render each as its own row.
+    // One .grid-container per physical tier (e.g. HL15Rack: NVMe row + HDD
+    // bays). The wrapping div carries the user's chosen group name and the
+    // grid-template-columns reflects their chosen column count. Honor both
+    // instead of hard-coding "biggest group = HDDs" in the card.
     const containerEls = Array.from(source.querySelectorAll('.grid-container'));
-    const groups: DiskSlot[][] = containerEls.map((container) => {
+    const groups: DisklocationGroup[] = containerEls.map((container) => {
       const slotEls = Array.from(container.querySelectorAll(':scope > div'));
-      return slotEls.map((el) => {
+      const slots = slotEls.map((el) => {
         const state = parseSlotState(el);
         return {
           position: parsePosition(el),
@@ -85,6 +121,11 @@ export const disklocationExtractor: Extractor<DisklocationState> = {
           inlineBgColor: parseInlineBgColor(el),
         };
       });
+      return {
+        name: parseGroupName(container),
+        columns: parseGroupColumns(container),
+        slots,
+      };
     });
 
     return {

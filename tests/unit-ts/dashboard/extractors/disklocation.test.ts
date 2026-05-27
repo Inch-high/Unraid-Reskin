@@ -35,51 +35,74 @@ describe('disklocationExtractor', () => {
     expect(result?.totalCount).toBe(19);
   });
 
+  // Helper to flatten slots across all groups for the cross-group assertions.
+  const allSlots = (tb: HTMLTableSectionElement) =>
+    (disklocationExtractor.extract({ source: tb })?.groups ?? []).flatMap((g) => g.slots);
+
   it('extracts at least one slot', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    expect((result?.groups.flat().length ?? 0)).toBeGreaterThan(0);
+    expect(allSlots(tbody).length).toBeGreaterThan(0);
   });
 
   it('has a mix of occupied and empty slots', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const occupied = result?.groups.flat().filter((s) => s.occupied) ?? [];
-    const empty = result?.groups.flat().filter((s) => !s.occupied) ?? [];
-    expect(occupied.length).toBeGreaterThan(0);
-    expect(empty.length).toBeGreaterThan(0);
+    const slots = allSlots(tbody);
+    expect(slots.filter((s) => s.occupied).length).toBeGreaterThan(0);
+    expect(slots.filter((s) => !s.occupied).length).toBeGreaterThan(0);
   });
 
   it('parses slot label from <b>N</b>', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const labels = result?.groups.flat().map((s) => s.label) ?? [];
+    const labels = allSlots(tbody).map((s) => s.label);
     // Slot labels are stringified numbers (e.g. "1", "2", …)
     expect(labels.every((l) => l.length > 0)).toBe(true);
-    // Confirm presence of a known label from the fixture
     expect(labels).toContain('1');
   });
 
   it('parses position from style="order:N"', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const positions = result?.groups.flat().map((s) => s.position) ?? [];
+    const positions = allSlots(tbody).map((s) => s.position);
     expect(positions.every((p) => typeof p === 'number' && p > 0)).toBe(true);
   });
 
   it('marks empty-state slots as not occupied', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const empty = result?.groups.flat().filter((s) => s.state === 'empty') ?? [];
+    const empty = allSlots(tbody).filter((s) => s.state === 'empty');
     expect(empty.length).toBeGreaterThan(0);
     expect(empty.every((s) => !s.occupied)).toBe(true);
   });
 
   it('marks active-state slots as occupied', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const active = result?.groups.flat().filter((s) => s.state === 'active') ?? [];
+    const active = allSlots(tbody).filter((s) => s.state === 'active');
     expect(active.length).toBeGreaterThan(0);
     expect(active.every((s) => s.occupied)).toBe(true);
   });
 
   it('captures inlineBgColor where present', () => {
-    const result = disklocationExtractor.extract({ source: tbody });
-    const withBg = result?.groups.flat().filter((s) => s.inlineBgColor !== null) ?? [];
+    const withBg = allSlots(tbody).filter((s) => s.inlineBgColor !== null);
     expect(withBg.length).toBeGreaterThan(0);
+  });
+
+  it("honors the user's group names from the disklocation plugin's groups.json", () => {
+    // The fixture is from a host whose groups.json names them "NVMEs" + "HDDs".
+    // We must surface those names directly rather than guess "NVMe / SSD" /
+    // "Drive Bays" — otherwise a user with groups like "Backup pool" or
+    // "Cold storage" sees the wrong labels.
+    const result = disklocationExtractor.extract({ source: tbody });
+    const names = result?.groups.map((g) => g.name) ?? [];
+    expect(names).toEqual(['NVMEs', 'HDDs']);
+  });
+
+  it('parses each group\'s column count from grid-template-columns', () => {
+    // Fixture: NVMEs row has 4 columns, HDDs row has 15. The extractor counts
+    // tokens in the inline style. A user-defined 8x2 layout would surface as
+    // 8 columns here; the card uses this to grid-template the row correctly.
+    const result = disklocationExtractor.extract({ source: tbody });
+    const cols = result?.groups.map((g) => g.columns) ?? [];
+    expect(cols).toEqual([4, 15]);
+  });
+
+  it('preserves group order as it appears in the source DOM', () => {
+    // Order matters because users place groups vertically in the plugin's
+    // layout editor. Our card renders them top-to-bottom in this order.
+    const result = disklocationExtractor.extract({ source: tbody });
+    const slotCounts = result?.groups.map((g) => g.slots.length) ?? [];
+    // NVMe row first (4 slots), HDD row second (15 slots).
+    expect(slotCounts).toEqual([4, 15]);
   });
 });
