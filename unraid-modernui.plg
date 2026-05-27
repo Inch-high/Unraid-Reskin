@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.0">
+<!ENTITY version   "0.5.1">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,15 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.5.1 (2026-05-27)
+- Feat (/Docker): pending-update indicators are now scannable — every row whose container has an update gets a 3px orange accent down its left edge, and every folder (collapsed or expanded) shows an orange "N update(s)" pill in its header. The 9px blue badge tucked next to the image text was too quiet to catch during a scan.
+- Perf (/Docker): hard-refresh no longer flashes the misleading "No containers — Add one from Community Apps" empty state. Page now renders four shimmering skeleton rows during the initial fetch window. Snapshot endpoint also skips the `docker stats --no-stream` shell-out (~1s blocking) and the `/containers/json?size=true` RW-layer walk when the Stats pill is off — shaves a second+ off every cold snapshot. nchan fills CPU/RAM for running containers within seconds either way.
+- Perf (/Docker): async check-for-updates worker. The synchronous `DockerUpdate::reloadUpdateStatus()` call (serial HTTPS manifest fetches — 10s+ on 30-container hosts) now spawns a detached PHP CLI worker with a PID lock + status file in `/var/lock` tmpfs and returns immediately. Front-end polls a cheap GET status endpoint every 2s, pauses while the tab is hidden, refreshes the snapshot when the worker reports done.
+- Fix (/Dashboard): Workloads and Power hero cards no longer pop in 1-3s after first paint. Extractors now distinguish "tbody on the page but Unraid's plugin JS hasn't injected tiles yet" from "configured empty"; the hero strip reserves the grid slots with shimmering skeleton cards in the loading window.
+- Fix (/Dashboard): Power hero + UPS panel stay live in Unraid 7.3. The legacy `tbody#tblUPSNUTDash` keeps serving its initial values forever in 7.3 (load% × nominal = "300W" frozen); live updates moved to `<footer> .footer-right`. UPS extractor now reads live watts + battery% from the footer, back-computes load% from `watts ÷ nominalPowerW` for the UPS card's Load row. Falls back to tbody-only behavior on Unraid &lt;7.3.
+- Fix (/Dashboard): 5s safety-net re-extract loop at the dashboard boot layer so any legacy widget that lost its DOM-mutation update path still ticks. Visibility-aware: pauses while the tab is hidden, fires immediately on focus.
+- Polish (shell): sidebar footer's plugin status rows now show two shimmering skeleton placeholders during the initial 3s window so plugin status (APC, parity-check, preclear) doesn't pop in late. Skeletons dismiss as soon as a real row appears or the 3s cap elapses.
+
 ###v0.5.0 (2026-05-27)
 - Phase 5: complete /Docker rebuild — Lit page replaces stock `DockerContainers.page`. Backend (`Events.php`, nchan, `DockerTemplates`) stays Unraid's; only the page surface is ours.
 - Folders + tags built in. One-shot migration imports your existing folder.view2 groups on first install — no dependency on the legacy plugin afterwards.
