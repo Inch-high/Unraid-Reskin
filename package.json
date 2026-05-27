@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.1: clearer pending-update indicators on /Docker, loading skeletons across docker page + dashboard hero + sidebar footer, and Unraid 7.3 live-data fixes for the UPS Power card.",
+  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.2: Docker /Update button actually updates containers now (was hitting a non-existent endpoint), in-flight Updating… status pill that survives refresh, and corrected polarity on the Update Available indicator.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

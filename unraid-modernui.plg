@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.1">
+<!ENTITY version   "0.5.2">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,15 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.5.2 (2026-05-27)
+- Fix (/Docker): clicking Update on a container actually pulls + recreates it now. The previous build POSTed `action=update` to `Events.php`, which has no `update` case — every click returned `{"error":"Unknown action 'update'"}` and the container was never touched. Routes through `StartCommand.php` with `cmd=update_container &lt;name&gt;` (the same path stock UI uses). Bulk uses the `*`-joined form so multiple containers run in a single serial worker, sidestepping `StartCommand.php`'s `pgrep`-by-binary-path race.
+- Fix (/Docker): "Update available" badge polarity was inverted. `DockerUpdate`'s `'updated'` field reads `'true'` when local==remote (= up to date) and `'false'` when they differ. Our check was the wrong way round, flagging every current container as outdated. Flipped to match stock UI's switch in `DockerContainers.php`. The page-level "N updates available" counter now reflects reality (most users will see the number drop substantially).
+- Feat (/Docker): in-flight update status. While `update_container` is running on the server, the row shows a blue "Updating" pill in the state column, an inline spinner badge next to the image text, a pulsing blue 4px left bar, and disabled start/stop/restart/remove buttons. Folder headers get a "N updating" pill so collapsed folders surface in-flight work too. Auto-clears when the snapshot detects id rotation or `updateAvailable` flips true→false (5-min watchdog as backstop).
+- Feat (/Docker): "Updating…" state survives page refresh + nav-away. `update_container` runs as a detached PHP CLI worker (minutes-long for some images), so losing the UI on refresh used to be confusing. Probe map persists to localStorage; restored on store creation; poll loop restarts when the restored set is non-empty.
+- Polish (/Docker): "Update available" indicator is significantly more scannable — 4px (was 3px) accent bar plus a warm orange gradient tint across the row, plus a bigger pill-style badge with the cloud-download icon (was a 9px blue text pill). The pending-updates folder pill excludes containers currently being updated so the counts don't double-count.
+- Polish (/Docker): kebab "Check for update" renamed to "Update now". The old label never actually checked anything; it triggered the pull-and-recreate.
+- Docs: README now carries an explicit unofficial-project disclaimer (no Lime Technology affiliation, no warranty, no liability, ~90% AI-generated code, install at your own risk) and links to the four stock-UI fallback paths. Stale phase-status blockquote removed.
+
 ###v0.5.1 (2026-05-27)
 - Feat (/Docker): pending-update indicators are now scannable — every row whose container has an update gets a 3px orange accent down its left edge, and every folder (collapsed or expanded) shows an orange "N update(s)" pill in its header. The 9px blue badge tucked next to the image text was too quiet to catch during a scan.
 - Perf (/Docker): hard-refresh no longer flashes the misleading "No containers — Add one from Community Apps" empty state. Page now renders four shimmering skeleton rows during the initial fetch window. Snapshot endpoint also skips the `docker stats --no-stream` shell-out (~1s blocking) and the `/containers/json?size=true` RW-layer walk when the Stats pill is off — shaves a second+ off every cold snapshot. nchan fills CPU/RAM for running containers within seconds either way.
