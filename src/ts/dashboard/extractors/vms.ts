@@ -61,11 +61,17 @@ export const vmsExtractor: Extractor<VmsState> = {
     const outers = Array.from(source.querySelectorAll('span.outer.solid.vms'));
     const vms = outers.map((o) => readVm(o));
     const totalRunning = vms.filter((v) => v.state === 'started').length;
+    // The cold VMs tbody calls `data="noVMs()"` and stays empty until
+    // libvirt.json injects the live tiles. Distinguish that state from "no
+    // VMs configured" so the Workloads hero card can show a skeleton.
+    const dataAttr = source.getAttribute('data') ?? '';
+    const loading = vms.length === 0 && (dataAttr.includes('noVMs') || dataAttr.includes('VMs'));
     return {
       kind: 'vms',
       vms,
       totalRunning,
       totalCount: vms.length,
+      loading,
     };
   },
 };

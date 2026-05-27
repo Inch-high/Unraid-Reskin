@@ -70,6 +70,14 @@ export const upsExtractor: Extractor<UpsState> = {
       loadPct !== null && nominalPowerW !== null
         ? Math.round((loadPct * nominalPowerW) / 100)
         : null;
+    // The cold UPS tbody renders spinner+<em> placeholders for every live
+    // field; apcupsd / nut JS replaces them once the daemon reports. If we see
+    // any of those placeholders, mark loading=true so the Power hero card can
+    // show a skeleton rather than the misleading "—" / "UPS status unknown".
+    const hasSpinner = source.querySelector('.fa-spinner') !== null
+      || source.querySelector('em') !== null;
+    const loading = hasSpinner && status === 'unknown' && batteryChargePct === null
+      && loadPct === null && runtimeMinutes === null;
     return {
       kind: 'ups',
       status,
@@ -80,6 +88,7 @@ export const upsExtractor: Extractor<UpsState> = {
       runtimeMinutes,
       nominalPowerW,
       nominalVA,
+      loading,
     };
   },
 };

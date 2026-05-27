@@ -131,6 +131,24 @@ export class MdHeroCard extends LitElement {
       color: var(--mui-accent);
       flex-shrink: 0;
     }
+
+    /* Skeleton placeholder shape — reserves the same grid slot a real card
+       would take, so the layout doesn't shift when data arrives. Used when
+       the underlying tbody exists but Unraid's plugin JS hasn't injected
+       values yet (Docker tiles, libvirt VMs, apcupsd UPS spinners). */
+    .sk {
+      background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--border-subtle) 50%, var(--bg-elevated) 100%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-xs);
+      animation: hero-shimmer 1.2s ease-in-out infinite;
+    }
+    .sk-big   { height: 28px; width: 70%; border-radius: 6px; }
+    .sk-sub   { height: 12px; width: 55%; margin-top: 4px; }
+    .sk-aside { height: 48px; width: 48px; border-radius: 50%; }
+    @keyframes hero-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
   `;
 
   @property({ type: String }) label = '';
@@ -146,6 +164,10 @@ export class MdHeroCard extends LitElement {
   @property({ type: String }) leftLabel = '';
   @property({ type: String }) rightBig = '';
   @property({ type: String }) rightLabel = '';
+  /** When true, renders shimmering skeleton bars instead of the value text +
+   *  default visual slot. Used while the source tbody is still being
+   *  populated by Unraid's own plugin JS. */
+  @property({ type: Boolean }) loading = false;
 
   private _onClick(): void {
     if (!this.scrollTarget) return;
@@ -189,6 +211,20 @@ export class MdHeroCard extends LitElement {
               </div>
               <slot name="right-icon"></slot>
             </div>
+          </div>
+        </div>
+      `;
+    }
+    if (this.loading) {
+      return html`
+        <div class="body">
+          <div class="text">
+            <span class="label">${this.label}</span>
+            <div class="sk sk-big"></div>
+            <div class="sk sk-sub"></div>
+          </div>
+          <div class="visual">
+            <div class="sk sk-aside"></div>
           </div>
         </div>
       `;

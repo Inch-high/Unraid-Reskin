@@ -136,6 +136,14 @@ export class MdHeroStrip extends LitElement {
     const v = this.vmsState;
     const dockerHas = !!d && d.totalCount > 0;
     const vmsHas    = !!v && v.totalCount > 0;
+    const dockerLoading = !!d?.loading;
+    const vmsLoading    = !!v?.loading;
+    // Reserve the slot with a skeleton when the underlying tbody exists but
+    // Unraid's JS hasn't injected tiles yet. Without this the card pops in
+    // ~1-3s after first paint.
+    if (!dockerHas && !vmsHas && (dockerLoading || vmsLoading)) {
+      return html`<md-hero-card label="Workloads" loading></md-hero-card>`;
+    }
     if (!dockerHas && !vmsHas) return '';
 
     // Both exist → twin layout so containers and VMs each get their own
@@ -185,6 +193,11 @@ export class MdHeroStrip extends LitElement {
   private _powerCard() {
     const u = this.upsState;
     if (!u) return '';
+    // Spinner placeholders still up — show a skeleton instead of the
+    // misleading "—" / "UPS status unknown" card.
+    if (u.loading) {
+      return html`<md-hero-card label="Power" loading></md-hero-card>`;
+    }
     if (u.status === 'unknown') {
       return html`
         <md-hero-card

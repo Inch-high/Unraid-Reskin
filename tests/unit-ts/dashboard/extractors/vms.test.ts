@@ -45,14 +45,24 @@ describe('vmsExtractor', () => {
     expect(vmsExtractor.match({ source: other })).toBe(false);
   });
 
-  it('returns an empty state for the cold fixture (no VM tiles)', () => {
+  it('returns an empty state for the cold fixture (no VM tiles) and marks it loading', () => {
+    // The cold tbody has data="noVMs()" — libvirt.json injects tiles later.
+    // Loading must be true so the hero strip renders a skeleton instead of
+    // misreporting "0 VMs" for a moment.
     const result = vmsExtractor.extract({ source: tbody })!;
     expect(result).toEqual({
       kind: 'vms',
       vms: [],
       totalRunning: 0,
       totalCount: 0,
+      loading: true,
     });
+  });
+
+  it('marks loading false when the tbody has no noVMs() marker (configured empty list)', () => {
+    const empty = parseTbody('<tbody id="vm_view"></tbody>');
+    const result = vmsExtractor.extract({ source: empty })!;
+    expect(result.loading).toBe(false);
   });
 
   it('parses a populated tbody with mixed VM states', () => {

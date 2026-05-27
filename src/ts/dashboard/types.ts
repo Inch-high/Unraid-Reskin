@@ -177,6 +177,10 @@ export interface DockerState {
   ungrouped: DockerContainer[]; // containers not in any folder
   totalRunning: number;
   totalCount: number;
+  /** True when the docker tbody is on the page but dynamix.docker.manager has
+   *  not injected `.outer.solid.apps` tiles yet. Lets the hero strip render a
+   *  skeleton placeholder instead of popping the card in late. */
+  loading?: boolean;
 }
 
 // VMs widget. The cold tbody is empty (data="noVMs()"); libvirt.json
@@ -192,6 +196,9 @@ export interface VmsState {
   vms: VmRow[];
   totalRunning: number;
   totalCount: number;
+  /** True when the vm_view tbody is on the page but libvirt.json has not
+   *  injected `.outer.solid.vms` tiles yet. */
+  loading?: boolean;
 }
 
 // Network interface widget. The header has a <select name="port_select">
@@ -224,6 +231,10 @@ export interface UpsState {
   runtimeMinutes: number | null;
   nominalPowerW: number | null;
   nominalVA: number | null;
+  /** True when the UPS tbody is on the page but apcupsd-status/nut JS has not
+   *  replaced the spinner placeholders yet. Distinguishes "still loading" from
+   *  "actually unknown" so the Power hero card can show a skeleton. */
+  loading?: boolean;
 }
 
 // Identity widget — the HL15Rack-style tbody with class='system'. Header shows

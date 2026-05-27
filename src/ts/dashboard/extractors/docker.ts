@@ -154,12 +154,21 @@ export const dockerExtractor: Extractor<DockerState> = {
       totalCount += f.totalCount;
     }
 
+    // Distinguish "still loading" from "no containers configured". The tbody
+    // matches before dynamix.docker.manager has injected `.outer.solid.apps`
+    // tiles, so an empty result during that window should not be treated as
+    // a populated zero-container dashboard.
+    const hasAnyTile = source.querySelector('span.outer.solid.apps') !== null
+      || source.querySelector('div.folder-showcase-outer') !== null;
+    const loading = totalCount === 0 && !hasAnyTile;
+
     return {
       kind: 'docker',
       folders,
       ungrouped,
       totalRunning,
       totalCount,
+      loading,
     };
   },
 };
