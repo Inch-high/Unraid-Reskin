@@ -21,6 +21,7 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+<![CDATA[
 ###v0.5.2 (2026-05-27)
 - Fix (/Docker): clicking Update on a container actually pulls + recreates it now. The previous build POSTed `action=update` to `Events.php`, which has no `update` case — every click returned `{"error":"Unknown action 'update'"}` and the container was never touched. Routes through `StartCommand.php` with `cmd=update_container &lt;name&gt;` (the same path stock UI uses). Bulk uses the `*`-joined form so multiple containers run in a single serial worker, sidestepping `StartCommand.php`'s `pgrep`-by-binary-path race.
 - Fix (/Docker): "Update available" badge polarity was inverted. `DockerUpdate`'s `'updated'` field reads `'true'` when local==remote (= up to date) and `'false'` when they differ. Our check was the wrong way round, flagging every current container as outdated. Flipped to match stock UI's switch in `DockerContainers.php`. The page-level "N updates available" counter now reflects reality (most users will see the number drop substantially).
@@ -102,6 +103,7 @@
 
 ###v0.1.0 (2026-05-24)
 - Phase 1: foundation, safety, design tokens, settings page, fallback paths
+]]>
 </CHANGES>
 
 <FILE Name="/boot/config/plugins/&name;.plg">
