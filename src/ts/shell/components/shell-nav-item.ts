@@ -81,6 +81,18 @@ export class ShellNavItem extends LitElement {
   }
 
   private _toggle(): void {
+    // In collapsed mode the children dropdown is display:none, so a plain
+    // expand-toggle gives the user no feedback - the click looks broken.
+    // Navigate to the group's primary destination instead (first child with
+    // a URL — e.g. Storage → /Main).
+    const collapsed = document.body.classList.contains('modernui-shell-collapsed');
+    if (collapsed && this.item.children) {
+      const dest = this.item.children.find((c) => c.url)?.url;
+      if (dest) {
+        window.location.href = dest;
+        return;
+      }
+    }
     this.expanded = !this.expanded;
   }
 
@@ -92,7 +104,7 @@ export class ShellNavItem extends LitElement {
     const iconEl = iconName ? html`<span class="icon">${icon(iconName)}</span>` : '';
     if (item.children && item.children.length > 0) {
       return html`
-        <button type="button" @click=${this._toggle}>
+        <button type="button" title=${item.label} @click=${this._toggle}>
           ${iconEl}
           <span class="label">${item.label}</span>
           <span class="chevron">${icon('chevron-right', 14)}</span>
@@ -107,7 +119,7 @@ export class ShellNavItem extends LitElement {
       `;
     }
     return html`
-      <a href=${item.url || '#'}>
+      <a href=${item.url || '#'} title=${item.label}>
         ${iconEl}
         <span class="label">${item.label}</span>
       </a>
