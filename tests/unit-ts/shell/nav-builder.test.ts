@@ -70,4 +70,30 @@ describe('buildNav — auto-discovery merge', () => {
     const tree = buildNav(anchors);
     expect(tree.find((n) => n.label === 'Other')).toBeUndefined();
   });
+
+  it('drops non-navigable anchors so Other does not show a literal "#" row', () => {
+    // Unraid's #menu includes dropdown triggers (href="#") and JS handlers
+    // (href="javascript:..."). They previously leaked into the Other section
+    // as sub-items labelled "#" that went nowhere on click.
+    const anchors: StockAnchor[] = [
+      { href: '#',                       text: '' },
+      { href: '#some-anchor',            text: 'In-page' },
+      { href: 'javascript:doStuff()',    text: 'JS trigger' },
+      { href: 'JavaScript:do()',         text: 'mixed case' },
+      { href: '/RealPage',               text: 'Real Page' },
+    ];
+    const tree = buildNav(anchors);
+    const other = tree.find((n) => n.label === 'Other');
+    expect(other?.children?.map((c) => c.label)).toEqual(['Real Page']);
+  });
+
+  it('dedupes anchors that appear twice (top-level + sub-tab) in Unraid menu', () => {
+    const anchors: StockAnchor[] = [
+      { href: '/Plugins/Custom', text: 'Custom' },
+      { href: '/Plugins/Custom', text: 'Custom' },
+    ];
+    const tree = buildNav(anchors);
+    const other = tree.find((n) => n.label === 'Other');
+    expect(other?.children?.length).toBe(1);
+  });
 });

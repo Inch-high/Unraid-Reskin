@@ -34,9 +34,33 @@ function flattenCuratedUrls(tree: NavItem[]): Set<string> {
   return out;
 }
 
+// True when the href would actually navigate somewhere — drops Unraid's
+// dropdown/trigger anchors (href="#", "javascript:...") and unparseable
+// relative paths. Without this filter "Other" picked up bare hashes (which
+// rendered as a literal "#" sub-item label) and clicks on Other-in-collapsed
+// mode did nothing because the first child's URL was "#".
+function isNavigable(href: string): boolean {
+  if (!href) return false;
+  const trimmed = href.trim();
+  if (trimmed === '' || trimmed === '#') return false;
+  if (trimmed.startsWith('#')) return false;          // in-page anchors
+  if (trimmed.toLowerCase().startsWith('javascript:')) return false;
+  return true;
+}
+
 export function buildNav(anchors: StockAnchor[]): NavItem[] {
   const known = flattenCuratedUrls(CURATED_NAV);
-  const unknowns = anchors.filter((a) => a.href && !known.has(a.href));
+  // Dedupe by href — Unraid's #menu sometimes carries the same path twice
+  // (once as a top-level entry, once as a sub-tab), which would render
+  // doubled rows under "Other".
+  const seen = new Set<string>();
+  const unknowns = anchors.filter((a) => {
+    if (!isNavigable(a.href)) return false;
+    if (known.has(a.href)) return false;
+    if (seen.has(a.href)) return false;
+    seen.add(a.href);
+    return true;
+  });
   if (unknowns.length === 0) return [...CURATED_NAV];
   return [
     ...CURATED_NAV,
