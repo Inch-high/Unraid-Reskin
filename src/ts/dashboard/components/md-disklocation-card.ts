@@ -207,10 +207,14 @@ export class MdDisklocationCard extends LitElement {
         ${sorted.map((g) => {
           const compact = g.columns <= MdDisklocationCard.COMPACT_COLUMNS_MAX;
           const cols = Math.max(1, g.columns);
-          // Inline grid-template-columns honors the user's chosen N — repeat()
-          // doesn't break on the wider 15-bay row because Lit interpolates the
-          // number into the style string verbatim.
-          const gridStyle = `grid-template-columns: repeat(${cols}, minmax(0, 1fr))`;
+          // Wide rows (HDDs etc) fill the card width — each slot gets a 1fr
+          // track. Compact rows (NVMe, small SSD groups) cap each slot at
+          // 64px so 4 NVMe drives don't span the full card as huge tiles;
+          // the row's justify-content: end then anchors them to the right
+          // edge for visual symmetry with the wider HDD row below.
+          const gridStyle = compact
+            ? `grid-template-columns: repeat(${cols}, 64px)`
+            : `grid-template-columns: repeat(${cols}, minmax(0, 1fr))`;
           return html`
             <div class="row-label">${g.name || 'Bays'}</div>
             <div class="row ${compact ? 'compact' : ''}" style=${gridStyle}>
