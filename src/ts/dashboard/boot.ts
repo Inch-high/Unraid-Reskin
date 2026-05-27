@@ -57,24 +57,15 @@ export function boot(): void {
   if (!isDashboardEnabled(document)) return;
   if (!onDashboardPage()) return;
 
-  // Mount the overlay IMMEDIATELY rather than waiting for Unraid's Vue to
-  // create <table.dashboard>. Before this change boot blocked on
-  // waitForSource(5000) — the user saw 1-3 seconds of blank/stock dashboard
-  // while Vue mounted, even though all our code was loaded and ready. Now we
-  // render a full layout skeleton at first paint and progressively populate
-  // real widgets as Unraid's data arrives.
-  document.body.classList.add('modernui-dashboard-active');
-
-  const container = document.querySelector('div.frame') || document.body;
-  const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
-  container.appendChild(root);
-
+  // Mount the overlay as early as possible — but it MUST go inside div.frame
+  // so the dashboard-overlay.scss grid-stacking rule (which keys on
+  // `div.frame > modernui-dashboard` and `div.frame > div.grid` sharing the
+  // same grid cell) wins over the stock layout. If we append to body when
+  // div.frame doesn't exist yet, the stock dashboard renders on top of us
+  // and the user sees the legacy UI (regression in ba9eb21).
   const store = createStore();
+  const root = document.createElement('modernui-dashboard') as ModernuiDashboard;
   root.setStore(store);
-
-  // First sync: tables may already be in the DOM (server-rendered by Unraid
-  // 7.2-) or absent (Vue-rendered by 7.3). Either way the call is cheap.
-  extractAll(store);
 
   // Track the observers we attach so we don't double-bind once tables appear.
   const observed = new WeakSet<HTMLTableElement>();
@@ -86,12 +77,22 @@ export function boot(): void {
       obs.start();
     }
   };
-  attachObservers();
 
-  // If no tables yet, wait for Vue to mount them (scoped to div.content rather
-  // than document.body so we don't run querySelectorAll on every node Vue
-  // creates during mount — ~10× fewer observer fires on a fresh page load).
-  if (collectDashboardTables().length === 0) {
+  const mountInto = (frame: Element): void => {
+    if (root.isConnected) return;
+    document.body.classList.add('modernui-dashboard-active');
+    frame.appendChild(root);
+    extractAll(store);
+    attachObservers();
+  };
+
+  const watchForTables = (): void => {
+    if (collectDashboardTables().length > 0) {
+      extractAll(store);
+      attachObservers();
+      return;
+    }
+    // Tables come later (Unraid 7.3 Vue-renders them after div.frame mounts).
     const sourceScope = document.querySelector('div.content') || document.body;
     const tablesObserver = new MutationObserver(() => {
       if (collectDashboardTables().length > 0) {
@@ -101,10 +102,34 @@ export function boot(): void {
       }
     });
     tablesObserver.observe(sourceScope, { childList: true, subtree: true });
-    // Give up after 10s. Beyond that the dashboard genuinely has no source —
-    // user-visible skeleton stays so it's clear something's wrong rather than
-    // looking like a deliberately empty page.
     window.setTimeout(() => tablesObserver.disconnect(), 10_000);
+  };
+
+  // div.frame is Unraid chrome — Vue mounts it ahead of the per-tile data,
+  // typically within ~100-500ms of page load. If it's already there at boot,
+  // we mount synchronously (fast path); otherwise we watch for it.
+  const existing = document.querySelector('div.frame');
+  if (existing) {
+    mountInto(existing);
+    watchForTables();
+  } else {
+    const frameObserver = new MutationObserver(() => {
+      const frame = document.querySelector('div.frame');
+      if (frame) {
+        frameObserver.disconnect();
+        mountInto(frame);
+        watchForTables();
+      }
+    });
+    frameObserver.observe(document.body, { childList: true, subtree: true });
+    // Safety: if div.frame never appears (older / non-standard Unraid build),
+    // leave the stock UI alone rather than risk a wrong-parent mount.
+    window.setTimeout(() => {
+      frameObserver.disconnect();
+      if (!root.isConnected) {
+        console.warn('[modernui-dashboard] div.frame not found within 5s — leaving stock UI');
+      }
+    }, 5000);
   }
 
   // Safety-net periodic refresh. The MutationObserver above catches DOM
