@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.4.2">
+<!ENTITY version   "0.5.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,19 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.5.0 (2026-05-27)
+- Phase 5: complete /Docker rebuild — Lit page replaces stock `DockerContainers.page`. Backend (`Events.php`, nchan, `DockerTemplates`) stays Unraid's; only the page surface is ours.
+- Folders + tags built in. One-shot migration imports your existing folder.view2 groups on first install — no dependency on the legacy plugin afterwards.
+- Real search · state/tag/folder filters · bulk actions (start / stop / restart / update / remove). Every filter is URL-syncable so you can bookmark a filtered view.
+- Per-folder collapsed state persisted to localStorage; survives filter flips (no more re-mount losing your collapse choices).
+- Stats view: Toolbar "Stats On/Off" pill. Per-row CPU · RAM · VDisk · MAC line; collapsed folder headers show summed CPU / RAM / VDISK so you can scan resource footprints across groups at a glance. CPU + RAM populated in the boot snapshot so numbers show on first paint.
+- Page-header morph button: "Check for updates" with nothing selected, "Update selected (N)" with containers checked.
+- Perf: async check-for-updates. The synchronous `reloadUpdateStatus()` call (serial HTTPS manifest fetches — 10s+ on 30-container hosts) now spawns a detached PHP worker and returns immediately; the front-end polls a cheap status endpoint, refreshes the snapshot when done.
+- Perf: zero blocking I/O on the docker-state request path. Single nchan subscription, hidden-tab pause. Fixed delta parser that was reading multiline payloads as single lines + treating `25MiB` as 25 bytes (live CPU/RAM updates now actually flow).
+- Sidebar: smooth collapse animation — sidebar width, topbar left offset, and body padding transition together at 180ms; chevron rotates instead of icon-swapping.
+- Sidebar pill is now a preference, not a live toggle: click sets the next-load default rather than collapsing immediately, matching how the folder-default pill works.
+- 296 unit tests across the docker store, store filters, lifecycle, format helpers, and check-updates contract.
+
 ###v0.4.2 (2026-05-27)
 - Feat: real topbar search. Click the magnifier (or press Ctrl/Cmd+K, or `/`) to open a popover that indexes every curated nav entry plus auto-discovered plugin pages. Type to filter, arrow keys to navigate, Enter to jump.
 - Fix: `/Plugins` shows the "Installed Plugins" / "Install Plugin" sub-tabs again. v0.4.1 blanket-hid `nav.tabs` to suppress Unraid's legacy 7.x top navigation, but 7.3 reuses the same class for in-page sub-tab navigation inside `#displaybox`. Scoped the hide rule to `body > nav.tabs` so only the page-level chrome is suppressed.
