@@ -1,0 +1,124 @@
+# Auto-build + publish a GitHub Release when a v*.*.* tag is pushed.
+#
+# Trigger:
+#   git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z
+#
+# Steps:
+#   1. Verify the tag matches package.json's `version` and the .plg's `<!ENTITY version "...">`
+#      so we never publish a release whose .plg points at a tarball it can't find.
+#   2. Run the TS test suite. PHP tests need a configured PHP and aren't useful as a
+#      release gate — they cover request-shape validation and the dev box runs them.
+#   3. Build the assets (Sass + Vite → package/theme/dist/).
+#   4. Pack the .txz (tools/package-txz.mjs does CRLF normalization first — Windows
+#      checkouts have historically tainted .page files).
+#   5. Extract the matching version's notes from unraid-modernui.plg's <CHANGES> block
+#      and create the release with the .txz attached. Tags like vX.Y.Z-beta / -rc are
+#      auto-flagged as prerelease.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write   # needed by gh release create
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Need the full history so .gitattributes-normalized text files don't
+          # accidentally get CR bytes packaged into the txz (the package script
+          # has a normalization pass but shallow clones have surprised it before).
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Derive version from tag
+        id: ver
+        # ${GITHUB_REF_NAME} is "v0.5.2" for tag vX.Y.Z; strip the leading v.
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}"        >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          # vX.Y.Z-beta / -rc / -alpha → prerelease
+          if [[ "${TAG}" == *-* ]]; then
+            echo "prerelease=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "prerelease=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Verify package.json + .plg agree with tag
+        # The .plg points at /releases/download/v${version}/unraid-modernui-${version}.txz
+        # via its &version; entity. If the source-of-truth version is stale we'd
+        # publish a release whose .plg can't resolve its own tarball URL — abort
+        # before that happens. Forces the release flow to follow the bump→tag order.
+        run: |
+          PKG=$(node -e "process.stdout.write(require('./package.json').version)")
+          PLG=$(grep -oP '<!ENTITY version\s+"\K[^"]+' unraid-modernui.plg)
+          EXPECTED="${{ steps.ver.outputs.version }}"
+          echo "tag      → ${EXPECTED}"
+          echo "package  → ${PKG}"
+          echo ".plg     → ${PLG}"
+          if [[ "${PKG}" != "${EXPECTED}" || "${PLG}" != "${EXPECTED}" ]]; then
+            echo "::error::Version mismatch — package.json + .plg must equal the tag before tagging."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TS tests
+        run: npm run test:ts
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Package txz
+        run: npm run package
+
+      - name: Extract release notes from .plg
+        id: notes
+        # The .plg CHANGES block is the canonical changelog. The top entry begins
+        # with "###v${version} (date)" — extract from there to the next "###v"
+        # marker (exclusive). Quoted heredoc preserves backticks/markdown.
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          awk -v v="###v${VERSION}" '
+            $0 ~ "^"v" " { capture=1; print; next }
+            /^###v/      { if (capture) exit }
+            capture       { print }
+          ' unraid-modernui.plg > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::warning::No CHANGES entry for ${VERSION} found in unraid-modernui.plg — using a placeholder body."
+            echo "Release ${VERSION}. See commit history for changes." > release-notes.md
+          fi
+          echo "----- release-notes.md -----"
+          cat release-notes.md
+          echo "----------------------------"
+
+      - name: Create GitHub release with txz attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=(
+            "${{ steps.ver.outputs.tag }}"
+            "dist/unraid-modernui-${{ steps.ver.outputs.version }}.txz"
+            --title "${{ steps.ver.outputs.tag }}"
+            --notes-file release-notes.md
+          )
+          if [[ "${{ steps.ver.outputs.prerelease }}" == "true" ]]; then
+            ARGS+=(--prerelease)
+          fi
+          gh release create "${ARGS[@]}"
