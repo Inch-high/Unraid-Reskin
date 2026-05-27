@@ -2,7 +2,7 @@
 
 A clean, flat, responsive theme for Unraid 7.x. Inspired by TrueNAS SCALE with refined Unraid orange accent.
 
-> **v0.4.0 status:** Phase 4 shell (left sidebar + slim topbar) shipping alongside the Phase 3 Modern Dashboard. Plugin proxy re-sourced for the Unraid 7.3 Vue chrome (Phase 4.1).
+> ⚠️ **Unofficial hobby project — not affiliated with, endorsed by, or supported by Lime Technology, Inc.** See [Disclaimer](#disclaimer) before installing.
 
 ## Install
 
@@ -60,6 +60,19 @@ MODERNUI_TEST_HOST=root@<host> MODERNUI_SSH_PORT=22 npm run test:integration
 
 See [INSTALL.md](INSTALL.md) for install troubleshooting and [docs/manual-verification.md](docs/manual-verification.md) for the pre-release checklist.
 
+## Disclaimer
+
+**This is a personal hobby project. Install at your own risk.**
+
+- **Not affiliated.** I'm not affiliated with, endorsed by, sponsored by, or in any way officially connected to Lime Technology, Inc., the makers of Unraid®. "Unraid" and the Unraid logo are trademarks of Lime Technology, Inc. — all rights reserved by their respective owners. This project is independent fan work that re-skins the stock web UI on a user's own server; it is not a fork of Unraid and does not redistribute any Unraid code.
+- **Not supported by Unraid.** Don't ask the Unraid forums or Lime Tech for help with this theme. Bugs / questions / feature requests go in [GitHub Issues](https://github.com/Inch-high/Unraid-Reskin/issues) on this repo only. If you have a Lime Technology support contract, this plugin is **not** covered by it.
+- **Hobby quality.** This is something I built for my own server in my spare time. There is no roadmap, no SLA, no guarantee of compatibility with future Unraid releases, and no promise that I'll keep maintaining it. Stuff will break. Some of it has not been tested outside my own homelab.
+- **Vibe coded.** Roughly ~90% of the code in this repo was written with heavy AI assistance (Claude). I review and test the output, but the volume of code is far greater than I could hand-write in spare-time hours, and AI-generated code can absolutely contain subtle bugs, edge cases, or security mistakes that a human reviewer (me) misses. Read the code before trusting it.
+- **No warranty.** The plugin is provided "AS IS", without warranty of any kind, express or implied — including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability — including data loss, downtime, container breakage, or anything else — arising from or in connection with the plugin or its use. **You take full responsibility for installing it on your server.**
+- **It's a theme, but Unraid is your data.** Always have working backups before installing any third-party plugin. Four independent fallback paths back to the stock UI are documented above ([Fallback to stock UI](#fallback-to-stock-ui-any-time-instantly)) — know how to use them before you need them.
+
+If any of the above makes you uncomfortable, don't install this. Stick with the stock UI — it's good.
+
 ## License
 
-MIT
+MIT (see source). The MIT license governs *this project's own code*. It does **not** grant any rights to Unraid, the Unraid name, the Unraid logo, or any Lime Technology trademarks or copyrighted material.
