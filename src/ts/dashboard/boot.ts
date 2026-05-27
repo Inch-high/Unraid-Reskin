@@ -78,6 +78,20 @@ export function boot(): void {
         const obs = createSourceObserver(table, () => extractAll(store), 50);
         obs.start();
       }
+
+      // Safety-net periodic refresh. The MutationObserver above catches DOM
+      // changes when Unraid actively rewrites a tbody, but in 7.3 some legacy
+      // dashboard widgets (notably the UPS tbody) stop receiving live DOM
+      // updates while the modern <footer> chrome continues to refresh. Without
+      // this, the Power hero card would stay frozen at first-paint values.
+      // Cadence matches the sidebar's existing 5s interval so the two surfaces
+      // stay in sync. Pauses while hidden, catches up on focus (cf. webgui#2641).
+      window.setInterval(() => {
+        if (!document.hidden) extractAll(store);
+      }, 5000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) extractAll(store);
+      });
     },
     () => {
       console.warn('[modernui-dashboard] source not found; leaving stock UI');
