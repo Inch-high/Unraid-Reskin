@@ -179,7 +179,12 @@ export interface DockerState {
   totalCount: number;
   /** True when the docker tbody is on the page but dynamix.docker.manager has
    *  not injected `.outer.solid.apps` tiles yet. Lets the hero strip render a
-   *  skeleton placeholder instead of popping the card in late. */
+   *  skeleton placeholder instead of popping the card in late.
+   *
+   *  Lifecycle: there's no explicit clear — the next extractAll() pass sees
+   *  the real tiles, recomputes loading=false, and the store replaces the
+   *  prior state. The MutationObserver fires that next pass as soon as
+   *  dynamix.docker.manager injects the first `.outer.solid.apps`. */
   loading?: boolean;
 }
 
@@ -197,7 +202,11 @@ export interface VmsState {
   totalRunning: number;
   totalCount: number;
   /** True when the vm_view tbody is on the page but libvirt.json has not
-   *  injected `.outer.solid.vms` tiles yet. */
+   *  injected `.outer.solid.vms` tiles yet.
+   *
+   *  Lifecycle: never explicitly cleared. The next extract pass (triggered by
+   *  the MutationObserver or the 5s safety-net) recomputes loading=false once
+   *  real tiles appear, and the store replaces the prior state. */
   loading?: boolean;
 }
 
@@ -233,7 +242,12 @@ export interface UpsState {
   nominalVA: number | null;
   /** True when the UPS tbody is on the page but apcupsd-status/nut JS has not
    *  replaced the spinner placeholders yet. Distinguishes "still loading" from
-   *  "actually unknown" so the Power hero card can show a skeleton. */
+   *  "actually unknown" so the Power hero card can show a skeleton.
+   *
+   *  Lifecycle: never explicitly cleared. The next extract pass recomputes
+   *  loading=false once spinners go away. In Unraid 7.3, that's typically the
+   *  5s safety-net tick (since the legacy tbody also stops receiving live
+   *  characterData mutations once the modern <footer> takes over). */
   loading?: boolean;
 }
 

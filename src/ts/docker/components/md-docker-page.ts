@@ -282,17 +282,44 @@ export class ModernuiDockerPage extends LitElement {
   // Poll every 2s. Pauses while the tab is hidden (cheap retries kicked off
   // on visibilitychange would still serve us, but tab-hidden polling burns
   // background CPU on long-lived tabs — see unraid/webgui#2641).
+  //
+  // Soft 60s cap: the worker is already self-healing — posix_kill(pid, 0) on
+  // the lock file cleans stale PIDs, so a crashed worker eventually flips
+  // `status.running` to false. But if PHP-FPM dies mid-fork, the lock + status
+  // file may stay forever stuck in "running". Bail after ~60s so the button
+  // returns to its idle state instead of polling indefinitely.
+  private static readonly POLL_INTERVAL_MS = 2000;
+  private static readonly POLL_MAX_MS = 60_000;
+
   private _pollCheckUpdates(): void {
+    const startedAt = Date.now();
     const tick = async (): Promise<void> => {
       this._checkPollHandle = null;
+      if (Date.now() - startedAt > ModernuiDockerPage.POLL_MAX_MS) {
+        // Soft cap reached. Treat as a silent worker failure: still refresh
+        // the snapshot once (the worker might have written update-status.json
+        // even if it never cleared its lock), warn, release the button.
+        console.warn('[modernui-docker] check-for-updates poll exceeded 60s, giving up');
+        try {
+          const snap = await fetchSnapshot({ withStats: this._store?.getShowStats() ?? false });
+          this._store?.setState({
+            containers: snap.containers,
+            folders: snap.folders,
+            tags: snap.tags,
+            tagAssignments: snap.tagAssignments,
+          });
+        } catch { /* snapshot is best-effort here */ }
+        this._checkingUpdates = false;
+        return;
+      }
       if (document.hidden) {
-        this._checkPollHandle = window.setTimeout(tick, 2000);
+        this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
         return;
       }
       try {
         const status = await getCheckUpdatesStatus();
         if (status.running) {
-          this._checkPollHandle = window.setTimeout(tick, 2000);
+          this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
           return;
         }
         if (status.error) {
@@ -311,7 +338,7 @@ export class ModernuiDockerPage extends LitElement {
         this._checkingUpdates = false;
       }
     };
-    this._checkPollHandle = window.setTimeout(tick, 2000);
+    this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
   }
 
   private _runUpdateSelected = async (): Promise<void> => {

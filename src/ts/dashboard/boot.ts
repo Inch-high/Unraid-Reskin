@@ -52,6 +52,30 @@ function extractAll(store: ReturnType<typeof createStore>): void {
   }
 }
 
+// Widget kinds whose source tbodies lose their live DOM-mutation update path
+// in Unraid 7.3 — specifically the UPS (.nut_loadpct/.nut_bcharge spans go
+// stale after the modern <footer> chrome takes over), VMs (libvirt.json may
+// re-inject tiles without bubbling characterData mutations our observer
+// catches), and Docker (occasional missed updates when many tiles rewrite
+// rapidly). Static widgets like identity / motherboard / shares / users
+// don't need a periodic re-extract — they change only on user action, which
+// already triggers the MutationObserver path.
+const LIVE_WIDGET_KINDS = new Set(['ups', 'vms', 'docker']);
+
+function extractLive(store: ReturnType<typeof createStore>): void {
+  // Cheaper than extractAll: dispatches each tbody but only writes back to
+  // the store when the result is one of LIVE_WIDGET_KINDS. Doesn't touch the
+  // deletion bookkeeping — that's still owned by the main extractAll path
+  // (a widget disappearing is a structural change, which the MutationObserver
+  // already catches).
+  for (const tbody of collectDashboardTbodies()) {
+    const result = dispatch({ source: tbody });
+    if (!result || !LIVE_WIDGET_KINDS.has(result.kind)) continue;
+    const id = (result as { id?: string }).id || tbody.id || result.kind;
+    store.set(id, result);
+  }
+}
+
 export function boot(): void {
   if (!isDashboardEnabled(document)) return;
   if (!onDashboardPage()) return;
@@ -84,13 +108,17 @@ export function boot(): void {
       // dashboard widgets (notably the UPS tbody) stop receiving live DOM
       // updates while the modern <footer> chrome continues to refresh. Without
       // this, the Power hero card would stay frozen at first-paint values.
-      // Cadence matches the sidebar's existing 5s interval so the two surfaces
-      // stay in sync. Pauses while hidden, catches up on focus (cf. webgui#2641).
+      //
+      // Narrowed to UPS/VMs/Docker via extractLive() — the static widgets
+      // (identity, motherboard, shares, users) don't need polling and the
+      // others already update via the observer reliably. Cadence matches the
+      // sidebar's existing 5s interval. Pauses while hidden, catches up on
+      // focus (cf. webgui#2641).
       window.setInterval(() => {
-        if (!document.hidden) extractAll(store);
+        if (!document.hidden) extractLive(store);
       }, 5000);
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) extractAll(store);
+        if (!document.hidden) extractLive(store);
       });
     },
     () => {
