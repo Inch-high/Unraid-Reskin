@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.5">
+<!ENTITY version   "0.5.6">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,9 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.6 (2026-05-27)
+- Fix (modals): the "Update Unraid OS confirmation required" dialog now actually shows its Cancel and Confirm buttons. The shell overlay's `body.modernui-shell-active footer { display: none !important }` rule (intended for Unraid's page-level `<footer id="footer">`) also matched the `<footer>` element Unraid Connect's Vue dialogs use for their action button row, so the confirm modal rendered with no buttons and the upgrade flow was a dead end. Scoped the selector to a direct body child (`body.modernui-shell-active > footer`) — Connect's portaled dialogs are nested several levels deep, so their footers no longer match.
+
 ###v0.5.5 (2026-05-27)
 - Fix (lifecycle): `event/disks_mounted` no longer silently uninstalls the plugin. `upgrade.php` requires both `install.php` and `uninstall.php` for shared helpers (`modernui_replace_file`, `modernui_restore_from_backup`) — but PHP runs the CLI block at the bottom of each required file regardless of whether it was `require_once`'d or run directly. The net effect every time the array started: install side-effect → uninstall side-effect → upgrade_check, leaving the plugin uninstalled. v0.5.4 made this user-visible by removing `event/started`, which had been masking the bug by re-running `install.php` immediately after `disks_mounted`. The CLI guard in both files now also requires `realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)` so requiring the file from another script no longer triggers its side effects. New test: `upgrade-no-side-effects.test.php`.
 

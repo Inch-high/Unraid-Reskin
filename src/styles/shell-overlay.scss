@@ -34,8 +34,12 @@ body.modernui-shell-active {
   // Bottom status bar — Unraid 7.x renders this as <div class="statusbar">
   // inside <footer> in DefaultPageLayout.php. Hide while leaving the DOM
   // for the MutationObserver mirror.
+  //
+  // `footer` is scoped to a direct child of body — Unraid Connect's Vue
+  // dialogs (e.g. the Update OS confirmation modal) use <footer> for their
+  // action button row, and an unscoped rule hides those buttons too.
   div.statusbar,
-  footer {
+  > footer {
     display: none !important;
   }
 
