@@ -93,14 +93,33 @@ export async function saveTags(tags: DockerTag[], assignments: Record<string, st
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
-// Trigger Unraid's "check for updates" on every image. The server walks each
-// image's RepoDigest against the remote manifest, takes a while; resolves only
-// once done. Caller should re-fetch the snapshot afterwards.
-export async function checkForUpdates(): Promise<void> {
-  const res = await postUrlEncoded('/plugins/unraid-modernui/include/docker-check-updates.php', {});
+// Trigger Unraid's "check for updates" on every image. The server spawns a
+// detached PHP worker (since each image is a serial HTTPS manifest fetch — 10s+
+// on a 30-container host) and returns immediately. Caller polls
+// getCheckUpdatesStatus() until { running: false } and then re-fetches the
+// snapshot to pick up the new `updateAvailable` flags.
+export interface CheckUpdatesStart { queued: boolean; running: boolean }
+export interface CheckUpdatesStatus { running: boolean; finishedAt: number | null; error: string | null }
+
+const CHECK_UPDATES_URL = '/plugins/unraid-modernui/include/docker-check-updates.php';
+
+export async function checkForUpdates(): Promise<CheckUpdatesStart> {
+  const res = await postUrlEncoded(CHECK_UPDATES_URL, {});
   if (!res.ok) throw new Error(`check-updates ${res.status}`);
-  const json = await res.json() as { ok: boolean; error?: string };
+  const json = await res.json() as { ok: boolean; queued?: boolean; running?: boolean; error?: string };
   if (!json.ok) throw new Error(json.error ?? 'check failed');
+  return { queued: json.queued ?? false, running: json.running ?? true };
+}
+
+export async function getCheckUpdatesStatus(): Promise<CheckUpdatesStatus> {
+  const res = await fetch(CHECK_UPDATES_URL, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(`check-updates status ${res.status}`);
+  const json = await res.json() as { running?: boolean; finishedAt?: number | null; error?: string | null };
+  return {
+    running: json.running ?? false,
+    finishedAt: json.finishedAt ?? null,
+    error: json.error ?? null,
+  };
 }
 
 // =========================================================================

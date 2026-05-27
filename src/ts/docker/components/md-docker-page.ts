@@ -11,6 +11,7 @@ import {
   saveTags as saveTagsRemote,
   saveSetting,
   checkForUpdates,
+  getCheckUpdatesStatus,
   fetchSnapshot,
   openWebUi,
   openLogs,
@@ -108,6 +109,7 @@ export class ModernuiDockerPage extends LitElement {
   @state() private _showFolderModal = false;
   @state() private _showTagModal = false;
   @state() private _checkingUpdates = false;
+  private _checkPollHandle: number | null = null;
 
   setStore(store: DockerStore): void {
     this._unsubscribe?.();
@@ -118,6 +120,10 @@ export class ModernuiDockerPage extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this._unsubscribe?.();
+    if (this._checkPollHandle !== null) {
+      window.clearTimeout(this._checkPollHandle);
+      this._checkPollHandle = null;
+    }
   }
 
   private async _handleAction(e: CustomEvent<DockerRowActionDetail>): Promise<void> {
@@ -219,26 +225,58 @@ export class ModernuiDockerPage extends LitElement {
     catch (err) { console.warn('[modernui-docker] failed to persist folder default:', err); }
   };
 
+  // Kick off the async worker, then poll the status endpoint until it reports
+  // not-running. Async because reloadUpdateStatus() walks every image's tag
+  // manifest over HTTPS — 10s+ on a 30-container host. Polling beats a
+  // dedicated nchan worker here because the event is one-shot (vs. the
+  // continuous stats stream that nchan does carry).
   private _runCheckForUpdates = async (): Promise<void> => {
     if (!this._store || this._checkingUpdates) return;
     this._checkingUpdates = true;
     try {
       await checkForUpdates();
-      // Refresh snapshot so the new updateAvailable flags propagate.
-      const snap = await fetchSnapshot();
-      this._store.setState({
-        containers: snap.containers,
-        folders: snap.folders,
-        tags: snap.tags,
-        tagAssignments: snap.tagAssignments,
-      });
+      this._pollCheckUpdates();
     } catch (err) {
+      this._checkingUpdates = false;
       console.warn('[modernui-docker] check-for-updates failed:', err);
       alert(`Check for updates failed: ${(err as Error).message}`);
-    } finally {
-      this._checkingUpdates = false;
     }
   };
+
+  // Poll every 2s. Pauses while the tab is hidden (cheap retries kicked off
+  // on visibilitychange would still serve us, but tab-hidden polling burns
+  // background CPU on long-lived tabs — see unraid/webgui#2641).
+  private _pollCheckUpdates(): void {
+    const tick = async (): Promise<void> => {
+      this._checkPollHandle = null;
+      if (document.hidden) {
+        this._checkPollHandle = window.setTimeout(tick, 2000);
+        return;
+      }
+      try {
+        const status = await getCheckUpdatesStatus();
+        if (status.running) {
+          this._checkPollHandle = window.setTimeout(tick, 2000);
+          return;
+        }
+        if (status.error) {
+          console.warn('[modernui-docker] check-for-updates worker error:', status.error);
+        }
+        const snap = await fetchSnapshot();
+        this._store?.setState({
+          containers: snap.containers,
+          folders: snap.folders,
+          tags: snap.tags,
+          tagAssignments: snap.tagAssignments,
+        });
+      } catch (err) {
+        console.warn('[modernui-docker] status poll failed:', err);
+      } finally {
+        this._checkingUpdates = false;
+      }
+    };
+    this._checkPollHandle = window.setTimeout(tick, 2000);
+  }
 
   private _runUpdateSelected = async (): Promise<void> => {
     if (!this._store) return;
