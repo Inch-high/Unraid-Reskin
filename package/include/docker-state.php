@@ -26,7 +26,7 @@ if (is_file(MODERNUI_DOCKER_CLIENT)) {
     require_once MODERNUI_DOCKER_CLIENT;               // populates $dockerManPaths + $driver
 }
 
-function modernui_docker_state(): array {
+function modernui_docker_state(bool $withStats = false): array {
     global $dockerManPaths, $driver;  // bound from DockerClient.php's top-level scope
 
     modernui_maybe_migrate_folder_view2();
@@ -48,15 +48,14 @@ function modernui_docker_state(): array {
                 if (isset($ct['Name'])) $byName[$ct['Name']] = $ct;
             }
 
-            // Fetch container sizes in one call. /containers/json?size=true walks each
-            // container's RW layer — moderately expensive, so we batch it once.
-            $sizes = modernui_fetch_sizes($client);
-
-            // Fetch live CPU% and memory usage in one shell-out. Same command
-            // Unraid's nchan worker uses (see dynamix.docker.manager/nchan/docker_load).
-            // Populates the snapshot so users see stats immediately instead of
-            // waiting for the first nchan delta to arrive.
-            $stats = modernui_fetch_docker_stats();
+            // Sizes + live CPU/RAM are both expensive (sizes walks each
+            // container's RW layer; `docker stats --no-stream` blocks ~1s for
+            // a delta sample). They're only shown when the Stats pill is on,
+            // so we skip them when $withStats=false — saves a second+ on the
+            // hot-path snapshot fetch. The nchan live stream fills in CPU/RAM
+            // for running containers within seconds of page load anyway.
+            $sizes = $withStats ? modernui_fetch_sizes($client) : [];
+            $stats = $withStats ? modernui_fetch_docker_stats() : [];
 
             foreach ((array)$info as $name => $row) {
                 $container = $byName[$name] ?? [];
@@ -216,5 +215,8 @@ function modernui_normalize_ports(array $rawPorts, string $url): array {
 }
 
 if (PHP_SAPI !== 'cli') {
-    modernui_json_response(modernui_docker_state());
+    // ?stats=1 opts into the expensive size + docker-stats fetches. The
+    // front-end only sends it when the Stats pill is on.
+    $withStats = isset($_GET['stats']) && $_GET['stats'] === '1';
+    modernui_json_response(modernui_docker_state($withStats));
 }

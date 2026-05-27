@@ -59,6 +59,15 @@ describe('DockerStore — basics', () => {
     expect(store.getState().containers.length).toBe(4);
   });
 
+  it('isLoading is true until first setState, then false', () => {
+    // Lets the page render a skeleton during the initial fetch window instead
+    // of the misleading "No containers" empty state.
+    const store = createDockerStore();
+    expect(store.isLoading()).toBe(true);
+    store.setState(sampleState());
+    expect(store.isLoading()).toBe(false);
+  });
+
   it('toggleSelection adds + removes', () => {
     const store = createDockerStore();
     store.setState(sampleState());

@@ -58,6 +58,9 @@ export interface DockerStore {
   getCollapseDefault(): 'expanded' | 'collapsed';
   /** Whether the Show Stats toggle is on — controls the per-row stats line and collapsed-folder sums. */
   getShowStats(): boolean;
+  /** True until the first setState() resolves. Lets the page render a skeleton
+   *  instead of the "No containers" empty state during the initial fetch window. */
+  isLoading(): boolean;
 
   setState(state: DockerPageState): void;
   applyDelta(delta: DockerDelta): void;
@@ -85,6 +88,7 @@ export function createDockerStore(): DockerStore {
   let explicitToggles: Set<string> = loadCollapsedFromStorage();
   let collapseDefault: 'expanded' | 'collapsed' = 'expanded';
   let showStats = false;
+  let loading = true;
   const listeners = new Set<Listener>();
 
   const notify = (): void => {
@@ -97,6 +101,7 @@ export function createDockerStore(): DockerStore {
     getSelection: () => selection,
     getCollapseDefault: () => collapseDefault,
     getShowStats: () => showStats,
+    isLoading: () => loading,
     isCollapsed(folderId) {
       const isInToggles = explicitToggles.has(folderId);
       // explicit toggle FLIPS the default. So:
@@ -110,6 +115,7 @@ export function createDockerStore(): DockerStore {
 
     setState(next) {
       state = next;
+      loading = false;
       // Drop selection entries for containers that no longer exist
       const live = new Set(next.containers.map((c) => c.name));
       let changed = false;

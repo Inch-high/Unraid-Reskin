@@ -127,7 +127,10 @@ export async function boot(): Promise<void> {
 
   const resync = async (): Promise<void> => {
     try {
-      const snapshot = await fetchSnapshot();
+      // Only request stats when the toggle is on — saves a second+ on
+      // every fetch when stats aren't shown. nchan deltas keep CPU/RAM
+      // fresh for running containers regardless.
+      const snapshot = await fetchSnapshot({ withStats: store.getShowStats() });
       store.setState({
         containers: snapshot.containers,
         folders: snapshot.folders,

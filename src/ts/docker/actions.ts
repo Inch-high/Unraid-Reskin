@@ -65,10 +65,14 @@ export interface DockerSnapshot {
   tagAssignments: Record<string, string[]>;
 }
 
-export async function fetchSnapshot(): Promise<DockerSnapshot> {
-  const res = await fetch('/plugins/unraid-modernui/include/docker-state.php', {
-    credentials: 'same-origin',
-  });
+// withStats=true opts into the expensive VDisk + `docker stats` fetches on
+// the server. We only pass it when the Stats pill is on — otherwise the hot
+// snapshot path takes ~1s+ less (no shell-out to `docker stats --no-stream`,
+// no `/containers/json?size=true` RW-layer walk). nchan live updates fill in
+// CPU/RAM within seconds anyway.
+export async function fetchSnapshot(opts: { withStats?: boolean } = {}): Promise<DockerSnapshot> {
+  const url = '/plugins/unraid-modernui/include/docker-state.php' + (opts.withStats ? '?stats=1' : '');
+  const res = await fetch(url, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(`docker-state.php ${res.status}`);
   return res.json();
 }

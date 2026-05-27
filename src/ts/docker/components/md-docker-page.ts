@@ -91,6 +91,42 @@ export class ModernuiDockerPage extends LitElement {
     .btn-primary { background: var(--mui-accent); color: #fff; border-color: var(--mui-accent); }
     .btn-primary:hover { background: var(--mui-accent-hover); border-color: var(--mui-accent-hover); color: #fff; }
 
+    /* Skeleton block while the first snapshot is in flight. Three placeholder
+       rows of the same shape as a real row, with a soft shimmer. Without this
+       the page would briefly show the "No containers" empty state because the
+       store starts with containers=[]. */
+    .skeleton {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .skeleton .sk-row {
+      display: grid;
+      grid-template-columns: 28px 40px 1fr 110px 90px;
+      gap: 12px;
+      padding: 14px 12px;
+      align-items: center;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .skeleton .sk-row:first-child { border-top: 0; }
+    .skeleton .sk-bar {
+      height: 12px;
+      background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--border-subtle) 50%, var(--bg-elevated) 100%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-xs);
+      animation: sk-shimmer 1.2s ease-in-out infinite;
+    }
+    .skeleton .sk-icon {
+      width: 28px; height: 28px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+    }
+    @keyframes sk-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     .empty {
       padding: 48px 20px;
       text-align: center;
@@ -262,7 +298,7 @@ export class ModernuiDockerPage extends LitElement {
         if (status.error) {
           console.warn('[modernui-docker] check-for-updates worker error:', status.error);
         }
-        const snap = await fetchSnapshot();
+        const snap = await fetchSnapshot({ withStats: this._store?.getShowStats() ?? false });
         this._store?.setState({
           containers: snap.containers,
           folders: snap.folders,
@@ -308,6 +344,22 @@ export class ModernuiDockerPage extends LitElement {
     const ce = e as CustomEvent<{ on: boolean }>;
     this._store.setShowStats(ce.detail.on);
     document.documentElement.dataset.modernuiDockerStats = ce.detail.on ? 'on' : 'off';
+    // When turning stats ON, refetch with ?stats=1 so VDisk + initial CPU/RAM
+    // populate. (Boot skipped them when stats started off.) When turning OFF,
+    // we keep last-known values — they just stop being shown.
+    if (ce.detail.on) {
+      try {
+        const snap = await fetchSnapshot({ withStats: true });
+        this._store.setState({
+          containers: snap.containers,
+          folders: snap.folders,
+          tags: snap.tags,
+          tagAssignments: snap.tagAssignments,
+        });
+      } catch (err) {
+        console.warn('[modernui-docker] stats refetch failed:', err);
+      }
+    }
     try { await saveSetting('docker_show_stats', ce.detail.on ? 'on' : 'off'); }
     catch (err) { console.warn('[modernui-docker] failed to persist show_stats:', err); }
   };
@@ -401,7 +453,19 @@ export class ModernuiDockerPage extends LitElement {
           .showStats=${this._store?.getShowStats() ?? false}
         ></md-docker-toolbar>
 
-        ${total === 0 ? html`
+        ${this._store?.isLoading() ? html`
+          <div class="skeleton" aria-live="polite" aria-busy="true">
+            ${[0, 1, 2, 3].map(() => html`
+              <div class="sk-row">
+                <div></div>
+                <div class="sk-icon"></div>
+                <div class="sk-bar" style="width: 60%"></div>
+                <div class="sk-bar" style="width: 70%"></div>
+                <div class="sk-bar" style="width: 50%"></div>
+              </div>
+            `)}
+          </div>
+        ` : total === 0 ? html`
           <div class="empty">
             <strong>No containers</strong>
             Add one from Community Apps, or use the Add Container button above.
