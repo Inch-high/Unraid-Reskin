@@ -35,6 +35,12 @@ function modernui_uninstall(): void {
     // The .plg remove block deletes the plugin payload itself.
 }
 
-if (PHP_SAPI === 'cli' && !defined('MODERNUI_TESTING')) {
+// See the matching note in install.php — the realpath check prevents
+// upgrade.php (which require_once's this file for modernui_restore_from_backup)
+// from accidentally triggering a full uninstall as a side effect.
+if (PHP_SAPI === 'cli'
+    && !defined('MODERNUI_TESTING')
+    && isset($_SERVER['SCRIPT_FILENAME'])
+    && realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     modernui_uninstall();
 }

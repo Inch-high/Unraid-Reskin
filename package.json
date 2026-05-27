@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.4: install/uninstall integrity fixes. The SHA backup pointer no longer captures our own injected/overlaid output as the \"stock\" backup, and the destructive event/started + event/stopped hooks (which strip chrome on array stop and re-corrupt the backup pointer on array start) are removed.",
+  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.5: stop upgrade.php from accidentally uninstalling the plugin. require_once'ing install.php/uninstall.php for their helpers used to also run their CLI bodies, so every event/disks_mounted fire silently stripped the chrome. CLI guards now require the file to be the entry script.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

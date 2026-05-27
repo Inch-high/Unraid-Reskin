@@ -212,6 +212,15 @@ function modernui_install(): void {
     echo "Modern UI: install complete (disabled=" . ($disabled ? 'true' : 'false') . ")\n";
 }
 
-if (PHP_SAPI === 'cli' && !defined('MODERNUI_TESTING')) {
+// Only auto-run modernui_install() when this file is invoked directly
+// (e.g. `php install.php`). Without the realpath check, requiring this file
+// from upgrade.php / tests / dev-mirror — which need its functions and
+// constants — would re-run the full install side-effect as a surprise. The
+// MODERNUI_TESTING guard remains for the rare case a test wants to load
+// this file as the entry script with side-effects suppressed.
+if (PHP_SAPI === 'cli'
+    && !defined('MODERNUI_TESTING')
+    && isset($_SERVER['SCRIPT_FILENAME'])
+    && realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     modernui_install();
 }

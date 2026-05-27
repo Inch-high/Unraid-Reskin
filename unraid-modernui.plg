@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.4">
+<!ENTITY version   "0.5.5">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,9 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.5 (2026-05-27)
+- Fix (lifecycle): `event/disks_mounted` no longer silently uninstalls the plugin. `upgrade.php` requires both `install.php` and `uninstall.php` for shared helpers (`modernui_replace_file`, `modernui_restore_from_backup`) — but PHP runs the CLI block at the bottom of each required file regardless of whether it was `require_once`'d or run directly. The net effect every time the array started: install side-effect → uninstall side-effect → upgrade_check, leaving the plugin uninstalled. v0.5.4 made this user-visible by removing `event/started`, which had been masking the bug by re-running `install.php` immediately after `disks_mounted`. The CLI guard in both files now also requires `realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)` so requiring the file from another script no longer triggers its side effects. New test: `upgrade-no-side-effects.test.php`.
+
 ###v0.5.4 (2026-05-27)
 - Fix (install): SHA backup pointer no longer tracks our own output. The previous behavior of `modernui_backup_file` unconditionally rewrote `backups/<file>.current.sha` to the live file's SHA, so a second install run on an already-injected layout (or an already-overlaid docker page) snapshotted our own output as the "stock" backup. A later uninstall would then "restore" the file to our injected/overlaid version instead of Unraid's real original — leaving orphan `<link>`/`<script>` tags in the layout and a non-functional `<modernui-docker-page>` mount point on /Docker until the next reboot. `modernui_install()` now only refreshes the layout backup when the file is presumed-clean (no marker block present), and `modernui_replace_file()` only backs up the target when it doesn't already match our overlay byte-for-byte.
 - Fix (lifecycle): removed `event/stopped`, which ran `uninstall.php` on every array stop. Each time the user clicked Stop on the array — or any clean shutdown that hit cmdStop — the chrome stripped out of the live webGui session, snapping the page back to stock UI mid-action. Uninstall now only happens at plugin remove time, as intended.
