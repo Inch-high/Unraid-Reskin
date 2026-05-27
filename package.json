@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.2: Docker /Update button actually updates containers now (was hitting a non-existent endpoint), in-flight Updating… status pill that survives refresh, and corrected polarity on the Update Available indicator.",
+  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.3: .plg install no longer fails XML validation — wrapped the CHANGES block in CDATA so changelog text (raw `&`, `<link>`, etc.) is no longer re-parsed as XML. Package contents unchanged from v0.5.2.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

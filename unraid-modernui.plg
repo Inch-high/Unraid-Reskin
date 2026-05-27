@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.2">
+<!ENTITY version   "0.5.3">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,9 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.3 (2026-05-27)
+- Fix (install): .plg no longer fails Unraid's XML validation. Older changelog entries contained raw ampersands (e.g. "Processor & Memory") and raw HTML-looking literals, which the XML parser rejected with `xmlParseEntityRef: no name` — `plugin install` aborted before any FILE block ran. The CHANGES block is now wrapped in a CDATA section so changelog prose is no longer re-parsed as XML (matches the pattern community.applications.plg and appdata.backup.plg use). Package contents are otherwise identical to v0.5.2.
+
 ###v0.5.2 (2026-05-27)
 - Fix (/Docker): clicking Update on a container actually pulls + recreates it now. The previous build POSTed `action=update` to `Events.php`, which has no `update` case — every click returned `{"error":"Unknown action 'update'"}` and the container was never touched. Routes through `StartCommand.php` with `cmd=update_container &lt;name&gt;` (the same path stock UI uses). Bulk uses the `*`-joined form so multiple containers run in a single serial worker, sidestepping `StartCommand.php`'s `pgrep`-by-binary-path race.
 - Fix (/Docker): "Update available" badge polarity was inverted. `DockerUpdate`'s `'updated'` field reads `'true'` when local==remote (= up to date) and `'false'` when they differ. Our check was the wrong way round, flagging every current container as outdated. Flipped to match stock UI's switch in `DockerContainers.php`. The page-level "N updates available" counter now reflects reality (most users will see the number drop substantially).
