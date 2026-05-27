@@ -24,16 +24,24 @@ export class ShellNotificationBell extends LitElement {
       display: inline-flex; align-items: center; justify-content: center;
       background: transparent; border: 0; color: var(--text-primary);
       cursor: pointer; border-radius: 6px; font-size: 16px;
+      transition: color 150ms ease;
     }
     .trigger:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
+    /* Bell turns Unraid orange when there's anything unread — pairs with the
+       badge so the glance-test "do I have notifications?" works even when
+       the user's eye sits on the icon, not the corner. */
+    :host([has-unread]) .trigger { color: var(--mui-accent, #ff8c2f); }
     .badge {
       position: absolute; top: 2px; right: 2px;
-      min-width: 14px; height: 14px;
-      background: var(--accent, #ff8c2f); color: #fff;
-      border-radius: 7px; font-size: 9px; font-weight: 600;
+      min-width: 16px; height: 16px;
+      background: var(--mui-accent, #ff8c2f); color: #fff;
+      border-radius: 8px; font-size: 10px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      padding: 0 3px; box-sizing: border-box;
+      padding: 0 4px; box-sizing: border-box;
       pointer-events: none;
+      /* Dark ring so the badge reads against any topbar background and
+         visually separates from the bell behind it. */
+      box-shadow: 0 0 0 2px var(--bg-surface, #1a1a1a);
     }
     .popover {
       position: absolute; top: calc(100% + 6px); right: 0;
@@ -78,7 +86,7 @@ export class ShellNotificationBell extends LitElement {
       font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em;
     }
     .archive-all {
-      background: transparent; border: 0; color: var(--accent, #ff8c2f);
+      background: transparent; border: 0; color: var(--mui-accent, #ff8c2f);
       cursor: pointer; font: inherit; padding: 0;
     }
     .archive-all:hover { text-decoration: underline; }
@@ -87,6 +95,13 @@ export class ShellNotificationBell extends LitElement {
   @state() private _open = false;
   @state() private _items: NotifyEntry[] = [];
   private _pollInterval: number | null = null;
+
+  protected updated(): void {
+    // Mirror unread state onto the host so the CSS :host([has-unread]) hook
+    // can colour the bell. Reflecting a derived flag is cheaper than a
+    // dedicated @property + reactive setter.
+    this.toggleAttribute('has-unread', this._items.length > 0);
+  }
 
   connectedCallback(): void {
     super.connectedCallback();

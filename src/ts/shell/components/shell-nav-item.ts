@@ -26,7 +26,7 @@ export class ShellNavItem extends LitElement {
     }
     a:hover, button:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
     :host([active]) a, :host([active]) > button {
-      border-left-color: var(--accent, #ff8c2f);
+      border-left-color: var(--mui-accent, #ff8c2f);
       color: var(--text-primary);
       font-weight: 600;
     }
@@ -35,7 +35,7 @@ export class ShellNavItem extends LitElement {
       display: inline-flex; align-items: center; justify-content: center;
       color: var(--text-secondary);
     }
-    :host([active]) .icon { color: var(--accent, #ff8c2f); }
+    :host([active]) .icon { color: var(--mui-accent, #ff8c2f); }
     .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chevron {
       width: 16px; height: 16px;

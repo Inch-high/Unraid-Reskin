@@ -11,7 +11,7 @@ export class ShellUserMenu extends LitElement {
     :host { position: relative; }
     .trigger {
       width: 32px; height: 32px; border-radius: 50%;
-      background: var(--accent, #ff8c2f); color: #fff;
+      background: var(--mui-accent, #ff8c2f); color: #fff;
       border: 0; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 13px; font-weight: 600;
@@ -37,7 +37,7 @@ export class ShellUserMenu extends LitElement {
     .item:hover { background: var(--bg-elev-1, rgba(255,255,255,0.04)); }
     .about { padding: 12px; font-size: 12px; color: var(--text-secondary); }
     .about p { margin: 4px 0; }
-    .about a { color: var(--accent, #ff8c2f); text-decoration: none; }
+    .about a { color: var(--mui-accent, #ff8c2f); text-decoration: none; }
     .divider { height: 1px; background: var(--border-subtle, rgba(255,255,255,0.08)); margin: 4px 0; }
   `;
 
