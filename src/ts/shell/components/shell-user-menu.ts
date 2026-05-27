@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 const GITHUB_URL = 'https://github.com/EXAMPLE/unraid-modernui';
 const MANUAL_URL = '/webGui/include/Help.php';
 

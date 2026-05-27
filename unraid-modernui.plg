@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.4.0">
+<!ENTITY version   "0.4.1">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -21,6 +21,12 @@
   support="https://github.com/Inch-high/Unraid-Reskin/issues">
 
 <CHANGES>
+###v0.4.1 (2026-05-27)
+- Fix: notification bell now reads Unraid 7.3's actual data source. v0.4.0 watched the legacy `#notifier` DOM element which 7.3 removed; the new bell polls Unraid's `Notify.php` (POST `cmd=get`) so unread notifications, their subjects, descriptions, and links actually appear. Per-item archive + "Archive all" header action, sorted newest-first.
+- Fix: brand orange (badge, user-menu avatar, active nav-item highlight) no longer clobbered by Unraid 7.3's tailwind `--accent` HSL-triple convention. Renamed our token references to `--mui-accent` everywhere it matters.
+- Feat: bell icon itself turns orange when there's anything unread — glance-test "do I have notifications?" works without your eye finding the badge corner.
+- Perf: sidebar + topbar polling pauses while the browser tab is hidden, syncs immediately on focus. Borrowed from unraid/webgui#2641. Cuts background CPU to zero on a tab the user keeps open all day.
+
 ###v0.4.0 (2026-05-26)
 - Phase 4: rebuilt shell — left sidebar + slim topbar replace Unraid's top nav and bottom status bar
 - Sidebar: curated nav with active-page highlight, server-name header, collapsible (preference persists across reloads)
