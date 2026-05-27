@@ -149,8 +149,13 @@ export class ShellSidebar extends LitElement {
   // preference without flipping the live state.
   @state() private _savedDefault: 'expanded' | 'collapsed' = 'expanded';
   @state() private _statusItems: Array<{ entry: PluginEntry | null; node: Element }> = [];
+  // True until we either see a plugin-status row appear OR the initial-load
+  // window elapses. Drives the skeleton placeholders in the footer so the
+  // sidebar's bottom rows don't pop in 1-2s after first paint.
+  @state() private _statusInitialLoading = true;
   private _disposeMirror: (() => void) | null = null;
   private _arrayInterval: number | null = null;
+  private _statusInitialLoadingTimer: number | null = null;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -176,8 +181,23 @@ export class ShellSidebar extends LitElement {
       registry: REGISTRY.bottom,
       onUpdate: (items) => {
         this._statusItems = items;
+        // Drop the loading flag the moment any real (non-filler) row appears.
+        // Filler rows like footer-spacer / footer-left / footer-right don't
+        // count — they're chrome, not plugin status.
+        const hasReal = items.some((it) => {
+          const cls = it.node.className || '';
+          if (/footer-spacer|footer-left|footer-right/.test(cls)) return false;
+          return (it.node.textContent?.trim().length ?? 0) > 0;
+        });
+        if (hasReal) this._statusInitialLoading = false;
       },
     });
+    // Hard cap on the skeleton lifetime — if no plugin row has appeared after
+    // 3s, the host probably just doesn't have any (no APC, no parity-check,
+    // no preclear, etc). Don't leave skeleton ghosts there forever.
+    this._statusInitialLoadingTimer = window.setTimeout(() => {
+      this._statusInitialLoading = false;
+    }, 3000);
     // Unraid 7.3 renders <footer> asynchronously after our mount, so the first
     // render misses the status data. Fire a quick re-render at 250ms (after
     // Vue's typical first paint) so the rows appear immediately, then settle
@@ -196,6 +216,10 @@ export class ShellSidebar extends LitElement {
     document.removeEventListener('visibilitychange', this._onVisibility);
     this._disposeMirror?.();
     if (this._arrayInterval) clearInterval(this._arrayInterval);
+    if (this._statusInitialLoadingTimer) {
+      clearTimeout(this._statusInitialLoadingTimer);
+      this._statusInitialLoadingTimer = null;
+    }
   }
 
   private _onVisibility = (): void => {
@@ -345,6 +369,10 @@ export class ShellSidebar extends LitElement {
         ${this._renderArrayState()}
         ${this._renderFooterRight()}
         ${this._statusItems.map((it) => this._renderStatus(it))}
+        ${this._statusInitialLoading ? html`
+          <shell-status-row loading></shell-status-row>
+          <shell-status-row loading></shell-status-row>
+        ` : ''}
         ${this._collapsed ? '' : html`
           <div class="default-toggle" title="Sidebar state used on next page load. Use the chevron below to collapse now.">
             <span class="label">Default</span>

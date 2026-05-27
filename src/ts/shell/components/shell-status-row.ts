@@ -52,6 +52,25 @@ export class ShellStatusRow extends LitElement {
     :host([open]) .popover { display: block; }
     :host-context(body.modernui-shell-collapsed) .label,
     :host-context(body.modernui-shell-collapsed) .value { display: none; }
+
+    /* Skeleton shimmer for rows still being populated by Unraid's plugin
+       injection. Keeps the same layout (icon+label+value lanes) so when the
+       real row replaces the skeleton, nothing shifts. */
+    .sk {
+      background: linear-gradient(90deg, var(--bg-elev-1, rgba(255,255,255,0.04)) 0%, var(--border-subtle, rgba(255,255,255,0.12)) 50%, var(--bg-elev-1, rgba(255,255,255,0.04)) 100%);
+      background-size: 200% 100%;
+      border-radius: 3px;
+      animation: status-shimmer 1.2s ease-in-out infinite;
+    }
+    .sk-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sk-label { flex: 1; height: 10px; max-width: 80px; }
+    .sk-value { height: 10px; width: 36px; }
+    :host-context(body.modernui-shell-collapsed) .sk-label,
+    :host-context(body.modernui-shell-collapsed) .sk-value { display: none; }
+    @keyframes status-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
   `;
 
   @property({ type: String }) label = '';
@@ -60,6 +79,9 @@ export class ShellStatusRow extends LitElement {
   @property({ type: String, attribute: 'icon-name' }) iconName = '';
   @property({ type: String }) detail = '';
   @property({ type: String, attribute: 'settings-url' }) settingsUrl = '';
+  /** Renders a shimmering skeleton row instead of label/value. Used while
+   *  the source plugin is still being injected into the bottom bar. */
+  @property({ type: Boolean }) loading = false;
   @state() private _open = false;
 
   private _toggle = (e: MouseEvent): void => {
@@ -86,6 +108,15 @@ export class ShellStatusRow extends LitElement {
   };
 
   render() {
+    if (this.loading) {
+      return html`
+        <div class="row" aria-busy="true" aria-label="Loading status">
+          <span class="sk sk-dot"></span>
+          <span class="sk sk-label"></span>
+          <span class="sk sk-value"></span>
+        </div>
+      `;
+    }
     return html`
       <button class="row" type="button" @click=${this._toggle} style=${`--dot-color: ${this.dotColor || 'currentColor'}`}>
         ${this.iconName
