@@ -78,7 +78,20 @@ function modernui_docker_state(bool $withStats = false): array {
         'folders'        => $folders['folders'],
         'tags'           => $tags['tags'],
         'tagAssignments' => (object)$tags['assignments'],
+        'serverUptime'   => modernui_read_uptime_seconds(),
     ];
+}
+
+// System uptime in seconds. The front-end uses this to gate the "post-reboot
+// autostart in progress" heuristic so it doesn't misfire on every page visit.
+// /proc/uptime exposes "<uptime> <idle>" — first float is seconds since boot.
+// Returns null if the file is unreadable (won't happen on Linux, but defensive).
+function modernui_read_uptime_seconds(): ?int {
+    $raw = @file_get_contents('/proc/uptime');
+    if (!is_string($raw) || $raw === '') return null;
+    $first = strtok($raw, ' ');
+    if ($first === false) return null;
+    return (int)(float)$first;
 }
 
 // Walks /containers/json?size=true and returns map of {shortId => SizeRw bytes}.

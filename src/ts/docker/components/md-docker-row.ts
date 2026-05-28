@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import type { DockerContainerFull, DockerTag } from '../types';
 import { icon } from '../icons';
 import { formatBytes, formatPercent, formatMac } from '../format';
@@ -10,7 +11,7 @@ import { formatBytes, formatPercent, formatMac } from '../format';
 
 export interface DockerRowActionDetail {
   container: string;
-  action: 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update' | 'webui' | 'logs' | 'console' | 'edit';
+  action: 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update' | 'webui' | 'logs' | 'console' | 'edit' | 'autostart-on' | 'autostart-off';
 }
 
 @customElement('md-docker-row')
@@ -19,7 +20,7 @@ export class MdDockerRow extends LitElement {
     :host { display: contents; }
     .row {
       display: grid;
-      grid-template-columns: 28px 40px minmax(220px, 1.4fr) minmax(140px, 1fr) minmax(120px, 0.8fr) 80px 110px 110px;
+      grid-template-columns: 28px 40px minmax(220px, 1.4fr) minmax(140px, 1fr) minmax(120px, 0.8fr) 80px 110px 144px;
       align-items: center;
       gap: 12px;
       padding: 10px 12px;
@@ -195,6 +196,9 @@ export class MdDockerRow extends LitElement {
     /* In-flight update — uses --info to match the row's pulse accent. The
        spinner takes the place of the colored dot used by other states. */
     .state-updating { background: rgba(59,130,246,.18); color: var(--info); }
+    /* "Starting" optimistic state — green-tinted with a spinner. Matches the
+       success palette so it reads as "almost there" rather than a problem. */
+    .state-starting { background: rgba(34,197,94,.15); color: var(--success); }
     .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .dot-success { background: var(--success); }
     .dot-danger  { background: var(--danger); }
@@ -225,22 +229,31 @@ export class MdDockerRow extends LitElement {
     .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-default); }
     .icon-btn-success:hover { color: var(--success); border-color: rgba(34,197,94,.4); }
     .icon-btn-warn:hover    { color: var(--warning); border-color: rgba(245,158,11,.4); }
+    /* Autostart pin: filled accent when enabled, muted outline when disabled.
+       Click toggles. Title/tooltip clarifies the on/off state for users who
+       don't recognize the icon. */
+    .pin-btn[data-on] { color: var(--mui-accent); }
+    .pin-btn:not([data-on]) { color: var(--text-muted); }
+    .pin-btn:hover { color: var(--mui-accent); border-color: rgba(255,140,47,.4); }
     .icon-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }
     .icon-btn:disabled:hover { background: transparent; color: var(--text-secondary); border-color: transparent; }
 
-    /* Action menu popover */
+    /* Action menu popover. position:fixed (rather than absolute) lets the
+       menu escape the folder section's overflow:hidden clipping — without
+       this, opening the menu on the last row of a folder would crop it. We
+       compute viewport coordinates from the kebab button's bounding rect in
+       _toggleMenu and flip upward when there isn't room below. */
     .menu {
-      position: absolute;
-      top: 36px; right: 0;
+      position: fixed;
       min-width: 180px;
       background: var(--bg-elevated);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-md);
       padding: 4px;
-      z-index: 5;
+      z-index: 50;
       box-shadow: 0 8px 24px rgba(0,0,0,.4);
     }
     .menu button {
@@ -261,11 +274,11 @@ export class MdDockerRow extends LitElement {
     .menu .divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
 
     @media (max-width: 1100px) {
-      .row { grid-template-columns: 28px 40px 1.5fr 1fr 80px 110px 110px; }
+      .row { grid-template-columns: 28px 40px 1.5fr 1fr 80px 110px 144px; }
       .ports { display: none; }
     }
     @media (max-width: 860px) {
-      .row { grid-template-columns: 28px 40px 1fr 110px 90px; }
+      .row { grid-template-columns: 28px 40px 1fr 110px 120px; }
       .tags, .uptime { display: none; }
     }
     /* Mobile: drop the state pill column (the icon already carries the
@@ -283,7 +296,7 @@ export class MdDockerRow extends LitElement {
       /* The "more" kebab is enough on a phone — webui/restart/start can ride
          in the menu. Show only the kebab when space is tight. */
       .actions .icon-btn:not(:last-child) { display: none; }
-      .menu { right: 0; min-width: 200px; }
+      .menu { min-width: 200px; }
     }
   `;
 
@@ -296,6 +309,15 @@ export class MdDockerRow extends LitElement {
   // True while the container is being updated (image pulled + recreated).
   // Owned by the page (DockerStore.updating set); the row only renders the UI.
   @property({ type: Boolean }) updating = false;
+  // True while the container is in the brief "starting" optimistic window:
+  // user clicked Start/Restart, or boot-time autostart is in flight. Cleared
+  // when the next snapshot confirms started/paused. Owned by the page.
+  @property({ type: Boolean }) starting = false;
+  // Viewport coordinates for the menu popover. Recomputed on every open from
+  // the kebab button's bounding rect; null when the menu is closed. The menu
+  // anchors to the right edge of the button and opens downward by default,
+  // flipping above the button when there isn't 240px of space below.
+  @state() private _menuStyle: { top: string; right: string } | null = null;
 
   private _portsText(): string {
     if (this.container.ports.length === 0) return '—';
@@ -324,20 +346,58 @@ export class MdDockerRow extends LitElement {
 
   private _toggleMenu(e: Event): void {
     e.stopPropagation();
-    this.menuOpen = !this.menuOpen;
+    if (this.menuOpen) {
+      this._closeMenu();
+      return;
+    }
+    // Compute viewport coordinates from the kebab's bounding rect. Right-anchor
+    // to keep the menu's right edge aligned with the button. Flip upward when
+    // there isn't enough space below — 240px covers the longest case (8
+    // entries + dividers).
+    const btn = e.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const MENU_HEIGHT_ESTIMATE = 240;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const right = Math.max(8, window.innerWidth - rect.right);
+    const top = spaceBelow >= MENU_HEIGHT_ESTIMATE
+      ? rect.bottom + 4
+      : Math.max(8, rect.top - MENU_HEIGHT_ESTIMATE - 4);
+    this._menuStyle = { top: `${top}px`, right: `${right}px` };
+    this.menuOpen = true;
+    // Only attach window scroll/resize listeners while the menu is actually
+    // open — avoids carrying 30+ noop listeners on a 30-container page (one
+    // per row instance).
+    window.addEventListener('scroll', this._closeMenu, { capture: true, passive: true });
+    window.addEventListener('resize', this._closeMenu);
   }
+
+  // Close on layout-disturbing events. Without the scroll/resize teardown the
+  // fixed-position menu would stay glued in place while the underlying row
+  // scrolled away.
+  private _closeMenu = (): void => {
+    if (!this.menuOpen) return;
+    this.menuOpen = false;
+    this._menuStyle = null;
+    window.removeEventListener('scroll', this._closeMenu, { capture: true } as EventListenerOptions);
+    window.removeEventListener('resize', this._closeMenu);
+  };
 
   connectedCallback(): void {
     super.connectedCallback();
     // Click-outside to close the action menu
-    this._onDocClick = this._onDocClick.bind(this);
     document.addEventListener('click', this._onDocClick);
   }
   disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('click', this._onDocClick);
+    // Defensive: if a row is removed while its menu is open, tear down the
+    // window listeners we attached in _toggleMenu.
+    if (this.menuOpen) this._closeMenu();
   }
-  private _onDocClick = (): void => { if (this.menuOpen) this.menuOpen = false; };
+  private _onDocClick = (): void => {
+    if (!this.menuOpen) return;
+    this._closeMenu();
+  };
 
   private _renderTagChips() {
     if (this.assignedTagIds.length === 0) return nothing;
@@ -352,12 +412,15 @@ export class MdDockerRow extends LitElement {
 
   render() {
     const c = this.container;
-    // Updating wins the visual state-badge slot: while a pull+recreate is in
-    // flight the container is being torn down + restarted, so the
-    // started/stopped pill is transient and misleading.
+    // Precedence: updating > starting > actual state. Updating wins because
+    // the container is being torn down + recreated. Starting wins next because
+    // the snapshot's "stopped" reading is stale (rc.docker hasn't reached this
+    // container yet, or the user just clicked Start).
     const stateClass = this.updating
       ? 'state-badge state-updating'
-      : `state-badge state-${c.state}`;
+      : this.starting
+        ? 'state-badge state-starting'
+        : `state-badge state-${c.state}`;
     const dotClass = c.state === 'started' ? 'dot dot-success'
                    : c.state === 'paused' ? 'dot dot-warning'
                    : c.state === 'stopped' ? 'dot dot-danger'
@@ -365,6 +428,9 @@ export class MdDockerRow extends LitElement {
     // Hide the "update available" affordance while the update is mid-flight —
     // it just answered the user's question, so showing it again is noise.
     const showUpdateBadge = c.updateAvailable && !this.updating;
+    const autostartLabel = c.autostart
+      ? 'Disable start on boot (autostart enabled)'
+      : 'Enable start on boot (autostart disabled)';
 
     return html`
       <div class="row"
@@ -409,36 +475,47 @@ export class MdDockerRow extends LitElement {
 
         ${this.updating
           ? html`<span class=${stateClass}><span class="sp"></span> Updating</span>`
-          : html`<span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>`}
+          : this.starting
+            ? html`<span class=${stateClass}><span class="sp"></span> Starting</span>`
+            : html`<span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>`}
 
         <div class="actions">
+          <button class="icon-btn pin-btn"
+                  title=${autostartLabel}
+                  ?data-on=${c.autostart}
+                  ?disabled=${this.updating}
+                  @click=${() => this._emit(c.autostart ? 'autostart-off' : 'autostart-on')}>${icon('power')}</button>
           ${c.webuiUrl ? html`
             <button class="icon-btn" title="Open WebUI" ?disabled=${this.updating} @click=${() => this._emit('webui')}>${icon('external')}</button>
           ` : nothing}
           ${c.state === 'started' ? html`
-            <button class="icon-btn icon-btn-warn" title=${this.updating ? 'Update in progress' : 'Restart'} ?disabled=${this.updating} @click=${() => this._emit('restart')}>${icon('restart')}</button>
+            <button class="icon-btn icon-btn-warn" title=${this.updating ? 'Update in progress' : 'Restart'} ?disabled=${this.updating || this.starting} @click=${() => this._emit('restart')}>${icon('restart')}</button>
           ` : html`
-            <button class="icon-btn icon-btn-success" title=${this.updating ? 'Update in progress' : 'Start'} ?disabled=${this.updating} @click=${() => this._emit('start')}>${icon('play')}</button>
+            <button class="icon-btn icon-btn-success" title=${this.updating ? 'Update in progress' : this.starting ? 'Starting…' : 'Start'} ?disabled=${this.updating || this.starting} @click=${() => this._emit('start')}>${icon('play')}</button>
           `}
           <button class="icon-btn" title="More" @click=${this._toggleMenu}>${icon('kebab')}</button>
 
           ${this.menuOpen ? html`
-            <div class="menu" @click=${(e: Event) => e.stopPropagation()}>
+            <div class="menu"
+                 style=${styleMap(this._menuStyle ?? {})}
+                 @click=${(e: Event) => e.stopPropagation()}>
               ${c.state === 'started' ? html`
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('pause')}>${icon('pause')} Pause</button>
               ` : c.state === 'paused' ? html`
-                <button ?disabled=${this.updating} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
+                <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
               ` : html`
-                <button ?disabled=${this.updating} @click=${() => this._emit('start')}>${icon('play')} Start</button>
+                <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('start')}>${icon('play')} Start</button>
               `}
-              <button ?disabled=${this.updating} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
+              <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
               <div class="divider"></div>
               <button @click=${() => this._emit('logs')}>${icon('logs')} Logs</button>
               <button @click=${() => this._emit('console')}>${icon('console')} Console</button>
               <button @click=${() => this._emit('edit')}>${icon('edit')} Edit</button>
               ${c.updateAvailable && !this.updating ? html`<button @click=${() => this._emit('update')}>${icon('update')} Update now</button>` : nothing}
+              <div class="divider"></div>
+              <button @click=${() => this._emit(c.autostart ? 'autostart-off' : 'autostart-on')}>${icon('power')} ${c.autostart ? 'Disable start on boot' : 'Enable start on boot'}</button>
               <div class="divider"></div>
               <button class="danger" ?disabled=${this.updating} @click=${() => this._emit('remove')}>${icon('trash')} Remove</button>
             </div>

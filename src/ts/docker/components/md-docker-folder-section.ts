@@ -131,6 +131,8 @@ export class MdDockerFolderSection extends LitElement {
   // Live set of container names with an update-in-flight. Threaded down to
   // each row so it can render the "Updating…" pill + disable buttons.
   @property({ type: Object }) updating: Set<string> = new Set();
+  // Live set of container names in the optimistic "starting" window.
+  @property({ type: Object }) starting: Set<string> = new Set();
   // Controlled: parent owns the collapsed state (via store) so it survives
   // re-renders triggered by filter changes. Toggle emits 'docker-toggle-folder'.
   @property({ type: Boolean, reflect: true }) collapsed = false;
@@ -244,6 +246,7 @@ export class MdDockerFolderSection extends LitElement {
               .assignedTagIds=${this.tagAssignments[c.name] ?? []}
               ?selected=${this.selection.has(c.name)}
               ?updating=${this.updating.has(c.name)}
+              ?starting=${this.starting.has(c.name)}
               ?showStats=${this.showStats}
             ></md-docker-row></li>
           `)}

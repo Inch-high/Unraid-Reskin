@@ -8,6 +8,7 @@ import {
   executeContainer,
   executeBulk,
   updateContainers,
+  saveAutostart,
   saveFolders as saveFoldersRemote,
   saveTags as saveTagsRemote,
   saveSetting,
@@ -167,16 +168,27 @@ export class ModernuiDockerPage extends LitElement {
   // services all in-flight container updates regardless of how many were
   // started — bulk updates and individual updates share the same cadence.
   private _updatePollHandle: number | null = null;
+  // Single shared poll handle for "starting" optimistic state. Triggered by
+  // start/restart/resume actions and by post-reboot autostart detection.
+  private _startingPollHandle: number | null = null;
 
   setStore(store: DockerStore): void {
     this._unsubscribe?.();
     this._store = store;
-    this._unsubscribe = store.subscribe(() => { this._tick++; });
-    // If the store hydrated probes from localStorage (refresh / nav-away
-    // during an in-flight update), kick the poll back into life so the UI
-    // can clear them when the snapshot confirms completion.
+    // Subscribe and also reconcile poll handles on every store change. The
+    // poll-start methods are idempotent (return early if already running), so
+    // we can safely call them whenever the respective set is non-empty —
+    // including for boot-time autostart detection that happens AFTER setStore.
+    this._unsubscribe = store.subscribe(() => {
+      this._tick++;
+      if (store.getUpdating().size > 0) this._startUpdatePoll();
+      if (store.getStarting().size > 0) this._startStartingPoll();
+    });
     if (store.getUpdating().size > 0) {
       this._startUpdatePoll();
+    }
+    if (store.getStarting().size > 0) {
+      this._startStartingPoll();
     }
   }
 
@@ -190,6 +202,10 @@ export class ModernuiDockerPage extends LitElement {
     if (this._updatePollHandle !== null) {
       window.clearTimeout(this._updatePollHandle);
       this._updatePollHandle = null;
+    }
+    if (this._startingPollHandle !== null) {
+      window.clearTimeout(this._startingPollHandle);
+      this._startingPollHandle = null;
     }
   }
 
@@ -220,6 +236,42 @@ export class ModernuiDockerPage extends LitElement {
           console.warn('[modernui-docker] update failed:', err);
         }
         return;
+      case 'autostart-on':
+      case 'autostart-off': {
+        const enabled = action === 'autostart-on';
+        // Optimistic update: flip the local flag immediately so the pin icon
+        // reflects the user's click without waiting for the snapshot refresh.
+        const state = this._store.getState();
+        const idx = state.containers.findIndex((x) => x.name === c.name);
+        if (idx >= 0) {
+          const next = {
+            ...state,
+            containers: [
+              ...state.containers.slice(0, idx),
+              { ...state.containers[idx], autostart: enabled },
+              ...state.containers.slice(idx + 1),
+            ],
+          };
+          this._store.setState(next);
+        }
+        try {
+          await saveAutostart([{ name: c.name, enabled }]);
+        } catch (err) {
+          console.warn('[modernui-docker] save autostart failed:', err);
+          alert(`Save failed: ${(err as Error).message}`);
+          // Revert by re-fetching the snapshot — single source of truth.
+          try {
+            const snap = await fetchSnapshot({ withStats: this._store.getShowStats() });
+            this._store.setState({
+              containers: snap.containers,
+              folders: snap.folders,
+              tags: snap.tags,
+              tagAssignments: snap.tagAssignments,
+            });
+          } catch { /* best-effort revert */ }
+        }
+        return;
+      }
       case 'start':
       case 'stop':
       case 'restart':
@@ -229,7 +281,21 @@ export class ModernuiDockerPage extends LitElement {
           start: 'start', stop: 'stop', restart: 'restart',
           pause: 'pause', resume: 'start',
         };
-        await executeContainer(c.name, map[action]);
+        // Optimistic "Starting…" badge for actions that move toward a running
+        // state. Cleared on the next snapshot that shows started/paused (or
+        // by the 90s watchdog). Stop/pause don't need it — those transitions
+        // are nearly instantaneous and the UI already disables the row.
+        if (action === 'start' || action === 'restart' || action === 'resume') {
+          this._store.markStarting([c.name]);
+          this._startStartingPoll();
+        }
+        try { await executeContainer(c.name, map[action]); }
+        catch (err) {
+          if (action === 'start' || action === 'restart' || action === 'resume') {
+            this._store.clearStarting(c.name);
+          }
+          console.warn(`[modernui-docker] ${action} failed:`, err);
+        }
         return;
       }
     }
@@ -262,12 +328,63 @@ export class ModernuiDockerPage extends LitElement {
       }
       return;
     }
-    const map: Record<Exclude<BulkAction, 'clear' | 'remove' | 'update'>, DockerAction> = {
+    if (a === 'autostart-on' || a === 'autostart-off') {
+      const enabled = a === 'autostart-on';
+      // Optimistic in-memory flip for every selected container.
+      const stateNow = this._store.getState();
+      const selSet = new Set(selected);
+      const nextContainers = stateNow.containers.map((c) =>
+        selSet.has(c.name) ? { ...c, autostart: enabled } : c,
+      );
+      this._store.setState({ ...stateNow, containers: nextContainers });
+      try {
+        await saveAutostart(selected.map((name) => ({ name, enabled })));
+      } catch (err) {
+        console.warn('[modernui-docker] bulk autostart failed:', err);
+        alert(`Save failed: ${(err as Error).message}`);
+        try {
+          const snap = await fetchSnapshot({ withStats: this._store.getShowStats() });
+          this._store.setState({
+            containers: snap.containers,
+            folders: snap.folders,
+            tags: snap.tags,
+            tagAssignments: snap.tagAssignments,
+          });
+        } catch { /* best-effort revert */ }
+      }
+      return;
+    }
+    const map: Record<Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>, DockerAction> = {
       start: 'start', stop: 'stop', restart: 'restart',
     };
-    try { await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update'>]); }
-    catch (err) {
+    let markedStarting: string[] = [];
+    if (a === 'start' || a === 'restart') {
+      // Only mark containers that aren't already running. Stop the user from
+      // also seeing "Starting…" on already-running rows.
+      markedStarting = selected.filter((n) => {
+        const c = this._store!.getState().containers.find((x) => x.name === n);
+        return c && c.state !== 'started';
+      });
+      if (markedStarting.length > 0) {
+        this._store.markStarting(markedStarting);
+        this._startStartingPoll();
+      }
+    }
+    try {
+      const { failed } = await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>]);
+      // Roll back the Starting badge for containers whose Events.php call
+      // threw, so failed rows don't sit on a 10-min watchdog before clearing.
+      if (failed.length > 0 && markedStarting.length > 0) {
+        const failedSet = new Set(failed);
+        for (const n of markedStarting) {
+          if (failedSet.has(n)) this._store.clearStarting(n);
+        }
+      }
+    } catch (err) {
+      // Outer reject is rare (executeBulk catches per-container). Clear all
+      // optimistic Starting badges on a total failure rather than leaving them.
       console.warn('[modernui-docker] bulk action failed:', err);
+      for (const n of markedStarting) this._store.clearStarting(n);
     }
   }
 
@@ -401,6 +518,43 @@ export class ModernuiDockerPage extends LitElement {
   // update; it self-terminates as soon as the store's updating set drains
   // (auto-cleared by reconcileUpdating() on each setState).
   private static readonly UPDATE_POLL_INTERVAL_MS = 4000;
+
+  // Per-container "starting" poll. Cadence is 3s — the UI lies about state
+  // (shows "Starting…") and the user's instinct will be to refresh if it
+  // takes too long, so we'd better confirm quickly. nchan /sub/dockerload
+  // only carries CPU/RAM deltas, not state changes, so we have to refetch
+  // the snapshot to detect the transition.
+  private static readonly STARTING_POLL_INTERVAL_MS = 3000;
+
+  private _startStartingPoll(): void {
+    if (this._startingPollHandle !== null) return;
+    const tick = async (): Promise<void> => {
+      this._startingPollHandle = null;
+      if (!this._store) return;
+      if (this._store.getStarting().size === 0) return;
+      if (document.hidden) {
+        this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+        return;
+      }
+      try {
+        const snap = await fetchSnapshot({ withStats: this._store.getShowStats() });
+        // setState() runs reconcileStarting() which clears any name whose
+        // container is now started/paused (or has timed out).
+        this._store.setState({
+          containers: snap.containers,
+          folders: snap.folders,
+          tags: snap.tags,
+          tagAssignments: snap.tagAssignments,
+        });
+      } catch (err) {
+        console.warn('[modernui-docker] starting poll snapshot failed:', err);
+      }
+      if (this._store.getStarting().size > 0) {
+        this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+      }
+    };
+    this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+  }
 
   private _startUpdatePoll(): void {
     if (this._updatePollHandle !== null) return; // already running
@@ -595,6 +749,7 @@ export class ModernuiDockerPage extends LitElement {
               .tagAssignments=${state.tagAssignments}
               .selection=${selection}
               .updating=${this._store?.getUpdating() ?? new Set()}
+              .starting=${this._store?.getStarting() ?? new Set()}
               ?collapsed=${this._store?.isCollapsed(key) ?? false}
               ?showStats=${this._store?.getShowStats() ?? false}
             ></md-docker-folder-section>

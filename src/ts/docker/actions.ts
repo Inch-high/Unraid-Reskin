@@ -18,6 +18,7 @@ const EVENTS_ENDPOINT = '/plugins/dynamix.docker.manager/include/Events.php';
 const START_COMMAND_ENDPOINT = '/webGui/include/StartCommand.php';
 const SAVE_FOLDERS    = '/plugins/unraid-modernui/include/save-docker-folders.php';
 const SAVE_TAGS       = '/plugins/unraid-modernui/include/save-docker-tags.php';
+const SAVE_AUTOSTART  = '/plugins/unraid-modernui/include/save-docker-autostart.php';
 
 // CSRF token is published by Unraid's auto_prepend onto `window.csrf_token`.
 // We read it once per call so the value stays fresh if the page persists.
@@ -73,12 +74,17 @@ export async function updateContainers(names: string[]): Promise<string> {
 // Sequential start/stop is too slow for 30+ containers; unlimited parallel
 // can wedge dockerd. 4 in-flight is a defensible middle ground (matches
 // docker compose's default parallelism).
+//
+// Returns the names that failed (per-container exception). Callers use this
+// to roll back optimistic UI state — e.g. clearing the "Starting…" badge on
+// a row whose Events.php call threw — instead of waiting for the watchdog.
 export async function executeBulk(
   containers: string[],
   action: DockerAction,
   concurrency = 4,
-): Promise<void> {
+): Promise<{ failed: string[] }> {
   const queue = [...containers];
+  const failed: string[] = [];
   const workers: Promise<void>[] = [];
   for (let i = 0; i < concurrency; i++) {
     workers.push((async (): Promise<void> => {
@@ -86,11 +92,15 @@ export async function executeBulk(
         const name = queue.shift();
         if (!name) return;
         try { await executeContainer(name, action); }
-        catch { /* swallow — nchan will reflect the actual state */ }
+        catch (err) {
+          failed.push(name);
+          console.warn(`[modernui-docker] bulk ${action} failed for ${name}:`, err);
+        }
       }
     })());
   }
   await Promise.all(workers);
+  return { failed };
 }
 
 // =========================================================================
@@ -102,6 +112,10 @@ export interface DockerSnapshot {
   folders: DockerFolder[];
   tags: DockerTag[];
   tagAssignments: Record<string, string[]>;
+  // Seconds since the server booted. Used by boot.ts to gate the
+  // "post-reboot autostart in progress" heuristic so it doesn't misfire on
+  // every page visit. null on the rare case /proc/uptime is unreadable.
+  serverUptime: number | null;
 }
 
 // withStats=true opts into the expensive VDisk + `docker stats` fetches on
@@ -124,6 +138,21 @@ export async function saveFolders(folders: DockerFolder[]): Promise<void> {
   const body: DockerFoldersFile = { version: 1, folders };
   const res = await postUrlEncoded(SAVE_FOLDERS, { payload: JSON.stringify(body) });
   if (!res.ok) throw new Error(`save-docker-folders ${res.status}`);
+  const json = await res.json() as { ok: boolean; error?: string };
+  if (!json.ok) throw new Error(json.error ?? 'save failed');
+}
+
+// Toggle autostart for one or more containers. Writes /var/lib/docker/unraid-autostart
+// on the server; rc.docker reads that file at boot time to start containers
+// sequentially. Existing wait values for entries we don't touch are preserved
+// by the endpoint.
+export interface AutostartChange { name: string; enabled: boolean }
+
+export async function saveAutostart(changes: AutostartChange[]): Promise<void> {
+  if (changes.length === 0) return;
+  const body = JSON.stringify({ changes });
+  const res = await postUrlEncoded(SAVE_AUTOSTART, { payload: body });
+  if (!res.ok) throw new Error(`save-docker-autostart ${res.status}`);
   const json = await res.json() as { ok: boolean; error?: string };
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
@@ -184,15 +213,40 @@ export function openWebUi(c: DockerContainerFull): void {
   window.open(c.webuiUrl, '_blank', 'noopener');
 }
 
+// openTerminal is the global JS helper Unraid injects via HeadInlineJS.php on
+// every page. It (a) opens a new window via makeWindow, (b) GETs OpenTerminal.php
+// which spawns ttyd-exec attached to a per-container unix socket, then (c) points
+// the new window at /logterminal/<name>(.log)/ to connect. We delegate rather
+// than re-implementing because the socket lifecycle + window-sizing rules are
+// fiddly and the function is guaranteed to exist on any Unraid page.
+type OpenTerminalFn = (tag: 'docker', name: string, more: string) => void;
+function openTerminal(): OpenTerminalFn | null {
+  const fn = (window as unknown as { openTerminal?: OpenTerminalFn }).openTerminal;
+  return typeof fn === 'function' ? fn : null;
+}
+
+// Surfaced when window.openTerminal isn't on the page. The function is part
+// of Unraid's chrome (HeadInlineJS.php) so its absence means our page is
+// loading without the surrounding template — surface it so the user knows
+// their click did something, instead of failing silently in the console.
+function warnTerminalMissing(): void {
+  console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
+  alert('Terminal helper unavailable. Reload the page and try again — if it persists, the Unraid chrome may not be loading on this view.');
+}
+
 export function openLogs(c: DockerContainerFull): void {
-  // Match stock popup spec — see DockerContainers.page in the upstream repo.
-  const url = `/plugins/dynamix.docker.manager/include/Logging.php?container=${encodeURIComponent(c.name)}`;
-  window.open(url, c.name, 'width=868,height=600');
+  // Stock uses openTerminal('docker', name, '.log') — the OpenTerminal.php
+  // docker case detects more==='.log' and runs `docker logs -f` instead of
+  // `docker exec -it`.
+  const t = openTerminal();
+  if (!t) { warnTerminalMissing(); return; }
+  t('docker', c.name, '.log');
 }
 
 export function openConsole(c: DockerContainerFull): void {
-  const url = `/plugins/dynamix.docker.manager/include/Exec.php?cmd=${encodeURIComponent(c.shell || 'sh')}&n=${encodeURIComponent(c.name)}&c=${encodeURIComponent(c.id)}`;
-  window.open(url, c.name + '_console', 'width=900,height=600');
+  const t = openTerminal();
+  if (!t) { warnTerminalMissing(); return; }
+  t('docker', c.name, c.shell || 'sh');
 }
 
 export function openEdit(c: DockerContainerFull): void {

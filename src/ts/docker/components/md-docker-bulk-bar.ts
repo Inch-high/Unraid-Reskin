@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { icon } from '../icons';
 
-export type BulkAction = 'start' | 'stop' | 'restart' | 'update' | 'remove' | 'clear';
+export type BulkAction = 'start' | 'stop' | 'restart' | 'update' | 'remove' | 'clear' | 'autostart-on' | 'autostart-off';
 
 @customElement('md-docker-bulk-bar')
 export class MdDockerBulkBar extends LitElement {
@@ -59,6 +59,8 @@ export class MdDockerBulkBar extends LitElement {
         <button @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
         <button @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
         <button @click=${() => this._emit('update')}>${icon('update')} Update</button>
+        <button @click=${() => this._emit('autostart-on')} title="Enable start on boot for selected containers">${icon('power')} Autostart on</button>
+        <button @click=${() => this._emit('autostart-off')} title="Disable start on boot for selected containers">${icon('power')} Autostart off</button>
         <span class="spacer"></span>
         <button class="danger" @click=${() => this._emit('remove')}>${icon('trash')} Remove</button>
         <button class="icon-btn" title="Clear selection" @click=${() => this._emit('clear')}>${icon('x')}</button>
