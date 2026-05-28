@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.6">
+<!ENTITY version   "0.5.7">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,14 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.7 (2026-05-28)
+- Feat (docker): per-container "Start on boot" pin in every row + Enable/Disable autostart in the kebab menu + bulk Autostart on/off buttons in the selection bar. Backend `save-docker-autostart.php` toggles entries in `/var/lib/docker/unraid-autostart` in place, preserving WAIT values for entries it doesn't touch; container names are regex-validated to block path/newline injection; the read→mutate→write sequence runs under an exclusive flock on a co-located `.lock` sentinel so concurrent toggles (two tabs, modernui + stock UI, bulk + single) can't clobber each other.
+- Feat (docker): transient "Starting…" badge with spinner. Start/Restart/Resume mark the row optimistically and a 3s snapshot poll confirms the transition (nchan `/sub/dockerload` only carries CPU/RAM deltas, not state changes). On a fresh-reboot visit, containers with `autostart=true && state=stopped` are also flagged so the post-boot rc.docker chain shows as in-flight instead of looking frozen. Gated on `serverUptime ≤ 5 min` (read from `/proc/uptime` via docker-state.php) so a crashed-but-autostart-enabled container doesn't show a stale "Starting…" badge hours after boot. 10-minute watchdog covers the worst-case rc.docker WAIT chain.
+- Fix (docker): Console + Logs were POSTing to `/plugins/dynamix.docker.manager/include/Exec.php` and `Logging.php`, which don't exist in dynamix.docker.manager — both buttons were dead. Now delegates to the global `openTerminal('docker', name, shell | '.log')` helper Unraid injects on every page, matching stock behavior. Alerts the user if the helper isn't on the page (instead of failing silently in the console).
+- Fix (docker): kebab menu was clipped by the folder section's `overflow:hidden` on the last row of a folder. Switched to `position:fixed` with viewport-relative coordinates computed from the kebab's bounding rect, auto-flip-up when there isn't 240px below. Scroll/resize close the menu; the listeners attach only while a menu is open (not 30 listeners on a 30-container page).
+- Fix (docker): bulk start/restart failures now clear the optimistic "Starting…" badge per failed container immediately instead of leaving them on the watchdog. `executeBulk()` now returns `{ failed: string[] }` instead of swallowing per-container errors.
+- Tests: new `save-docker-autostart.test.php` covers payload validation (empty / non-JSON / non-bool enabled / empty name / whitespace / path traversal / newline injection). New `store.test.ts` cases cover markStarting / clearStarting / reconcileStarting and the deliberate non-persistence across page reloads.
+
 ###v0.5.6 (2026-05-27)
 - Fix (modals): the "Update Unraid OS confirmation required" dialog now actually shows its Cancel and Confirm buttons. The shell overlay's `body.modernui-shell-active footer { display: none !important }` rule (intended for Unraid's page-level `<footer id="footer">`) also matched the `<footer>` element Unraid Connect's Vue dialogs use for their action button row, so the confirm modal rendered with no buttons and the upgrade flow was a dead end. Scoped the selector to a direct body child (`body.modernui-shell-active > footer`) — Connect's portaled dialogs are nested several levels deep, so their footers no longer match.
 
