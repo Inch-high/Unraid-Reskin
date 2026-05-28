@@ -347,8 +347,7 @@ export class MdDockerRow extends LitElement {
   private _toggleMenu(e: Event): void {
     e.stopPropagation();
     if (this.menuOpen) {
-      this.menuOpen = false;
-      this._menuStyle = null;
+      this._closeMenu();
       return;
     }
     // Compute viewport coordinates from the kebab's bounding rect. Right-anchor
@@ -357,7 +356,7 @@ export class MdDockerRow extends LitElement {
     // entries + dividers).
     const btn = e.currentTarget as HTMLElement;
     const rect = btn.getBoundingClientRect();
-    const MENU_HEIGHT_ESTIMATE = 320;
+    const MENU_HEIGHT_ESTIMATE = 240;
     const spaceBelow = window.innerHeight - rect.bottom;
     const right = Math.max(8, window.innerWidth - rect.right);
     const top = spaceBelow >= MENU_HEIGHT_ESTIMATE
@@ -365,37 +364,39 @@ export class MdDockerRow extends LitElement {
       : Math.max(8, rect.top - MENU_HEIGHT_ESTIMATE - 4);
     this._menuStyle = { top: `${top}px`, right: `${right}px` };
     this.menuOpen = true;
+    // Only attach window scroll/resize listeners while the menu is actually
+    // open — avoids carrying 30+ noop listeners on a 30-container page (one
+    // per row instance).
+    window.addEventListener('scroll', this._closeMenu, { capture: true, passive: true });
+    window.addEventListener('resize', this._closeMenu);
   }
 
-  // Close on layout-disturbing events. Without these the fixed-position menu
-  // would stay glued in place while the underlying row scrolled away.
-  private _closeMenuIfOpen = (): void => {
+  // Close on layout-disturbing events. Without the scroll/resize teardown the
+  // fixed-position menu would stay glued in place while the underlying row
+  // scrolled away.
+  private _closeMenu = (): void => {
     if (!this.menuOpen) return;
     this.menuOpen = false;
     this._menuStyle = null;
+    window.removeEventListener('scroll', this._closeMenu, { capture: true } as EventListenerOptions);
+    window.removeEventListener('resize', this._closeMenu);
   };
 
   connectedCallback(): void {
     super.connectedCallback();
     // Click-outside to close the action menu
-    this._onDocClick = this._onDocClick.bind(this);
     document.addEventListener('click', this._onDocClick);
-    // Scroll + resize close the menu so a fixed-position popover doesn't drift
-    // off the kebab as the page moves. Capture-phase + passive scroll: cheap
-    // and catches every scroll container above us.
-    window.addEventListener('scroll', this._closeMenuIfOpen, { capture: true, passive: true });
-    window.addEventListener('resize', this._closeMenuIfOpen);
   }
   disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('click', this._onDocClick);
-    window.removeEventListener('scroll', this._closeMenuIfOpen, { capture: true } as EventListenerOptions);
-    window.removeEventListener('resize', this._closeMenuIfOpen);
+    // Defensive: if a row is removed while its menu is open, tear down the
+    // window listeners we attached in _toggleMenu.
+    if (this.menuOpen) this._closeMenu();
   }
   private _onDocClick = (): void => {
     if (!this.menuOpen) return;
-    this.menuOpen = false;
-    this._menuStyle = null;
+    this._closeMenu();
   };
 
   private _renderTagChips() {
@@ -502,12 +503,12 @@ export class MdDockerRow extends LitElement {
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('pause')}>${icon('pause')} Pause</button>
               ` : c.state === 'paused' ? html`
-                <button ?disabled=${this.updating} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
+                <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
               ` : html`
-                <button ?disabled=${this.updating} @click=${() => this._emit('start')}>${icon('play')} Start</button>
+                <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('start')}>${icon('play')} Start</button>
               `}
-              <button ?disabled=${this.updating} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
+              <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
               <div class="divider"></div>
               <button @click=${() => this._emit('logs')}>${icon('logs')} Logs</button>
               <button @click=${() => this._emit('console')}>${icon('console')} Console</button>

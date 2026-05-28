@@ -13,6 +13,10 @@
 require_once __DIR__ . '/docker-helpers.php';
 
 const MODERNUI_AUTOSTART_FILE = '/var/lib/docker/unraid-autostart';
+// Co-located lock file. flock-only — never holds content. Serializes the
+// read→mutate→write sequence so two concurrent toggles (two tabs, modernui +
+// stock UI, bulk + single) can't clobber each other.
+const MODERNUI_AUTOSTART_LOCK = '/var/lib/docker/unraid-autostart.lock';
 
 // Parse the autostart file into an ordered list of [name, wait] pairs. Lines
 // look like "Plex" or "Plex 60". Blank lines are skipped. Preserves order
@@ -44,8 +48,12 @@ function modernui_write_autostart_file(string $path, array $entries): bool {
     }
     $body = implode(PHP_EOL, $lines) . PHP_EOL;
     $tmp = $path . '.tmp.' . getmypid();
-    if (@file_put_contents($tmp, $body, LOCK_EX) === false) return false;
-    return @rename($tmp, $path);
+    if (@file_put_contents($tmp, $body) === false) return false;
+    if (@rename($tmp, $path)) return true;
+    // rename failed — clean up the orphaned temp file so we don't leak cruft
+    // on a full disk / immutable bit / SELinux denial.
+    @unlink($tmp);
+    return false;
 }
 
 function modernui_handle_save_autostart(array $post): array {
@@ -75,28 +83,43 @@ function modernui_handle_save_autostart(array $post): array {
         $byName[$name] = $enabled;
     }
 
-    $existing = modernui_parse_autostart_file(MODERNUI_AUTOSTART_FILE);
-    $existingNames = array_column($existing, 'name');
-
-    // Pass 1: remove entries the change set disables.
-    $next = [];
-    foreach ($existing as $e) {
-        $name = $e['name'];
-        if (isset($byName[$name]) && $byName[$name] === false) continue;
-        $next[] = $e;
+    // Serialize the read→mutate→write under an exclusive flock so concurrent
+    // toggles (e.g. two browser tabs, stock UI + modernui, bulk + single) can't
+    // race and lose each other's changes. The lock file is a zero-byte sentinel
+    // co-located with the data file; we hold the lock for the whole sequence.
+    $lockHandle = @fopen(MODERNUI_AUTOSTART_LOCK, 'c');
+    if ($lockHandle === false) return ['ok' => false, 'error' => 'lock open failed'];
+    if (!@flock($lockHandle, LOCK_EX)) {
+        @fclose($lockHandle);
+        return ['ok' => false, 'error' => 'lock acquire failed'];
     }
+    try {
+        $existing = modernui_parse_autostart_file(MODERNUI_AUTOSTART_FILE);
+        $existingNames = array_column($existing, 'name');
 
-    // Pass 2: append newly-enabled entries that weren't already listed.
-    foreach ($byName as $name => $enabled) {
-        if (!$enabled) continue;
-        if (in_array($name, $existingNames, true)) continue;
-        $next[] = ['name' => $name, 'wait' => ''];
-    }
+        // Pass 1: remove entries the change set disables.
+        $next = [];
+        foreach ($existing as $e) {
+            $name = $e['name'];
+            if (isset($byName[$name]) && $byName[$name] === false) continue;
+            $next[] = $e;
+        }
 
-    if (!modernui_write_autostart_file(MODERNUI_AUTOSTART_FILE, $next)) {
-        return ['ok' => false, 'error' => 'write failed'];
+        // Pass 2: append newly-enabled entries that weren't already listed.
+        foreach ($byName as $name => $enabled) {
+            if (!$enabled) continue;
+            if (in_array($name, $existingNames, true)) continue;
+            $next[] = ['name' => $name, 'wait' => ''];
+        }
+
+        if (!modernui_write_autostart_file(MODERNUI_AUTOSTART_FILE, $next)) {
+            return ['ok' => false, 'error' => 'write failed'];
+        }
+        return ['ok' => true];
+    } finally {
+        @flock($lockHandle, LOCK_UN);
+        @fclose($lockHandle);
     }
-    return ['ok' => true];
 }
 
 if (PHP_SAPI !== 'cli') {

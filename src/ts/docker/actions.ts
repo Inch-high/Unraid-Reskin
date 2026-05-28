@@ -74,12 +74,17 @@ export async function updateContainers(names: string[]): Promise<string> {
 // Sequential start/stop is too slow for 30+ containers; unlimited parallel
 // can wedge dockerd. 4 in-flight is a defensible middle ground (matches
 // docker compose's default parallelism).
+//
+// Returns the names that failed (per-container exception). Callers use this
+// to roll back optimistic UI state — e.g. clearing the "Starting…" badge on
+// a row whose Events.php call threw — instead of waiting for the watchdog.
 export async function executeBulk(
   containers: string[],
   action: DockerAction,
   concurrency = 4,
-): Promise<void> {
+): Promise<{ failed: string[] }> {
   const queue = [...containers];
+  const failed: string[] = [];
   const workers: Promise<void>[] = [];
   for (let i = 0; i < concurrency; i++) {
     workers.push((async (): Promise<void> => {
@@ -87,11 +92,15 @@ export async function executeBulk(
         const name = queue.shift();
         if (!name) return;
         try { await executeContainer(name, action); }
-        catch { /* swallow — nchan will reflect the actual state */ }
+        catch (err) {
+          failed.push(name);
+          console.warn(`[modernui-docker] bulk ${action} failed for ${name}:`, err);
+        }
       }
     })());
   }
   await Promise.all(workers);
+  return { failed };
 }
 
 // =========================================================================
@@ -103,6 +112,10 @@ export interface DockerSnapshot {
   folders: DockerFolder[];
   tags: DockerTag[];
   tagAssignments: Record<string, string[]>;
+  // Seconds since the server booted. Used by boot.ts to gate the
+  // "post-reboot autostart in progress" heuristic so it doesn't misfire on
+  // every page visit. null on the rare case /proc/uptime is unreadable.
+  serverUptime: number | null;
 }
 
 // withStats=true opts into the expensive VDisk + `docker stats` fetches on
@@ -212,24 +225,27 @@ function openTerminal(): OpenTerminalFn | null {
   return typeof fn === 'function' ? fn : null;
 }
 
+// Surfaced when window.openTerminal isn't on the page. The function is part
+// of Unraid's chrome (HeadInlineJS.php) so its absence means our page is
+// loading without the surrounding template — surface it so the user knows
+// their click did something, instead of failing silently in the console.
+function warnTerminalMissing(): void {
+  console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
+  alert('Terminal helper unavailable. Reload the page and try again — if it persists, the Unraid chrome may not be loading on this view.');
+}
+
 export function openLogs(c: DockerContainerFull): void {
   // Stock uses openTerminal('docker', name, '.log') — the OpenTerminal.php
   // docker case detects more==='.log' and runs `docker logs -f` instead of
   // `docker exec -it`.
   const t = openTerminal();
-  if (!t) {
-    console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
-    return;
-  }
+  if (!t) { warnTerminalMissing(); return; }
   t('docker', c.name, '.log');
 }
 
 export function openConsole(c: DockerContainerFull): void {
   const t = openTerminal();
-  if (!t) {
-    console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
-    return;
-  }
+  if (!t) { warnTerminalMissing(); return; }
   t('docker', c.name, c.shell || 'sh');
 }
 

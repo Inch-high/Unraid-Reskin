@@ -357,21 +357,34 @@ export class ModernuiDockerPage extends LitElement {
     const map: Record<Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>, DockerAction> = {
       start: 'start', stop: 'stop', restart: 'restart',
     };
+    let markedStarting: string[] = [];
     if (a === 'start' || a === 'restart') {
       // Only mark containers that aren't already running. Stop the user from
       // also seeing "Starting…" on already-running rows.
-      const namesToMark = selected.filter((n) => {
+      markedStarting = selected.filter((n) => {
         const c = this._store!.getState().containers.find((x) => x.name === n);
         return c && c.state !== 'started';
       });
-      if (namesToMark.length > 0) {
-        this._store.markStarting(namesToMark);
+      if (markedStarting.length > 0) {
+        this._store.markStarting(markedStarting);
         this._startStartingPoll();
       }
     }
-    try { await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>]); }
-    catch (err) {
+    try {
+      const { failed } = await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>]);
+      // Roll back the Starting badge for containers whose Events.php call
+      // threw, so failed rows don't sit on a 10-min watchdog before clearing.
+      if (failed.length > 0 && markedStarting.length > 0) {
+        const failedSet = new Set(failed);
+        for (const n of markedStarting) {
+          if (failedSet.has(n)) this._store.clearStarting(n);
+        }
+      }
+    } catch (err) {
+      // Outer reject is rare (executeBulk catches per-container). Clear all
+      // optimistic Starting badges on a total failure rather than leaving them.
       console.warn('[modernui-docker] bulk action failed:', err);
+      for (const n of markedStarting) this._store.clearStarting(n);
     }
   }
 

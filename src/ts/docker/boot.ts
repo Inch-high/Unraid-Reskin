@@ -125,12 +125,18 @@ export async function boot(): Promise<void> {
   page.setStore(store);
   root.appendChild(page);
 
+  // Mutable holder for the most recent raw snapshot — we need serverUptime
+  // outside the function scope for the boot-detection gate below. (The store
+  // doesn't retain server-meta fields; only the data subset.)
+  let lastServerUptime: number | null = null;
+
   const resync = async (): Promise<void> => {
     try {
       // Only request stats when the toggle is on — saves a second+ on
       // every fetch when stats aren't shown. nchan deltas keep CPU/RAM
       // fresh for running containers regardless.
       const snapshot = await fetchSnapshot({ withStats: store.getShowStats() });
+      lastServerUptime = snapshot.serverUptime;
       store.setState({
         containers: snapshot.containers,
         folders: snapshot.folders,
@@ -153,14 +159,22 @@ export async function boot(): Promise<void> {
   // deltas). The heuristic: any container with autostart=true that is
   // currently `stopped`. Mark them as "starting" so the row spinner appears,
   // and let the starting poll confirm the transition.
-  const snapshot = store.getState();
-  const bootCandidates = snapshot.containers
-    .filter((c) => c.autostart && c.state === 'stopped')
-    .map((c) => c.name);
-  if (bootCandidates.length > 0) {
-    // markStarting notifies subscribers; the page's setStore() subscriber
-    // sees the non-empty starting set and kicks off _startStartingPoll().
-    store.markStarting(bootCandidates);
+  //
+  // Gate on system uptime so we don't misfire hours after boot for a
+  // crashed-but-autostart-enabled container. 5 min covers the longest
+  // realistic rc.docker chain (per STARTING_TIMEOUT_MS in store.ts) while
+  // safely excluding the steady-state case.
+  const BOOT_AUTOSTART_WINDOW_S = 5 * 60;
+  if (lastServerUptime !== null && lastServerUptime <= BOOT_AUTOSTART_WINDOW_S) {
+    const snapshot = store.getState();
+    const bootCandidates = snapshot.containers
+      .filter((c) => c.autostart && c.state === 'stopped')
+      .map((c) => c.name);
+    if (bootCandidates.length > 0) {
+      // markStarting notifies subscribers; the page's setStore() subscriber
+      // sees the non-empty starting set and kicks off _startStartingPoll().
+      store.markStarting(bootCandidates);
+    }
   }
 
   // Subscribe to live deltas (cpu/mem/state). Visibility-aware: pauses while

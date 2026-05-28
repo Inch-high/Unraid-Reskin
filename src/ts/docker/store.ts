@@ -96,10 +96,13 @@ export interface DockerStore {
 // Per-name probe captured at markStarting(). The starting probe is simpler than
 // the updating one — we just track when we set it and clear on the next snapshot
 // that shows started/paused, or after the watchdog elapses. The watchdog is
-// generous (90s) because boot-time autostart can WAIT up to dozens of seconds
-// between containers.
+// generous (10 min) because boot-time autostart runs sequentially and each
+// entry can WAIT up to 60s — a 5+ container chain with 30s waits already
+// exceeds 90s, so we err well on the high side. Watchdog only kicks in for
+// genuinely stuck transitions; the snapshot poll clears probes much sooner in
+// the happy path.
 interface StartingProbe { startedAt: number; }
-const STARTING_TIMEOUT_MS = 90_000;
+const STARTING_TIMEOUT_MS = 10 * 60_000;
 
 // Per-name baseline captured at markUpdating(). Used by setState() to decide
 // when an in-flight update has completed: container's docker id changes when
