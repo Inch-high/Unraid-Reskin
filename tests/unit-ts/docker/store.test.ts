@@ -384,6 +384,85 @@ describe('updating state', () => {
   });
 });
 
+describe('starting state', () => {
+  it('markStarting flags containers and notifies once per batch', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.markStarting(['plex', 'sonarr']);
+    expect(store.getStarting().has('plex')).toBe(true);
+    expect(store.getStarting().has('sonarr')).toBe(true);
+    expect(calls).toBe(1);
+  });
+
+  it('markStarting is idempotent', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markStarting(['plex']);
+    let calls = 0;
+    store.subscribe(() => { calls++; });
+    store.markStarting(['plex']);
+    expect(calls).toBe(0);
+  });
+
+  it('clears starting once snapshot confirms started or paused', () => {
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[2] = mkContainer({ name: 'radarr', state: 'stopped' });
+    store.setState(s);
+    store.markStarting(['radarr']);
+    expect(store.getStarting().has('radarr')).toBe(true);
+
+    const next = sampleState();
+    next.containers[2] = mkContainer({ name: 'radarr', state: 'started' });
+    store.setState(next);
+    expect(store.getStarting().has('radarr')).toBe(false);
+  });
+
+  it('does NOT clear starting while container is still reporting stopped', () => {
+    // Boot-time autostart sequence: rc.docker hasn't reached this container
+    // yet, so the snapshot keeps showing "stopped". Keeping the optimistic
+    // spinner avoids whiplash between "Starting…" and "stopped".
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[2] = mkContainer({ name: 'radarr', state: 'stopped' });
+    store.setState(s);
+    store.markStarting(['radarr']);
+    store.setState({ ...s });
+    expect(store.getStarting().has('radarr')).toBe(true);
+  });
+
+  it('clears when the container vanishes from the snapshot', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markStarting(['radarr']);
+    const next = sampleState();
+    next.containers = next.containers.filter((c) => c.name !== 'radarr');
+    store.setState(next);
+    expect(store.getStarting().has('radarr')).toBe(false);
+  });
+
+  it('clearStarting drops a single entry', () => {
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markStarting(['plex', 'sonarr']);
+    store.clearStarting('plex');
+    expect(store.getStarting().has('plex')).toBe(false);
+    expect(store.getStarting().has('sonarr')).toBe(true);
+  });
+
+  it('does NOT persist across store recreate (unlike updating)', () => {
+    // Starting is a UI-only optimistic flag — restoring it after a refresh
+    // would be confusing because the action either succeeded or not by then.
+    const store1 = createDockerStore();
+    store1.setState(sampleState());
+    store1.markStarting(['plex']);
+    const store2 = createDockerStore();
+    expect(store2.getStarting().has('plex')).toBe(false);
+  });
+});
+
 describe('showStats flag', () => {
   it('defaults off and toggles via setShowStats', () => {
     const store = createDockerStore();

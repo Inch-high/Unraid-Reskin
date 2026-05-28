@@ -18,6 +18,7 @@ const EVENTS_ENDPOINT = '/plugins/dynamix.docker.manager/include/Events.php';
 const START_COMMAND_ENDPOINT = '/webGui/include/StartCommand.php';
 const SAVE_FOLDERS    = '/plugins/unraid-modernui/include/save-docker-folders.php';
 const SAVE_TAGS       = '/plugins/unraid-modernui/include/save-docker-tags.php';
+const SAVE_AUTOSTART  = '/plugins/unraid-modernui/include/save-docker-autostart.php';
 
 // CSRF token is published by Unraid's auto_prepend onto `window.csrf_token`.
 // We read it once per call so the value stays fresh if the page persists.
@@ -128,6 +129,21 @@ export async function saveFolders(folders: DockerFolder[]): Promise<void> {
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
+// Toggle autostart for one or more containers. Writes /var/lib/docker/unraid-autostart
+// on the server; rc.docker reads that file at boot time to start containers
+// sequentially. Existing wait values for entries we don't touch are preserved
+// by the endpoint.
+export interface AutostartChange { name: string; enabled: boolean }
+
+export async function saveAutostart(changes: AutostartChange[]): Promise<void> {
+  if (changes.length === 0) return;
+  const body = JSON.stringify({ changes });
+  const res = await postUrlEncoded(SAVE_AUTOSTART, { payload: body });
+  if (!res.ok) throw new Error(`save-docker-autostart ${res.status}`);
+  const json = await res.json() as { ok: boolean; error?: string };
+  if (!json.ok) throw new Error(json.error ?? 'save failed');
+}
+
 export async function saveTags(tags: DockerTag[], assignments: Record<string, string[]>): Promise<void> {
   const body: DockerTagsFile = { version: 1, tags, assignments };
   const res = await postUrlEncoded(SAVE_TAGS, { payload: JSON.stringify(body) });
@@ -184,15 +200,37 @@ export function openWebUi(c: DockerContainerFull): void {
   window.open(c.webuiUrl, '_blank', 'noopener');
 }
 
+// openTerminal is the global JS helper Unraid injects via HeadInlineJS.php on
+// every page. It (a) opens a new window via makeWindow, (b) GETs OpenTerminal.php
+// which spawns ttyd-exec attached to a per-container unix socket, then (c) points
+// the new window at /logterminal/<name>(.log)/ to connect. We delegate rather
+// than re-implementing because the socket lifecycle + window-sizing rules are
+// fiddly and the function is guaranteed to exist on any Unraid page.
+type OpenTerminalFn = (tag: 'docker', name: string, more: string) => void;
+function openTerminal(): OpenTerminalFn | null {
+  const fn = (window as unknown as { openTerminal?: OpenTerminalFn }).openTerminal;
+  return typeof fn === 'function' ? fn : null;
+}
+
 export function openLogs(c: DockerContainerFull): void {
-  // Match stock popup spec — see DockerContainers.page in the upstream repo.
-  const url = `/plugins/dynamix.docker.manager/include/Logging.php?container=${encodeURIComponent(c.name)}`;
-  window.open(url, c.name, 'width=868,height=600');
+  // Stock uses openTerminal('docker', name, '.log') — the OpenTerminal.php
+  // docker case detects more==='.log' and runs `docker logs -f` instead of
+  // `docker exec -it`.
+  const t = openTerminal();
+  if (!t) {
+    console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
+    return;
+  }
+  t('docker', c.name, '.log');
 }
 
 export function openConsole(c: DockerContainerFull): void {
-  const url = `/plugins/dynamix.docker.manager/include/Exec.php?cmd=${encodeURIComponent(c.shell || 'sh')}&n=${encodeURIComponent(c.name)}&c=${encodeURIComponent(c.id)}`;
-  window.open(url, c.name + '_console', 'width=900,height=600');
+  const t = openTerminal();
+  if (!t) {
+    console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
+    return;
+  }
+  t('docker', c.name, c.shell || 'sh');
 }
 
 export function openEdit(c: DockerContainerFull): void {

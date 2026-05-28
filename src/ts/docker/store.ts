@@ -63,6 +63,9 @@ export interface DockerStore {
   isLoading(): boolean;
   /** Live set of containers currently being updated (image pull + recreate in flight). */
   getUpdating(): Set<string>;
+  /** Live set of containers we've optimistically marked as "starting".
+   *  Cleared automatically on the next snapshot that confirms the real state. */
+  getStarting(): Set<string>;
 
   setState(state: DockerPageState): void;
   applyDelta(delta: DockerDelta): void;
@@ -80,9 +83,23 @@ export interface DockerStore {
   markUpdating(names: string[]): void;
   /** Explicit clear — e.g. after the bulk-update timeout fires. */
   clearUpdating(name: string): void;
+  /** Optimistically mark containers as "starting" — for the brief window between
+   *  user action and the next snapshot. Auto-cleared by reconcileStarting() once
+   *  the snapshot confirms started/paused, or watchdog after STARTING_TIMEOUT_MS. */
+  markStarting(names: string[]): void;
+  /** Explicit clear — e.g. on action failure. */
+  clearStarting(name: string): void;
 
   subscribe(fn: Listener): () => void;
 }
+
+// Per-name probe captured at markStarting(). The starting probe is simpler than
+// the updating one — we just track when we set it and clear on the next snapshot
+// that shows started/paused, or after the watchdog elapses. The watchdog is
+// generous (90s) because boot-time autostart can WAIT up to dozens of seconds
+// between containers.
+interface StartingProbe { startedAt: number; }
+const STARTING_TIMEOUT_MS = 90_000;
 
 // Per-name baseline captured at markUpdating(). Used by setState() to decide
 // when an in-flight update has completed: container's docker id changes when
@@ -161,6 +178,11 @@ export function createDockerStore(): DockerStore {
   // matches updateProbes' keys exactly.
   const updateProbes = loadUpdatingFromStorage();
   let updating: Set<string> = new Set(updateProbes.keys());
+  // Starting probes are NOT persisted: they're meaningful only for the brief
+  // window after a user action and would be misleading if restored after a
+  // page reload (the action either succeeded or not by then).
+  const startingProbes = new Map<string, StartingProbe>();
+  let starting: Set<string> = new Set();
   const listeners = new Set<Listener>();
 
   const notify = (): void => {
@@ -196,6 +218,32 @@ export function createDockerStore(): DockerStore {
     return changed;
   };
 
+  // Drop "starting" entries whose container now reports started/paused (success)
+  // or which have timed out. We deliberately do NOT clear on a still-stopped
+  // result, because the user could be looking at a slow startup (e.g. db
+  // containers running migrations) where the server reports `stopped` for many
+  // seconds before flipping. The watchdog is the safety net there.
+  const reconcileStarting = (next: DockerPageState): boolean => {
+    if (startingProbes.size === 0) return false;
+    const now = Date.now();
+    let changed = false;
+    for (const [name, probe] of [...startingProbes]) {
+      const c = next.containers.find((x) => x.name === name);
+      const elapsed = now - probe.startedAt;
+      const done =
+        !c ||
+        c.state === 'started' || c.state === 'paused' ||
+        elapsed > STARTING_TIMEOUT_MS;
+      if (done) {
+        startingProbes.delete(name);
+        starting.delete(name);
+        changed = true;
+      }
+    }
+    if (changed) starting = new Set(starting);
+    return changed;
+  };
+
   return {
     getState: () => state,
     getFilters: () => filters,
@@ -204,6 +252,7 @@ export function createDockerStore(): DockerStore {
     getShowStats: () => showStats,
     isLoading: () => loading,
     getUpdating: () => updating,
+    getStarting: () => starting,
     isCollapsed(folderId) {
       const isInToggles = explicitToggles.has(folderId);
       // explicit toggle FLIPS the default. So:
@@ -229,6 +278,7 @@ export function createDockerStore(): DockerStore {
       }
       if (changed) selection = new Set(selection);
       reconcileUpdating(next);
+      reconcileStarting(next);
       notify();
     },
 
@@ -347,6 +397,33 @@ export function createDockerStore(): DockerStore {
         updating = new Set(updating);
       }
       saveUpdatingToStorage(updateProbes);
+      notify();
+    },
+
+    markStarting(names) {
+      let changed = false;
+      const now = Date.now();
+      for (const name of names) {
+        if (startingProbes.has(name)) continue;
+        startingProbes.set(name, { startedAt: now });
+        if (!starting.has(name)) {
+          starting.add(name);
+          changed = true;
+        }
+      }
+      if (changed) {
+        starting = new Set(starting);
+        notify();
+      }
+    },
+
+    clearStarting(name) {
+      if (!startingProbes.has(name) && !starting.has(name)) return;
+      startingProbes.delete(name);
+      if (starting.has(name)) {
+        starting.delete(name);
+        starting = new Set(starting);
+      }
       notify();
     },
 

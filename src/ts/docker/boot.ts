@@ -144,6 +144,25 @@ export async function boot(): Promise<void> {
 
   await resync();
 
+  // Detect a post-reboot autostart-in-progress sequence. rc.docker reads
+  // /var/lib/docker/unraid-autostart at boot and starts each listed container
+  // sequentially with optional WAIT between them. While that's running, the
+  // dashboard snapshot shows some containers as `stopped` even though they're
+  // about to be started in seconds. Without this signal the user sees no
+  // movement until the next manual refresh (nchan only carries CPU/RAM
+  // deltas). The heuristic: any container with autostart=true that is
+  // currently `stopped`. Mark them as "starting" so the row spinner appears,
+  // and let the starting poll confirm the transition.
+  const snapshot = store.getState();
+  const bootCandidates = snapshot.containers
+    .filter((c) => c.autostart && c.state === 'stopped')
+    .map((c) => c.name);
+  if (bootCandidates.length > 0) {
+    // markStarting notifies subscribers; the page's setStore() subscriber
+    // sees the non-empty starting set and kicks off _startStartingPoll().
+    store.markStarting(bootCandidates);
+  }
+
   // Subscribe to live deltas (cpu/mem/state). Visibility-aware: pauses while
   // hidden, resyncs on next visible. See lifecycle.ts.
   createLiveSubscription({

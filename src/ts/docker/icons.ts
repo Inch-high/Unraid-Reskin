@@ -44,6 +44,10 @@ const SVG_PATHS: Record<string, TemplateResult> = {
 
   // Status badge ring
   dot: svg`<circle cx="12" cy="12" r="5"/>`,
+
+  // Power / autostart pin. Lightning bolt reads as "powers up on boot" and
+  // is visually distinct from the play arrow used for the Start action.
+  power: svg`<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>`,
 };
 
 export const FOLDER_ICONS: ReadonlyArray<keyof typeof SVG_PATHS> = [
