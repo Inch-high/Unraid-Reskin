@@ -159,15 +159,14 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** `package/include/main-state.php`, `tests/unit-php/main-state.test.php`, `tests/unit-php/run-all.mjs` (register)
 
-- [ ] **Step 1:** Write `tests/unit-php/main-state.test.php` that feeds the `disks.ini.sample` + `var.ini.sample` fixtures (via a parser function taking file paths) and asserts the emitted JSON: device count, parity present, a data disk's model/serial split, NVMe pool leader fields, flash device, `mdState`/`fsState`, parity fields.
-- [ ] **Step 2:** Implement `main-state.php`:
-  - Parse `/var/local/emhttp/disks.ini` (`parse_ini_file(..., true)`) and `var.ini`.
-  - Build `MainPageState`: split devices by `type` into array (parity+data), pools (group `Cache` by leader, read `pool_status_N`), flash. Compute orb/smart/utilization. Carry `numReads/Writes/Errors`, `temp`, FS fields. Split `id` → model/serial on last `_`.
-  - Include the array/parity state fields from `var.ini`.
-  - **Read-only.** No `emcmd`, no `curl/wget`, no shelling. Guard: refuse if `disabled`/`safemode` flag present.
-  - Set `Content-Type: application/json`.
-- [ ] **Step 3:** Register the test in `run-all.mjs`; `npm run test:php` green. (PHP not on PATH locally — see memory note; CI runs it. Document the winget hint if needed.)
-- [ ] **Step 4 (rig check):** `ssh -p 2929 root@10.10.10.10 'curl -s http://localhost/plugins/unraid-modernui/include/main-state.php'` (after deploy) → valid JSON matching the live array. (Resolves spec open question on CSRF-for-GET.)
+- [x] **Step 1:** Wrote `tests/unit-php/main-state.test.php` — feeds the fixtures and asserts device counts, model/serial split, state/orb/temp/reads mapping, sizes, the NVMe pool (leader + 4 members, profile), flash, the raw operation fields (and that `primary` is NOT server-side), encryption `unlocked`, and the three `disks-enc-*.ini` → mode mappings.
+- [x] **Step 2:** Implemented `main-state.php`:
+  - Custom parsers `modernui_parse_ini_sections` (disks.ini `["name"]`+quoted values) and `modernui_parse_var_ini` (quoted flat var.ini — `modernui_parse_cfg` is for the *unquoted* settings.cfg and does NOT strip quotes; using it on var.ini was the first test failure).
+  - `modernui_main_state($disks,$var,$csrf)` (pure) → array (parity-first, then data, by idx), pools (leader = Cache device with an FS block; members by `^leader\d+$`), boot (Flash), parity, operation (raw fields), encryption via `modernui_derive_encryption` (reproduces `check_encryption()`).
+  - **operation.primary deliberately omitted** — `deriveOperation()` (Task 7) is the single source of truth; PHP emits raw fields only.
+  - **Read-only.** No emcmd/curl/wget/shell. HTTP path refuses (409) when `disabled`/`safemode`.
+- [x] **Step 3:** Test auto-discovered by `run-all.mjs`; `npm run test:php` green (incl. `main-state.test.php`), except the pre-existing `save-docker-autostart` flake. (PHP 8.2 installed locally via winget — memory updated.)
+- [x] **Step 4 (rig check):** Ran the endpoint against the **real** live `disks.ini`/`var.ini` (copied to `/tmp`, PHP CLI, cleaned up — zero footprint, no page replaced): 14 array devices, 1 pool, flash boot, `mdState=STARTED`, `enc=unlocked`, correct model/serial/temp/reads/orb on a sample device, ~10 KB JSON. (CSRF not needed for the GET snapshot — confirmed.)
 - [ ] Commit `feat(main): add read-only main-state.php snapshot endpoint (TDD)`.
 
 ---
