@@ -2,6 +2,9 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { MainStore } from '../store';
 import type { MainPageState } from '../types';
+import './md-main-array-card';
+import './md-main-pool-card';
+import './md-main-boot-card';
 
 // Root component for the Modern UI /Main page. Owns nothing but a reference to
 // the store; subscribes for re-render. Task 5 ships the skeleton + a minimal
@@ -24,19 +27,22 @@ export class ModernuiMainPage extends LitElement {
       gap: 12px;
     }
     .skeleton .bar {
-      height: 56px;
+      height: 120px;
       border-radius: var(--radius-lg, 10px);
       background: linear-gradient(90deg,
         var(--bg-surface, #1e1e1e) 0%,
-        var(--bg-surface-2, #2a2a2a) 50%,
+        var(--bg-elevated, #2a2a2a) 50%,
         var(--bg-surface, #1e1e1e) 100%);
       background-size: 200% 100%;
       animation: shimmer 1.2s ease-in-out infinite;
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .skeleton .bar { animation: none; } }
-    .summary { font-size: 14px; line-height: 1.6; }
-    .summary strong { color: var(--text-primary, #fff); }
+    .error {
+      padding: 16px; border-radius: var(--radius-lg);
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      color: var(--text-secondary); font-size: 14px;
+    }
   `;
 
   private _store: MainStore | null = null;
@@ -63,20 +69,25 @@ export class ModernuiMainPage extends LitElement {
     this._loading = this._store.isLoading();
   }
 
+  private get _compact(): boolean {
+    return document.documentElement.dataset.modernuiDensity === 'compact';
+  }
+
   render() {
     if (this._loading || !this._state) {
       return html`<div class="skeleton">
         <div class="bar"></div><div class="bar"></div><div class="bar"></div>
       </div>`;
     }
-    // Placeholder summary until Task 6 lands the device-table cards. Proves the
-    // fetch → store → render path works end to end.
     const s = this._state;
-    return html`<div class="summary">
-      <p>Array: <strong>${s.operation.mdState}</strong> / ${s.operation.fsState}
-        — ${s.array.devices.length} devices</p>
-      <p>Pools: <strong>${s.pools.length}</strong>${s.boot ? ' · Boot: flash' : ''}</p>
-      <p>Encryption: <strong>${s.operation.encryption.mode}</strong></p>
-    </div>`;
+    const compact = this._compact;
+    return html`
+      <md-main-array-card .array=${s.array} ?compact=${compact}></md-main-array-card>
+      ${s.pools.map(
+        (p) => html`<md-main-pool-card .pool=${p} ?compact=${compact}></md-main-pool-card>`,
+      )}
+      ${s.boot ? html`<md-main-boot-card .device=${s.boot} ?compact=${compact}></md-main-boot-card>` : ''}
+    `;
+    // Task 9 inserts <md-main-operation-panel> above the cards.
   }
 }

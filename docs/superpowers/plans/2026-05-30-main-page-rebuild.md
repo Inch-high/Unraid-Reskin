@@ -187,12 +187,13 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** `md-main-page.ts`, `md-main-array-card.ts`, `md-main-pool-card.ts`, `md-main-boot-card.ts`, `md-main-device-row.ts`, `format.ts`, `main-page.scss`, smoke tests
 
-- [ ] **Step 1:** `format.ts` — `formatBytes`, `formatTemp`, `splitModelSerial`, `utilizationPct`. Unit tests.
-- [ ] **Step 2:** `md-main-device-row.ts` — render: device icon (by `role`/`fsType`), name as link to `detailHref`, **identification = model + serial**, orb + state label, temp, reads, writes, errors, FS type, size, used, free, utilization bar. Smoke test asserts serial + reads/writes render. Respect `data-modernui-density`.
-- [ ] **Step 3:** `md-main-array-card.ts` (parity + data rows, array totals), `md-main-pool-card.ts` (per pool: status text, profile, totals + rows), `md-main-boot-card.ts` (flash usage). Smoke tests.
-- [ ] **Step 4:** `md-main-page.ts` — compose the cards from store slices; loading/empty states.
-- [ ] **Step 5:** `main-page.scss` — card/table/orb styling reusing existing tokens + `status.scss`. Import in `modernui.scss`.
-- [ ] **Step 6:** Build + deploy → **Expected:** `/Main` shows all devices with serials, temps, R/W/err, FS, sizes, utilization, matching stock field-for-field. Verify against `disks.ini` on the rig.
+- [x] **Step 1:** `format.ts` — `formatBytes` (decimal/base-1000 like stock), `formatTemp`, `formatCount`, `formatPct`, `splitModelSerial`. 5 unit tests (15 cases).
+- [x] **Step 2:** `md-main-device-row.ts` — custom element rendering the 11 columns: orb + name link (to `detailHref`, red on problem status) + sub-state label, **identification = model + serial** (+ SMART glyph), temp, reads, writes, errors (red when >0), FS, size, used, free, utilization bar (amber ≥85%, red ≥95%). Shared `MAIN_ROW_COLUMNS` grid template. Respects `compact`. Parity rows show dashes for FS/used/free. Smoke tests assert serial/model/reads/link/state/util/errors.
+- [x] **Step 3:** A shared `md-main-card.ts` base (chrome + `col-head` header + sets `--main-row-cols` via `unsafeCSS`); `md-main-array-card.ts` (parity-first rows + totals), `md-main-pool-card.ts` (status pill ONLINE/DEGRADED/OFFLINE + profile + totals), `md-main-boot-card.ts` (flash usage). Smoke tests for array + pool.
+- [x] **Step 4:** `md-main-page.ts` — composes array card + pool cards + boot card from the store; skeleton while loading; reads `data-modernui-density` → `compact`. (Operation panel slot reserved above the cards for Task 9.)
+- [x] **Step 5:** `main-page.scss` — hides the empty stock `nav.tabs` shell via `#displaybox:has(#modernui-main-root)` and full-widths the mount; imported in `modernui.scss`. (Cards self-style via tokens in Shadow DOM.)
+- [x] **Verify:** 367 TS tests pass (+11); `modernui.css` + `modernui-main.js` (32 KB) build; `src/ts/main` type-clean.
+- [ ] **Step 6 (DEFERRED with Task 3 Step 8):** On-rig visual verify against `disks.ini` deferred until the operation panel (Task 9) exists, so we don't deploy a page that lists devices but can't Start/Stop the array. Confirm with user before first production deploy.
 - [ ] Commit `feat(main): device tables — array, pools, boot with model+serial 1:1`.
 
 ---
