@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.6.0">
+<!ENTITY version   "0.6.1">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,10 @@
 
 <CHANGES>
 <![CDATA[
+###v0.6.1 (2026-05-30)
+- Security (main): `main-state.php` no longer emits the per-boot CSRF token in its read-only JSON snapshot. The token is delivered solely via the `#modernui-main-root` data-csrf attribute (htmlspecialchars-escaped), which the front-end already treats as authoritative — keeping it out of a readable response body (data minimization / defense-in-depth). No functional change: action POSTs still read the token from the attribute.
+- Fix (main): Unassigned Devices "Historical (previous) devices" detection now compares serials exactly instead of with a loose bidirectional substring test. A previously-seen device whose serial happens to be a substring of an attached disk's serial (or vice-versa) is no longer wrongly treated as present and hidden from the Historical list.
+
 ###v0.6.0 (2026-05-30)
 - Feat (main): full rebuild of the `/Main` array/device-management page (Phase 6). Replaces the four stock dynamix pages (ArrayDevices/CacheDevices/BootDevice/ArrayOperation) with a clean Lit UI: every device with model **+ serial**, state orb, temperature, reads/writes/errors, filesystem, size/used/free, and a utilization bar — array, pools, and boot device — plus a full Array Operation panel (Start/Stop with the exact stock state-machine gating, parity Check/Sync/Clear + Pause/Resume/Cancel + progress, Spin Up/Down all, Clear Stats, Move/Reboot/Shutdown). All actions reuse Unraid's stock endpoints (update.htm/emcmd, ToggleState.php, Boot.php) — emhttp does every operation. Data comes from a new read-only `main-state.php` (parses disks.ini + var.ini, no shelling/external HTTP); live updates ride Unraid's nchan channels (devices/mymonitor/fsState/paritymonitor/arraymonitor) with a visibility-aware lifecycle.
 - Feat (main): encrypted-array key entry (passphrase/keyfile) reproduces stock's `check_encryption()`/`prepareInput()` 1:1 — pool-state precheck, printable-ASCII validation, base64 `luksKey`. The data-destructive "permit reformat" is kept but **guarded**: default off, inline warning, and a second explicit acknowledgement before Start fires (stricter than stock).

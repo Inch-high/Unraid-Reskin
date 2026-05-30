@@ -563,5 +563,5 @@
         "moverEnabled": true
     },
     "serverVersion": "7.3.1",
-    "csrfToken": "TEST"
+    "csrfToken": ""
 }

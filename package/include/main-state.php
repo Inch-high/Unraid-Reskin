@@ -372,8 +372,13 @@ function modernui_main_state(array $disks, array $var, string $csrf = ''): array
 function modernui_main_state_from_files(string $disksPath, string $varPath): array {
     $disks = modernui_parse_ini_sections($disksPath);
     $var   = modernui_parse_var_ini($varPath);
-    $csrf  = (string)($var['csrf_token'] ?? '');
-    return modernui_main_state($disks, $var, $csrf);
+    // Intentionally do NOT emit the CSRF token in the snapshot body. The token
+    // reaches the page via the #modernui-main-root data-csrf attribute
+    // (htmlspecialchars-escaped in ArrayDevices.page), and that attribute is the
+    // authoritative source the front-end reads (boot.ts backfills it onto the
+    // snapshot). Keeping the per-boot token out of this read-only JSON response
+    // means nothing that can read the body ever sees it.
+    return modernui_main_state($disks, $var, '');
 }
 
 if (PHP_SAPI !== 'cli') {

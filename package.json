@@ -1,6 +1,6 @@
 {
   "name": "unraid-modernui",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.8: Docker page gains a floating update-progress panel (container name + byte-weighted overall % + inferred download speed, persisted across navigation via sessionStorage) and a one-click \"Update all\" action for every container with an available update. UX fixes: the folder default Expanded/Collapsed control no longer inverts manually-toggled folders, and the row/tag-modal checkbox tick is now mathematically centered (inline SVG). CI runs the TS test suite + asset build on every PR.",
   "type": "module",
