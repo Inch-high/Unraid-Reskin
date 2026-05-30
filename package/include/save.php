@@ -51,10 +51,17 @@ function modernui_replace_main_pages(): void {
     foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
         modernui_replace_file($target, $overlaySrc);
     }
+    // Optional Unassigned Devices suppression overlay (only if plugin present).
+    if (modernui_ud_plugin_present()) {
+        modernui_replace_file(MODERNUI_UD_PAGE_TARGET, modernui_ud_overlay_src());
+    }
 }
 function modernui_restore_main_pages(): void {
     foreach (modernui_main_overlay_table() as $target => $_overlaySrc) {
         modernui_restore_from_backup($target, fn($s) => $s);
+    }
+    if (is_file(MODERNUI_UD_PAGE_TARGET)) {
+        modernui_restore_from_backup(MODERNUI_UD_PAGE_TARGET, fn($s) => $s);
     }
 }
 

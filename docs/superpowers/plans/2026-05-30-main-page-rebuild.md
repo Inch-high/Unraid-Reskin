@@ -251,6 +251,24 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 ---
 
+## Task 12: Fold in Unassigned Devices (scope: card + mount/unmount; link rest to stock)
+
+Optional third-party plugin (`unassigned.devices`, contributes `UnassignedDevices.page` = `Main:4`, 1869 lines, 52 action verbs incl. data-destructive `format_disk`). Scope confirmed with stakeholder: **modern card listing unassigned disks + remote SMB/NFS/ISO mounts with inline Mount/Unmount; everything else (format, preclear, settings, scripts, add-share) handled by switching Main→Stock.**
+
+**Architecture (decoupled from the core safe-mode flag — the plugin updates often):**
+- Suppress the stock section by replacing `UnassignedDevices.page` with a **title-less empty overlay** (only when the plugin is present). **Not** in `modernui_main_overlay_table()` / the upgrade safe-mode loop — so a UD plugin update can never disable the core Main rebuild. If UD reclaims its page on update, the stock section returns and our card auto-hides (see `available` check); the overlay re-applies on the next theme (re)install.
+- Read-only data via a new `ud-state.php` wrapper that requires UD's `lib.php` and returns a **credential-stripped** whitelist (NEVER forward `pass`/`user_command`/`command`). Mount/unmount proxy to the stock endpoint `POST /plugins/unassigned.devices/include/UnassignedDevices.php {action:'mount'|'umount', device}`.
+
+- [x] **Research (done):** endpoint, `get_content_json`→`get_all_disks_info()`, `get_samba_mounts()` shape (protocol/ip/share/name/mountpoint/fstype/mounted/size/used/avail/alive/read_only/device/target + sensitive `pass`/`command` to drop), mount call `{action, device}`.
+- [x] **Step 1:** `ud-state.php` — `{available, disks[], remotes[]}` from UD's `get_all_disks_info`/`get_samba_mounts`/`get_iso_mounts`, **credential-stripped whitelist** (drops `pass`/`user`/`command`/`logfile`…); `available` = plugin present && our overlay marker present. `ud-state.test.php` asserts NO secrets leak + field mapping (PASS).
+- [x] **Step 2:** Overlay `unassigned.devices/UnassignedDevices.page` (title-less empty, marker in comment). install.php conditional replace (plugin present) via `modernui_ud_plugin_present()`; save/uninstall restore; **excluded from the core safe-mode loop** (UD updates can't disable the core rebuild).
+- [x] **Step 3:** `types.ts` (UnassignedDisk/Partition/Remote/State), `fetchUnassigned()` (best-effort, hides card on error), `md-main-unassigned-card.ts` (disks + partitions + remote shares, Mount/Unmount → `buildUdMount/Umount`, footnote → Main: Stock). Action builders + tests; card smoke tests (incl. mount POSTs device id, unavailable→renders nothing).
+- [x] **Step 4:** Wired into `md-main-page` (renders only when `available`); boot fetches UD initially + on resync. type-clean; tests green; builds.
+- [x] **Step 5:** Redeployed + verified on rig: stock section suppressed (single card, no duplicate), `ud-state` returns 2 remotes with **`has_pass=no`** (credentials stripped, confirmed live), card shows both SMB shares with Mount buttons + the empty-disks note + footnote.
+- [ ] Commit `feat(main): fold in Unassigned Devices card (mount/unmount + remotes)`.
+
+---
+
 ## Task 11: Hardening, CI guards, docs, release v0.6.0
 
 **Files:** `.github/workflows/ci.yml` (if grep guard added), `docs/compatibility.md`, `docs/manual-verification.md`, `README.md`, `unraid-modernui.plg`, `package/Theme.page` (version string), `CHANGELOG`/release

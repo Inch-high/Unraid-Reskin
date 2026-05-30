@@ -1,4 +1,4 @@
-import { LitElement, html, css, unsafeCSS, type TemplateResult } from 'lit';
+import { LitElement, html, css, unsafeCSS, type TemplateResult, type CSSResultGroup } from 'lit';
 import { MAIN_ROW_COLUMNS } from './md-main-device-row';
 
 // Shared chrome + column-header for the three device cards (array, pool, boot).
@@ -7,7 +7,7 @@ import { MAIN_ROW_COLUMNS } from './md-main-device-row';
 // into each <md-main-device-row>'s :host (custom props pierce shadow DOM), so
 // the header and rows share one column template and align.
 export class MdMainCardBase extends LitElement {
-  static styles = css`
+  static styles: CSSResultGroup = css`
     :host { display: block; margin: 0 0 16px; }
     .card {
       background: var(--bg-surface);

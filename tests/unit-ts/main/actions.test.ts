@@ -50,6 +50,10 @@ describe('action builders → exact {url, params}', () => {
     expect(A.buildReboot(true).params).toEqual({ cmd: 'reboot', safemode: '1' });
     expect(A.buildShutdown().params).toEqual({ cmd: 'shutdown' });
   });
+  it('unassigned mount / umount → plugin endpoint', () => {
+    expect(A.buildUdMount('SMB_x')).toEqual({ url: '/plugins/unassigned.devices/include/UnassignedDevices.php', params: { action: 'mount', device: 'SMB_x' } });
+    expect(A.buildUdUmount('sdz1').params).toEqual({ action: 'umount', device: 'sdz1' });
+  });
   it('keyfile upload / delete / pool precheck', () => {
     expect(A.buildKeyfileUpload('data:abc').params).toEqual({ '#file': 'unused', '#include': 'webGui/include/KeyUpload.php', file: 'data:abc' });
     expect(A.buildDeleteKeyfile().params).toEqual({ '#file': 'unused', '#include': 'webGui/include/KeyUpload.php', '#apply': 'Delete' });

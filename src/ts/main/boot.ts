@@ -8,7 +8,7 @@
 // Live nchan subscriptions land in Task 10; the operation-panel derive in 9.
 
 import { createMainStore } from './store';
-import { fetchSnapshot } from './snapshot';
+import { fetchSnapshot, fetchUnassigned } from './snapshot';
 import { createMainLive, parseBusy } from './lifecycle';
 import './components/md-main-page';
 import type { ModernuiMainPage } from './components/md-main-page';
@@ -54,6 +54,9 @@ export async function boot(): Promise<void> {
       } catch (err) {
         console.warn('[modernui-main] resync failed:', err);
       }
+      // Optional Unassigned Devices state (separate, best-effort — never blocks
+      // the core snapshot). The card hides itself when unavailable.
+      fetchUnassigned().then((u) => page.setUnassigned(u)).catch(() => undefined);
     }, 150);
   };
 
@@ -70,6 +73,9 @@ export async function boot(): Promise<void> {
   } catch (err) {
     console.warn('[modernui-main] snapshot fetch failed:', err);
   }
+
+  // Initial Unassigned Devices fetch (best-effort; card hides if unavailable).
+  fetchUnassigned().then((u) => page.setUnassigned(u)).catch(() => undefined);
 
   // Live updates. The ArrayOperation.page overlay keeps the
   // Nchan="device_list,disk_load,parity_list" attribute, so emhttp publishes

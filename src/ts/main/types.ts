@@ -160,3 +160,49 @@ export interface MainPageState {
   serverVersion: string;     // var.ini version
   csrfToken: string;         // for action POSTs (from #modernui-main-root data-csrf)
 }
+
+// ---- Unassigned Devices (optional plugin; fetched separately via ud-state.php) ----
+// Credential-stripped by the PHP wrapper — no passwords/commands ever reach here.
+
+export interface UnassignedPartition {
+  device: string;            // e.g. sdz1 — identifier for mount/umount
+  mountpoint: string;
+  fsType: string;
+  label: string;
+  mounted: boolean;
+  passThrough: boolean;
+  sizeBytes: number | null;
+  usedBytes: number | null;
+  freeBytes: number | null;
+}
+
+export interface UnassignedDisk {
+  device: string;            // sdz
+  serial: string;
+  model: string;
+  sizeBytes: number | null;
+  tempC: number | null;
+  partitions: UnassignedPartition[];
+}
+
+export interface UnassignedRemote {
+  protocol: string;          // smb | nfs | root (iso)
+  name: string;
+  ip: string;
+  share: string;
+  mountpoint: string;
+  fsType: string;
+  device: string;            // identifier for mount/umount
+  mounted: boolean;
+  alive: boolean;
+  readOnly: boolean;
+  sizeBytes: number | null;
+  usedBytes: number | null;
+  freeBytes: number | null;
+}
+
+export interface UnassignedState {
+  available: boolean;        // plugin present AND our suppression overlay active
+  disks: UnassignedDisk[];
+  remotes: UnassignedRemote[];
+}

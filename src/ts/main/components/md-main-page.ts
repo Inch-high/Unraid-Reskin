@@ -6,6 +6,8 @@ import './md-main-array-card';
 import './md-main-pool-card';
 import './md-main-boot-card';
 import './md-main-operation-panel';
+import './md-main-unassigned-card';
+import type { UnassignedState } from '../types';
 
 // Root component for the Modern UI /Main page. Owns nothing but a reference to
 // the store; subscribes for re-render. Task 5 ships the skeleton + a minimal
@@ -51,6 +53,10 @@ export class ModernuiMainPage extends LitElement {
 
   @state() private _state: MainPageState | null = null;
   @state() private _loading = true;
+  @state() private _unassigned: UnassignedState | null = null;
+
+  /** Set by boot.ts after fetching ud-state.php (and on resync). */
+  setUnassigned(u: UnassignedState): void { this._unassigned = u; }
 
   setStore(store: MainStore): void {
     this._unsub?.();
@@ -92,6 +98,9 @@ export class ModernuiMainPage extends LitElement {
         (p) => html`<md-main-pool-card .pool=${p} ?compact=${compact}></md-main-pool-card>`,
       )}
       ${s.boot ? html`<md-main-boot-card .device=${s.boot} ?compact=${compact}></md-main-boot-card>` : ''}
+      ${this._unassigned && this._unassigned.available
+        ? html`<md-main-unassigned-card .state=${this._unassigned} .csrf=${s.csrfToken} .resync=${this.resync}></md-main-unassigned-card>`
+        : ''}
     `;
   }
 }

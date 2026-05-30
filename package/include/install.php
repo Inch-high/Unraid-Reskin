@@ -26,6 +26,20 @@ function modernui_main_overlay_table(): array {
     }
     return $out;
 }
+
+// The optional Unassigned Devices plugin's /Main:4 page. Tracked SEPARATELY
+// from the core table and deliberately EXCLUDED from the upgrade safe-mode loop
+// — the plugin updates often, and a drift there must never disable the core
+// Main rebuild. Replaced only when the plugin is installed; if it reclaims its
+// page on update, our card auto-hides (ud-state.php marker check) and the stock
+// section returns until the next theme (re)install re-applies this overlay.
+const MODERNUI_UD_PAGE_TARGET = '/usr/local/emhttp/plugins/unassigned.devices/UnassignedDevices.page';
+function modernui_ud_overlay_src(): string {
+    return MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/unassigned.devices/UnassignedDevices.page';
+}
+function modernui_ud_plugin_present(): bool {
+    return is_file(MODERNUI_UD_PAGE_TARGET);
+}
 // Inline filemtime() expressions in the injected tags evaluate per-request
 // inside DefaultPageLayout.php (which is a PHP file), turning every cfg save
 // into a fresh URL and busting the browser's stale loader.js cache. Without
@@ -229,6 +243,12 @@ function modernui_install(): void {
     // stock — only the .page front-end is ours.
     foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
         modernui_replace_file($target, $overlaySrc);
+    }
+
+    // Suppress the optional Unassigned Devices section (only if the plugin is
+    // present). Separate from the core pages + the safe-mode loop on purpose.
+    if (modernui_ud_plugin_present()) {
+        modernui_replace_file(MODERNUI_UD_PAGE_TARGET, modernui_ud_overlay_src());
     }
 
     $disabled = modernui_is_disabled(MODERNUI_CFG_DIR);

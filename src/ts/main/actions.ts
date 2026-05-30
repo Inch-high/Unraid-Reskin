@@ -121,6 +121,18 @@ export function base64Passphrase(text: string): string {
   return btoa(text);
 }
 
+// ---- Unassigned Devices (optional plugin) ---------------------------------
+// Mount/unmount proxy to the plugin's OWN endpoint with its exact params
+// (POST .../UnassignedDevices.php {action:'mount'|'umount', device}). All other
+// UD operations stay in the stock plugin UI (Main: Stock).
+const UD_ENDPOINT = '/plugins/unassigned.devices/include/UnassignedDevices.php';
+export function buildUdMount(device: string): ActionRequest {
+  return { url: UD_ENDPOINT, params: { action: 'mount', device } };
+}
+export function buildUdUmount(device: string): ActionRequest {
+  return { url: UD_ENDPOINT, params: { action: 'umount', device } };
+}
+
 // ---- Submit ---------------------------------------------------------------
 
 // POST an ActionRequest as application/x-www-form-urlencoded with the csrf
