@@ -44,3 +44,15 @@ jobs:
 
       - name: Build assets
         run: npm run build
+
+      # The /Main + Unassigned Devices snapshot endpoints are READ-ONLY by
+      # contract — no external HTTP, no shelling out. Fail the build if a
+      # blocking/exec primitive sneaks in.
+      - name: Guard read-only PHP endpoints
+        run: |
+          if grep -nE 'curl_exec|shell_exec|proc_open|popen|\bexec\(|\bsystem\(|\bpassthru\(|wget |file_get_contents\(["'\'']https?:|fopen\(["'\'']https?:' \
+              package/include/main-state.php package/include/ud-state.php; then
+            echo "::error::main-state.php / ud-state.php must stay read-only (no external HTTP / shelling)."
+            exit 1
+          fi
+          echo "Read-only endpoint guard passed."

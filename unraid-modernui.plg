@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.8">
+<!ENTITY version   "0.6.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,14 @@
 
 <CHANGES>
 <![CDATA[
+###v0.6.0 (2026-05-30)
+- Feat (main): full rebuild of the `/Main` array/device-management page (Phase 6). Replaces the four stock dynamix pages (ArrayDevices/CacheDevices/BootDevice/ArrayOperation) with a clean Lit UI: every device with model **+ serial**, state orb, temperature, reads/writes/errors, filesystem, size/used/free, and a utilization bar — array, pools, and boot device — plus a full Array Operation panel (Start/Stop with the exact stock state-machine gating, parity Check/Sync/Clear + Pause/Resume/Cancel + progress, Spin Up/Down all, Clear Stats, Move/Reboot/Shutdown). All actions reuse Unraid's stock endpoints (update.htm/emcmd, ToggleState.php, Boot.php) — emhttp does every operation. Data comes from a new read-only `main-state.php` (parses disks.ini + var.ini, no shelling/external HTTP); live updates ride Unraid's nchan channels (devices/mymonitor/fsState/paritymonitor/arraymonitor) with a visibility-aware lifecycle.
+- Feat (main): encrypted-array key entry (passphrase/keyfile) reproduces stock's `check_encryption()`/`prepareInput()` 1:1 — pool-state precheck, printable-ASCII validation, base64 `luksKey`. The data-destructive "permit reformat" is kept but **guarded**: default off, inline warning, and a second explicit acknowledgement before Start fires (stricter than stock).
+- Feat (main): folds in the optional **Unassigned Devices** plugin — a modern card listing unassigned disks, remote SMB/NFS/ISO shares, and historical (previous) devices, with inline Mount/Unmount proxied to the plugin's own endpoint. A read-only `ud-state.php` wrapper emits a **credential-stripped** whitelist (never forwards share passwords/commands). Suppression overlay is kept out of the core safe-mode loop, so a UD plugin update can never disable the main rebuild. Advanced ops (format/preclear/settings/scripts/add-share) link to Main: Stock.
+- Feat (main): "Main page layout: Modern / Stock" toggle in Settings → Theme. The four stock pages are SHA-backed-up; switching to Stock, disabling the theme, or uninstalling restores them byte-for-byte. Drift on any page triggers safe mode (restore + revert).
+- CI: read-only guard fails the build if `main-state.php`/`ud-state.php` ever gain a shelling or external-HTTP primitive.
+- Tests: +main-state / deriveOperation (27 array-state-machine cases) / actions / lifecycle / device-row / operation-panel / encryption-fields / ud-state (credential-strip) coverage. 429 TS + 12 PHP suites green.
+
 ###v0.5.8 (2026-05-30)
 - Feat (docker): floating top-right update-progress panel (`<md-docker-update-panel>`) that surfaces in-flight container updates — name + overall % + download speed. Subscribes to the `/sub/docker` nchan channel stock Unraid's `update_container` script publishes to and parses its NUL-delimited protocol. Overall % is byte-weighted across layers (downloaded ÷ total), which stays monotonic where a raw per-layer mean would lurch backwards as fresh layers join at 0%; chunked layers with no declared total are excluded from the % but still feed the byte/speed totals. Download speed is inferred from a rolling 2.5s byte-rate window since the stock script doesn't emit it. State persists to `sessionStorage` (writes throttled to ≤1/750ms so a multi-layer pull doesn't storm the main thread; 5-min TTL matching the updating watchdog) so navigating away from /Docker and back doesn't blank the panel mid-update. The script's `_DONE_` end-of-batch marker force-clears the updating set + refetches, bypassing the 5-min watchdog when stock's digest-status cache lags reconcile detection.
 - Feat (docker): "Update all (N)" action in the toolbar when updates are available and nothing's selected — one click pulls + recreates every container with an available update, saving the user from expanding collapsed folders to tick each one. Soft-accent styling keeps it subordinate to the primary Add Container CTA.

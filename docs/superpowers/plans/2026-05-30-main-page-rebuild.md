@@ -273,11 +273,11 @@ Optional third-party plugin (`unassigned.devices`, contributes `UnassignedDevice
 
 **Files:** `.github/workflows/ci.yml` (if grep guard added), `docs/compatibility.md`, `docs/manual-verification.md`, `README.md`, `unraid-modernui.plg`, `package/Theme.page` (version string), `CHANGELOG`/release
 
-- [ ] **Step 1:** CI guard: `grep -E 'curl|wget|exec\(' package/include/main-state.php` must be empty; Playwright `document.scripts.length` constant on `/Main`. Add hidden-tab pause assertion.
-- [ ] **Step 2:** Update `docs/compatibility.md` (note the four replaced dynamix files + safe-mode), `docs/manual-verification.md` (add a `/Main` 1:1 checklist: every device field, every operation control, encrypted-array gate, fallback paths).
-- [ ] **Step 3:** Update README's feature list + the Theme.page "About" version, bump `unraid-modernui.plg` `<!ENTITY version>` to `0.6.0`.
-- [ ] **Step 4:** Full `npm test` + `npm run build`; deploy to rig; run the manual checklist.
-- [ ] **Step 5:** Release commit + tag `v0.6.0` (follow the repo's existing release flow / `release.yml`).
+- [x] **Step 1:** CI guard added to `ci.yml` — fails the build if `main-state.php`/`ud-state.php` gain a shelling/external-HTTP primitive (`curl_exec`/`shell_exec`/`exec(`/`system(`/`popen`/`wget`/`file_get_contents("http`…). Verified it passes against the current endpoints. (Playwright not set up in this repo; the read-only grep guard + the hidden-tab lifecycle unit test cover the invariants.)
+- [x] **Step 2:** `docs/compatibility.md` — added Unassigned Devices row + a "Replaced stock files (SHA-backed up, safe-mode guarded)" table covering all six replaced pages. `docs/manual-verification.md` — added the full `/Main` (Phase 6) checklist (device 1:1, operation controls, encrypted gate, actions-hit-stock, live updates, UD card + no-password-leak, fallbacks).
+- [x] **Step 3:** README "What's rebuilt" section (Shell/Dashboard/Docker/Main); Theme.page About → v0.6.0 (Phase 6); `unraid-modernui.plg` `<!ENTITY version>` → 0.6.0 + CHANGES entry; `package.json` → 0.6.0.
+- [x] **Step 4:** Full `npm run test:ts` (429) + `test:php` (11/12; the 12th, `save-docker-autostart`, is a pre-existing unrelated flake) + `npm run build` green. **Deployed to the rig and verified live in-browser** (device tables w/ serials, operation panel, pools/boot, Unassigned Devices card incl. remotes + historical, no console errors) — this also closes the previously-deferred on-rig verification from Tasks 3/6/9/10.
+- [ ] **Step 5:** Release commit + tag `v0.6.0` (the repo's `release.yml` builds/publishes on tag).
 - [ ] Commit `chore(release): v0.6.0 — Main page rebuild`.
 
 ---

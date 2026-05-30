@@ -117,7 +117,7 @@ $csrf_token = $var['csrf_token'] ?? '';
 
   <hr style="margin:32px 0 16px 0;">
   <h3 style="margin:0 0 8px 0;">About</h3>
-  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.4.2 (Phase 4). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
+  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.6.0 (Phase 6). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
   <p style="margin:0;font-size:13px;color:#666;">Unraid® webGui © Lime Technology, Inc. <a href="/webGui/include/Help.php" target="_blank">Manual</a></p>
 </div>
 
