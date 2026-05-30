@@ -77,12 +77,24 @@ export interface DockerStore {
   /** Toggle a folder's collapsed state and persist. Pass 'ungrouped' for the Ungrouped section. */
   toggleCollapsed(folderId: string): void;
   setCollapseDefault(d: 'expanded' | 'collapsed'): void;
+  /** Set every folder to the given collapsed state — i.e. treat the toolbar's
+   *  Expanded/Collapsed segmented control as "expand all / collapse all". Sets
+   *  the default AND clears per-folder explicit toggles; without the clear,
+   *  manually-flipped folders would read as the OPPOSITE of the new default
+   *  (because explicit toggles flip the default in isCollapsed()). */
+  setCollapseAll(d: 'expanded' | 'collapsed'): void;
   setShowStats(on: boolean): void;
   /** Flag one or more containers as "update in flight". Snapshot completion is
    *  auto-detected on the next setState() — see UpdateProbe. Idempotent. */
   markUpdating(names: string[]): void;
   /** Explicit clear — e.g. after the bulk-update timeout fires. */
   clearUpdating(name: string): void;
+  /** Force-clear every updating probe. Triggered when the nchan `/sub/docker`
+   *  stream emits `_DONE_`: the script has finished its batch, regardless of
+   *  whether DockerUpdate's digest cache has flushed yet. Without this the
+   *  panel could sit on "Working…" for the full 5-min watchdog when the
+   *  digest write lags reconcile detection. */
+  clearAllUpdating(): void;
   /** Optimistically mark containers as "starting" — for the brief window between
    *  user action and the next snapshot. Auto-cleared by reconcileStarting() once
    *  the snapshot confirms started/paused, or watchdog after STARTING_TIMEOUT_MS. */
@@ -360,6 +372,25 @@ export function createDockerStore(): DockerStore {
       notify();
     },
 
+    setCollapseAll(d) {
+      // Clear explicit toggles so the new default applies uniformly. Without
+      // this, a folder the user manually collapsed (now in explicitToggles)
+      // would flip to expanded when they click "Collapse all" — the opposite
+      // of their intent. Persists the cleared toggle set to localStorage so a
+      // refresh doesn't bring the overrides back.
+      let changed = false;
+      if (collapseDefault !== d) {
+        collapseDefault = d;
+        changed = true;
+      }
+      if (explicitToggles.size > 0) {
+        explicitToggles = new Set();
+        saveCollapsedToStorage(explicitToggles);
+        changed = true;
+      }
+      if (changed) notify();
+    },
+
     setShowStats(on) {
       if (showStats === on) return;
       showStats = on;
@@ -399,6 +430,14 @@ export function createDockerStore(): DockerStore {
         updating.delete(name);
         updating = new Set(updating);
       }
+      saveUpdatingToStorage(updateProbes);
+      notify();
+    },
+
+    clearAllUpdating() {
+      if (updateProbes.size === 0 && updating.size === 0) return;
+      updateProbes.clear();
+      updating = new Set();
       saveUpdatingToStorage(updateProbes);
       notify();
     },

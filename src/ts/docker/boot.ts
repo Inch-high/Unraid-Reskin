@@ -1,6 +1,7 @@
 import { createDockerStore, filtersFromQuery } from './store';
 import { fetchSnapshot } from './actions';
 import { createLiveSubscription } from './lifecycle';
+import { createUpdateProgressStore } from './update-progress';
 import './components/md-docker-page';
 import type { ModernuiDockerPage } from './components/md-docker-page';
 import type { DockerDelta } from './types';
@@ -120,17 +121,15 @@ export async function boot(): Promise<void> {
     store.setShowStats(true);
   }
 
-  // Mount immediately so the page paints (loading state) before fetch resolves.
-  const page = document.createElement('modernui-docker-page') as ModernuiDockerPage;
-  page.setStore(store);
-  root.appendChild(page);
-
   // Mutable holder for the most recent raw snapshot — we need serverUptime
   // outside the function scope for the boot-detection gate below. (The store
   // doesn't retain server-meta fields; only the data subset.)
   let lastServerUptime: number | null = null;
 
-  const resync = async (): Promise<void> => {
+  // Declared as a function expression so we can reference it from the
+  // progressStore's onBatchComplete closure below. (A `const resync = …`
+  // arrow would be TDZ at the point of progressStore creation.)
+  async function resync(): Promise<void> {
     try {
       // Only request stats when the toggle is on — saves a second+ on
       // every fetch when stats aren't shown. nchan deltas keep CPU/RAM
@@ -146,7 +145,41 @@ export async function boot(): Promise<void> {
     } catch (err) {
       console.warn('[modernui-docker] snapshot failed:', err);
     }
-  };
+  }
+
+  // Update-progress store. Subscribes to /sub/docker (the same channel stock
+  // Unraid's update_container script publishes to) and exposes a reactive
+  // snapshot of the in-flight pull/recreate sequence. The page mounts a panel
+  // that consumes this.
+  //
+  // The onBatchComplete callback fires on the script's `_DONE_` marker — we
+  // force-clear the docker store's updating set + refetch so the panel and
+  // per-row "update available" badges don't sit on stale state if the digest
+  // cache hasn't caught up yet. Without this fallback, "Working…" would
+  // linger until the 5-min watchdog fired.
+  const progressStore = createUpdateProgressStore(
+    (image) => {
+      // image string ("linuxserver/plex:latest") → container.name. Match
+      // verbatim first, then fall back to ignoring the tag — the pull log
+      // sometimes adds ":latest" that the snapshot's image string lacks.
+      const list = store.getState().containers;
+      for (const c of list) if (c.image === image) return c.name;
+      const stripTag = (s: string): string => s.replace(/:[^:/]+$/, '');
+      const stripped = stripTag(image);
+      for (const c of list) if (stripTag(c.image) === stripped) return c.name;
+      return null;
+    },
+    () => {
+      store.clearAllUpdating();
+      void resync();
+    },
+  );
+
+  // Mount immediately so the page paints (loading state) before fetch resolves.
+  const page = document.createElement('modernui-docker-page') as ModernuiDockerPage;
+  page.setStore(store);
+  page.setUpdateProgressStore(progressStore);
+  root.appendChild(page);
 
   await resync();
 
@@ -185,4 +218,17 @@ export async function boot(): Promise<void> {
     onDelta: (d) => store.applyDelta(d),
     resync,
   });
+
+  // Subscribe to the update-progress stream (/sub/docker — the channel stock
+  // Unraid's update_container script publishes to). Plain nchan subscription;
+  // no visibility gating because (a) the panel is hidden while tab is hidden
+  // anyway, and (b) missing messages would leave the panel stuck on stale
+  // data when the user comes back. If progress drifts, the next progress
+  // event refreshes it and reconcileUpdating() picks up completion.
+  const Nchan = (window as { NchanSubscriber?: new (url: string, opts?: Record<string, unknown>) => { on(e: string, f: (...a: unknown[]) => void): void; start(): void } }).NchanSubscriber;
+  if (Nchan) {
+    const sub = new Nchan('/sub/docker', { subscriber: 'websocket' });
+    sub.on('message', (raw: unknown) => progressStore.handleMessage(raw));
+    sub.start();
+  }
 }
