@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import type { DockerStore } from '../store';
+import type { UpdateProgressStore } from '../update-progress';
 import { filterContainers, groupContainers, filtersToQuery } from '../store';
 import type { DockerFolder, DockerTag } from '../types';
 import { icon } from '../icons';
@@ -28,6 +29,8 @@ import './md-docker-folder-section';
 import './md-docker-bulk-bar';
 import './md-docker-folder-modal';
 import './md-docker-tag-modal';
+import './md-docker-update-panel';
+import type { MdDockerUpdatePanel } from './md-docker-update-panel';
 
 @customElement('modernui-docker-page')
 export class ModernuiDockerPage extends LitElement {
@@ -108,6 +111,17 @@ export class ModernuiDockerPage extends LitElement {
     .btn:disabled:hover { background: transparent; color: var(--text-secondary); }
     .btn-primary { background: var(--mui-accent); color: #fff; border-color: var(--mui-accent); }
     .btn-primary:hover { background: var(--mui-accent-hover); border-color: var(--mui-accent-hover); color: #fff; }
+    /* Soft-accent button — used for the contextual "Update all (N)" action so
+       it reads as actionable without competing with the primary Add Container
+       CTA. Tinted background + orange text; escalates to full orange on hover. */
+    .btn-accent {
+      background: var(--mui-accent-muted);
+      color: var(--mui-accent);
+      border-color: rgba(255,140,47,.4);
+    }
+    .btn-accent:hover { background: var(--mui-accent); color: #fff; border-color: var(--mui-accent); }
+    .btn-accent:disabled { opacity: 0.6; cursor: progress; }
+    .btn-accent:disabled:hover { background: var(--mui-accent-muted); color: var(--mui-accent); border-color: rgba(255,140,47,.4); }
 
     /* Skeleton block while the first snapshot is in flight. Three placeholder
        rows of the same shape as a real row, with a soft shimmer. Without this
@@ -157,7 +171,11 @@ export class ModernuiDockerPage extends LitElement {
   `;
 
   private _store: DockerStore | null = null;
+  private _progressStore: UpdateProgressStore | null = null;
   private _unsubscribe: (() => void) | null = null;
+  // Reference to the child update-panel — we call setStores on it after each
+  // render once both stores are available.
+  @query('md-docker-update-panel') private _updatePanel?: MdDockerUpdatePanel;
 
   @state() private _tick = 0;   // re-render trigger
   @state() private _showFolderModal = false;
@@ -171,6 +189,14 @@ export class ModernuiDockerPage extends LitElement {
   // Single shared poll handle for "starting" optimistic state. Triggered by
   // start/restart/resume actions and by post-reboot autostart detection.
   private _startingPollHandle: number | null = null;
+
+  // Wired by boot.ts. The progress store is independent from the docker store
+  // (different concerns, different lifetime) but the page owns the panel that
+  // consumes both, so it threads them in together.
+  setUpdateProgressStore(store: UpdateProgressStore): void {
+    this._progressStore = store;
+    this._tick++;
+  }
 
   setStore(store: DockerStore): void {
     this._unsubscribe?.();
@@ -189,6 +215,15 @@ export class ModernuiDockerPage extends LitElement {
     }
     if (store.getStarting().size > 0) {
       this._startStartingPoll();
+    }
+  }
+
+  // Push stores into the update-panel child after each render — the panel is
+  // mounted unconditionally (it self-hides when nothing's updating) so the
+  // ref is stable across renders, and setStores is idempotent.
+  updated(): void {
+    if (this._updatePanel && this._store && this._progressStore) {
+      this._updatePanel.setStores(this._store, this._progressStore);
     }
   }
 
@@ -425,8 +460,12 @@ export class ModernuiDockerPage extends LitElement {
   private _handleFolderDefault = async (e: Event): Promise<void> => {
     if (!this._store) return;
     const ce = e as CustomEvent<{ value: 'expanded' | 'collapsed' }>;
-    // Immediate UI update; PHP persistence is best-effort in the background.
-    this._store.setCollapseDefault(ce.detail.value);
+    // The toolbar's Expanded/Collapsed segmented control is an "expand all /
+    // collapse all" action — use setCollapseAll so existing per-folder
+    // overrides are cleared and the new default applies uniformly. Using the
+    // raw setCollapseDefault here would flip manually-toggled folders to the
+    // OPPOSITE of the user's stated intent.
+    this._store.setCollapseAll(ce.detail.value);
     document.documentElement.dataset.modernuiDockerFolderDefault = ce.detail.value;
     try { await saveSetting('docker_folder_default', ce.detail.value); }
     catch (err) { console.warn('[modernui-docker] failed to persist folder default:', err); }
@@ -603,6 +642,29 @@ export class ModernuiDockerPage extends LitElement {
     }
   };
 
+  // "Update all" — applies every container whose updateAvailable=true, without
+  // forcing the user to expand folders + tick checkboxes. Folder layouts mean
+  // a "3 updates available" pill can be spread across collapsed sections, so
+  // an explicit one-click action saves a fair bit of mousework.
+  private _runUpdateAll = async (): Promise<void> => {
+    if (!this._store) return;
+    const updatable = this._store.getState().containers
+      .filter((c) => c.updateAvailable)
+      .map((c) => c.name);
+    if (updatable.length === 0) return;
+    if (!confirm(
+      `Update ${updatable.length} container${updatable.length === 1 ? '' : 's'} with available updates? Each will be pulled + recreated.`,
+    )) return;
+    this._store.markUpdating(updatable);
+    this._startUpdatePoll();
+    try {
+      await updateContainers(updatable);
+    } catch (err) {
+      for (const n of updatable) this._store.clearUpdating(n);
+      console.warn('[modernui-docker] update all failed:', err);
+    }
+  };
+
   private _handleShowStats = async (e: Event): Promise<void> => {
     if (!this._store) return;
     const ce = e as CustomEvent<{ on: boolean }>;
@@ -693,6 +755,14 @@ export class ModernuiDockerPage extends LitElement {
             </p>
           </div>
           <div class="actions">
+            ${withUpdates > 0 && selection.size === 0 ? html`
+              <button class="btn btn-accent"
+                      ?disabled=${this._checkingUpdates || (this._store?.getUpdating().size ?? 0) > 0}
+                      @click=${this._runUpdateAll}
+                      title="Update every container with an available update — saves expanding folders to tick them.">
+                ${icon('update')} Update all (${withUpdates})
+              </button>
+            ` : nothing}
             ${selection.size > 0 ? html`
               <button class="btn" ?disabled=${this._checkingUpdates} @click=${this._runUpdateSelected}>
                 ${icon('update')} ${this._checkingUpdates ? 'Updating…' : `Update selected (${selection.size})`}
@@ -774,6 +844,12 @@ export class ModernuiDockerPage extends LitElement {
             .containers=${state.containers}
           ></md-docker-tag-modal>
         ` : nothing}
+
+        <!-- Floating right-side update-progress panel. Rendered unconditionally
+             but self-hides when nothing's updating, so the ref stays stable for
+             setStores wiring in updated(). position:fixed inside means it
+             floats over the page rather than pushing layout. -->
+        <md-docker-update-panel></md-docker-update-panel>
       </div>
     `;
   }

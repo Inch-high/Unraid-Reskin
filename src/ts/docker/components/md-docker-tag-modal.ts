@@ -163,11 +163,12 @@ export class MdDockerTagModal extends LitElement {
       border: 1.5px solid var(--border-default); border-radius: var(--radius-xs);
       background: var(--bg-base); cursor: pointer; position: relative; margin: 0;
     }
-    .trow input[type="checkbox"]:checked { background: var(--mui-accent); border-color: var(--mui-accent); }
-    .trow input[type="checkbox"]:checked::after {
-      content: ""; position: absolute; left: 4px; top: 1px;
-      width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
+    /* Inline-SVG tick — see md-docker-row.ts for the rationale (rotated-rect
+       approach renders off-center). */
+    .trow input[type="checkbox"]:checked {
+      background-color: var(--mui-accent); border-color: var(--mui-accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: center; background-size: 12px 12px;
     }
     .ct-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .mini-icon {

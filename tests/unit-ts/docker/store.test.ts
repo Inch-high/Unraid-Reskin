@@ -243,6 +243,43 @@ describe('collapse state — default + explicit toggle', () => {
     store.setState({ containers: [], folders: [], tags: [], tagAssignments: {} });
     expect(store.isCollapsed('f-media')).toBe(true);
   });
+
+  it('setCollapseAll clears per-folder overrides — the reverse-action bug', () => {
+    // Repro: default=expanded, user manually collapses f-media (now in
+    // explicitToggles → reads as collapsed). User then clicks the toolbar's
+    // "Collapsed" button. Without setCollapseAll's clear, f-media flips to
+    // !collapsed = expanded — the OPPOSITE of what the user wanted.
+    const store = createDockerStore();
+    store.setCollapseDefault('expanded');
+    store.toggleCollapsed('f-media');
+    expect(store.isCollapsed('f-media')).toBe(true);   // manually collapsed
+    expect(store.isCollapsed('f-other')).toBe(false);
+
+    store.setCollapseAll('collapsed');
+    expect(store.isCollapsed('f-media')).toBe(true);   // stays collapsed (was the user's intent)
+    expect(store.isCollapsed('f-other')).toBe(true);   // also collapsed now
+
+    // And it works the other way — "Expand all" wins over a manual expand-then-collapse.
+    store.toggleCollapsed('f-media');                  // explicitly expand f-media (now in toggles vs collapsed default)
+    expect(store.isCollapsed('f-media')).toBe(false);
+    store.setCollapseAll('expanded');
+    expect(store.isCollapsed('f-media')).toBe(false);  // stays expanded
+    expect(store.isCollapsed('f-other')).toBe(false);  // also expanded
+  });
+
+  it('setCollapseAll persists the cleared toggle set to localStorage', () => {
+    const store = createDockerStore();
+    store.setCollapseDefault('expanded');
+    store.toggleCollapsed('f-media');
+    // toggleCollapsed should have written the toggle to localStorage.
+    expect(localStorage.getItem('modernui-docker-collapsed')).toContain('f-media');
+
+    store.setCollapseAll('collapsed');
+    // After "collapse all", the persisted toggle set is empty so a refresh
+    // won't bring f-media back as a flipped override.
+    const persisted = localStorage.getItem('modernui-docker-collapsed');
+    expect(persisted === null || persisted === '[]').toBe(true);
+  });
 });
 
 describe('updating state', () => {
@@ -441,6 +478,23 @@ describe('starting state', () => {
     next.containers = next.containers.filter((c) => c.name !== 'radarr');
     store.setState(next);
     expect(store.getStarting().has('radarr')).toBe(false);
+  });
+
+  it('clearAllUpdating wipes the whole updating set + persisted probes', () => {
+    // Used by the /sub/docker _DONE_ handler: the stock update_container
+    // script's end-of-batch marker means everything in the batch is done,
+    // regardless of whether the digest-status cache has flushed yet.
+    const store = createDockerStore();
+    store.setState(sampleState());
+    store.markUpdating(['plex', 'sonarr']);
+    expect(store.getUpdating().size).toBe(2);
+
+    store.clearAllUpdating();
+    expect(store.getUpdating().size).toBe(0);
+
+    // Persisted probes also gone — a refresh won't bring them back.
+    const persisted = localStorage.getItem('modernui-docker-updating');
+    expect(persisted === null || persisted === '{}').toBe(true);
   });
 
   it('clearStarting drops a single entry', () => {

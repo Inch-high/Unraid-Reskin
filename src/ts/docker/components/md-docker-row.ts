@@ -67,14 +67,18 @@ export class MdDockerRow extends LitElement {
       position: relative;
       margin: 0;
     }
+    /* Checked state. The tick is an inline SVG sat as a centered background
+       image rather than a rotated-rectangle ::after — the rotated approach
+       rendered low-and-right of center because the visible L-shape's mass
+       lands offset from the rotation point. Inline SVG via data URI gives us
+       a mathematically centered, sharp check with no rotation math. */
     input[type="checkbox"]:checked {
-      background: var(--mui-accent);
+      background-color: var(--mui-accent);
       border-color: var(--mui-accent);
-    }
-    input[type="checkbox"]:checked::after {
-      content: ""; position: absolute; left: 4px; top: 1px;
-      width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 12px 12px;
     }
 
     .icon {
