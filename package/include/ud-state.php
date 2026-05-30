@@ -88,7 +88,11 @@ function modernui_ud_historical(array $config, array $currentSerials): array {
         if ($serial === 'Config' || !is_array($value)) continue;
         $present = false;
         foreach ($currentSerials as $s) {
-            if ($s !== '' && (strpos($s, $serial) !== false || strpos($serial, $s) !== false)) { $present = true; break; }
+            // Exact serial match — both sides come from the plugin's own data
+            // keyed by the same serial. A loose substring match could hide a
+            // genuinely-historical device whose serial happens to be a substring
+            // of an unrelated attached disk's serial (or vice-versa).
+            if ($s !== '' && $s === $serial) { $present = true; break; }
         }
         if ($present) continue;
         $dev = (string)($value['unassigned_dev'] ?? '');

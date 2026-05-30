@@ -33,9 +33,11 @@ export async function boot(): Promise<void> {
   const root = document.querySelector<HTMLElement>('#modernui-main-root');
   if (!root) return; // mount point absent → stock page is rendering, bail silently
 
-  // CSRF token for action POSTs (Task 8), embedded by the ArrayDevices.page
-  // overlay from $var['csrf_token']. main-state.php also returns it, but the
-  // attribute is authoritative for the live page session.
+  // CSRF token for action POSTs, embedded by the ArrayDevices.page overlay from
+  // $var['csrf_token'] (htmlspecialchars-escaped). This attribute is the sole
+  // source: main-state.php deliberately omits the token from its read-only JSON
+  // body so the per-boot token is never handed out in a readable response. The
+  // resync/initial-fetch paths below backfill it onto each snapshot.
   const csrf = root.dataset.csrf ?? '';
 
   const store = createMainStore();
