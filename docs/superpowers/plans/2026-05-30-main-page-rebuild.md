@@ -243,9 +243,10 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** `src/ts/main/boot.ts`, `lifecycle.ts`
 
-- [ ] **Step 1:** Subscribe to `/sub/devices`, `/sub/mymonitor`, `/sub/fsState`, `/sub/paritymonitor`, `/sub/arraymonitor` via the visibility-aware lifecycle helper. On any message → debounced (200ms) `fetchSnapshot()` → `store.setState`. Parse `mymonitor` int directly into `operation.busy` for instant button gating.
-- [ ] **Step 2:** `visibilitychange`: pause processing on hide, one-shot resync on show. Add the lifecycle message counter for the hidden-tab test.
-- [ ] **Step 3:** Deploy → spin a disk down / up on the rig and watch the row + button update within a debounce window. Toggle array state and confirm transitions reflect.
+- [x] **Step 1:** New `src/ts/main/lifecycle.ts` (`createMainLive`, channel-oriented, no global-type conflict). `boot.ts` subscribes to `/sub/devices`, `/sub/fsState`, `/sub/paritymonitor`, `/sub/arraymonitor` → debounced `resync()` (the 150ms resync from Task 9, shared with action triggers), and `/sub/mymonitor` → `parseBusy` → `store.setBusy()` (instant button gating) + resync.
+- [x] **Step 2:** Visibility-aware — messages dropped while `document.hidden`; becoming visible fires one resync; `processedSinceVisible` counter exposed. 5 unit tests (channel subscribe/process, hidden-drop, resync-on-visible, parseBusy, nchan-absent no-op).
+- [x] **Verify:** 423 TS tests pass (+5); `src/ts/main` type-clean; `modernui-main.js` builds.
+- [ ] **Step 3 (DEFERRED to first deploy):** On-rig — spin a disk down/up and watch the row + button gate update within a debounce window; toggle array state and confirm transitions reflect.
 - [ ] Commit `feat(main): live nchan updates + visibility-aware lifecycle`.
 
 ---

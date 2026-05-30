@@ -9,6 +9,7 @@
 
 import { createMainStore } from './store';
 import { fetchSnapshot } from './snapshot';
+import { createMainLive, parseBusy } from './lifecycle';
 import './components/md-main-page';
 import type { ModernuiMainPage } from './components/md-main-page';
 
@@ -70,7 +71,23 @@ export async function boot(): Promise<void> {
     console.warn('[modernui-main] snapshot fetch failed:', err);
   }
 
-  // TODO(Task 10): subscribe to /sub/devices, /sub/mymonitor, /sub/fsState,
-  //                /sub/paritymonitor, /sub/arraymonitor via the lifecycle helper
-  //                → debounced resync + store.setBusy(mymonitor).
+  // Live updates. The ArrayOperation.page overlay keeps the
+  // Nchan="device_list,disk_load,parity_list" attribute, so emhttp publishes
+  // these channels. Most signals just mean "state changed → resync"; mymonitor
+  // additionally carries the busy int, which we apply immediately so the
+  // Stop/Spin/Mover buttons gate without waiting for the snapshot round-trip.
+  createMainLive({
+    resync,
+    channels: [
+      { url: '/sub/devices',       handle: () => resync() },
+      { url: '/sub/fsState',       handle: () => resync() },
+      { url: '/sub/paritymonitor', handle: () => resync() },
+      { url: '/sub/arraymonitor',  handle: () => resync() },
+      { url: '/sub/mymonitor',     handle: (raw) => {
+          const busy = parseBusy(raw);
+          if (busy !== null) store.setBusy(busy);
+          resync();
+        } },
+    ],
+  });
 }
