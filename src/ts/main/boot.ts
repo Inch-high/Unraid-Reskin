@@ -39,9 +39,27 @@ export async function boot(): Promise<void> {
 
   const store = createMainStore();
 
+  // Resync: re-fetch the snapshot (after an action, or on an nchan signal in
+  // Task 10). Debounced lightly so a burst of triggers collapses to one fetch.
+  let resyncTimer: number | null = null;
+  const resync = (): void => {
+    if (resyncTimer !== null) return;
+    resyncTimer = window.setTimeout(async () => {
+      resyncTimer = null;
+      try {
+        const snap = await fetchSnapshot();
+        snap.csrfToken = snap.csrfToken || csrf;
+        store.setState(snap);
+      } catch (err) {
+        console.warn('[modernui-main] resync failed:', err);
+      }
+    }, 150);
+  };
+
   // Mount immediately so the page paints a skeleton before the fetch resolves.
   const page = document.createElement('modernui-main-page') as ModernuiMainPage;
   page.setStore(store);
+  page.resync = resync;
   root.appendChild(page);
 
   try {
