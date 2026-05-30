@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.5.7">
+<!ENTITY version   "0.5.8">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,14 @@
 
 <CHANGES>
 <![CDATA[
+###v0.5.8 (2026-05-30)
+- Feat (docker): floating top-right update-progress panel (`<md-docker-update-panel>`) that surfaces in-flight container updates — name + overall % + download speed. Subscribes to the `/sub/docker` nchan channel stock Unraid's `update_container` script publishes to and parses its NUL-delimited protocol. Overall % is byte-weighted across layers (downloaded ÷ total), which stays monotonic where a raw per-layer mean would lurch backwards as fresh layers join at 0%; chunked layers with no declared total are excluded from the % but still feed the byte/speed totals. Download speed is inferred from a rolling 2.5s byte-rate window since the stock script doesn't emit it. State persists to `sessionStorage` (writes throttled to ≤1/750ms so a multi-layer pull doesn't storm the main thread; 5-min TTL matching the updating watchdog) so navigating away from /Docker and back doesn't blank the panel mid-update. The script's `_DONE_` end-of-batch marker force-clears the updating set + refetches, bypassing the 5-min watchdog when stock's digest-status cache lags reconcile detection.
+- Feat (docker): "Update all (N)" action in the toolbar when updates are available and nothing's selected — one click pulls + recreates every container with an available update, saving the user from expanding collapsed folders to tick each one. Soft-accent styling keeps it subordinate to the primary Add Container CTA.
+- Fix (docker): the folder-default Expanded/Collapsed segmented control flipped manually-toggled folders to the OPPOSITE of the user's intent — explicit per-folder toggles are stored as "flip the default", so changing the default inverted every override. New `setCollapseAll()` clears the per-folder overrides so the new default applies uniformly; boot-time hydration still preserves them.
+- Fix (docker): the row + tag-modal checkbox tick rendered low-and-right of center. The rotated-rectangle `::after` had a `box-sizing: content-box` border-inflation bug (the 5×9 rect was really 7×11) and the L-shape's pixel mass lands off the rotation pivot. Swapped for a mathematically centered, sharper inline-SVG check.
+- CI: new GitHub Actions workflow runs the TS test suite + asset build on every pull request and push to main, so regressions are caught before merge instead of at release-tag time.
+- Tests: +parser / sessionStorage round-trip / TTL expiry / `_DONE_` callback / chunked-advance / byte-weighted % / `setCollapseAll` / `clearAllUpdating` / `selectPanelView` coverage. 349 total, all green.
+
 ###v0.5.7 (2026-05-28)
 - Feat (docker): per-container "Start on boot" pin in every row + Enable/Disable autostart in the kebab menu + bulk Autostart on/off buttons in the selection bar. Backend `save-docker-autostart.php` toggles entries in `/var/lib/docker/unraid-autostart` in place, preserving WAIT values for entries it doesn't touch; container names are regex-validated to block path/newline injection; the read→mutate→write sequence runs under an exclusive flock on a co-located `.lock` sentinel so concurrent toggles (two tabs, modernui + stock UI, bulk + single) can't clobber each other.
 - Feat (docker): transient "Starting…" badge with spinner. Start/Restart/Resume mark the row optimistically and a 3s snapshot poll confirms the transition (nchan `/sub/dockerload` only carries CPU/RAM deltas, not state changes). On a fresh-reboot visit, containers with `autostart=true && state=stopped` are also flagged so the post-boot rc.docker chain shows as in-flight instead of looking frozen. Gated on `serverUptime ≤ 5 min` (read from `/proc/uptime` via docker-state.php) so a crashed-but-autostart-enabled container doesn't show a stale "Starting…" badge hours after boot. 10-minute watchdog covers the worst-case rc.docker WAIT chain.
