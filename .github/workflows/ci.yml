@@ -1,0 +1,46 @@
+# Continuous integration — runs on every pull request and on pushes to main.
+#
+# Gate: the TypeScript test suite must pass and the assets must build cleanly
+# (Sass + Vite → package/theme/dist/). This is the same TS-test + build pair
+# the release workflow runs before publishing, lifted to a per-PR check so
+# regressions are caught before merge rather than at tag time.
+#
+# PHP tests are deliberately omitted — they need a configured PHP runtime and,
+# per release.yml, cover request-shape validation that the dev box exercises;
+# they aren't a useful merge gate here.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Cancel an in-progress run when new commits land on the same branch/PR — no
+# point burning minutes validating a commit that's already been superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TS tests
+        run: npm run test:ts
+
+      - name: Build assets
+        run: npm run build
