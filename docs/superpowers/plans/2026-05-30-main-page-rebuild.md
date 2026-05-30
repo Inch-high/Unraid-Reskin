@@ -175,10 +175,10 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** `src/ts/main/snapshot.ts`, `src/ts/main/store.ts`, `src/ts/main/boot.ts`, `tests/unit-ts/main/snapshot.test.ts`, `tests/unit-ts/main/store.test.ts`
 
-- [ ] **Step 1:** `snapshot.ts` — `fetchSnapshot(): Promise<MainPageState>` GETs `main-state.php`. Unit-test against a JSON fixture (the captured endpoint output) for shape/typing.
-- [ ] **Step 2:** `store.ts` — reactive store (mirror `docker/store.ts`): `getState/setState/subscribe`. Tests for set/notify/dedupe.
-- [ ] **Step 3:** Wire `boot.ts`: create store, mount `<modernui-main-page>` into `#modernui-main-root`, read `csrf` from `root.dataset.csrf`, `await fetchSnapshot()` → `store.setState(...)`, render loading state first.
-- [ ] **Step 4:** `npm run test:ts` green; build.
+- [x] **Step 1:** `snapshot.ts` — `fetchSnapshot()` GETs `main-state.php` (same-origin, no-store), throws on non-OK. Unit-tested against a **real** generated fixture `main-state.sample.json` (PHP run over the sample inis): asserts 14 devices, pool, flash, mdState, encryption, serial/model split, and that `primary` is absent (derived later).
+- [x] **Step 2:** `store.ts` — minimal reactive store: `getState/isLoading/getBusy/setState/setBusy/subscribe`. `setState` stamps live `busy` onto operation; `setBusy` dedupes. 5 unit tests.
+- [x] **Step 3:** Wired `boot.ts`: create store, mount `<modernui-main-page>` (new minimal root in `components/md-main-page.ts` — skeleton + summary, expanded in Task 6) into `#modernui-main-root`, read `csrf` from `root.dataset.csrf`, `await fetchSnapshot()` → `store.setState`.
+- [x] **Step 4:** `tsc` clean on `src/ts/main/*`; `npm run test:ts` green (356, +7); `npm run build` emits `modernui-main.js`. (Test-file `node:` import warnings are the repo-wide pre-existing tsconfig quirk, not new.)
 - [ ] Commit `feat(main): snapshot fetch + reactive store + mount/paint`.
 
 ---

@@ -5,8 +5,12 @@
 // `#modernui-main-root` mount point. This bundle loads on every page (via
 // loader.js), exits early off-route, and only mounts when that root exists.
 //
-// All wiring beyond detection (store, snapshot fetch, nchan subscriptions,
-// component mount) lands in later tasks (5, 6, 9, 10).
+// Live nchan subscriptions land in Task 10; the operation-panel derive in 9.
+
+import { createMainStore } from './store';
+import { fetchSnapshot } from './snapshot';
+import './components/md-main-page';
+import type { ModernuiMainPage } from './components/md-main-page';
 
 // Page detection. The Array/Devices management screen lives at /Main. Stock
 // also has subpages (/Main/Device, /Main/Settings/Device) — we leave those to
@@ -28,12 +32,27 @@ export async function boot(): Promise<void> {
   const root = document.querySelector<HTMLElement>('#modernui-main-root');
   if (!root) return; // mount point absent → stock page is rendering, bail silently
 
-  // CSRF token for action POSTs, embedded by the ArrayDevices.page overlay
-  // from $var['csrf_token']. Kept here so later tasks can hand it to actions.ts.
+  // CSRF token for action POSTs (Task 8), embedded by the ArrayDevices.page
+  // overlay from $var['csrf_token']. main-state.php also returns it, but the
+  // attribute is authoritative for the live page session.
   const csrf = root.dataset.csrf ?? '';
-  void csrf;
 
-  // TODO(Task 5): create store, mount <modernui-main-page>, fetch main-state.php.
+  const store = createMainStore();
+
+  // Mount immediately so the page paints a skeleton before the fetch resolves.
+  const page = document.createElement('modernui-main-page') as ModernuiMainPage;
+  page.setStore(store);
+  root.appendChild(page);
+
+  try {
+    const snapshot = await fetchSnapshot();
+    snapshot.csrfToken = snapshot.csrfToken || csrf;
+    store.setState(snapshot);
+  } catch (err) {
+    console.warn('[modernui-main] snapshot fetch failed:', err);
+  }
+
   // TODO(Task 10): subscribe to /sub/devices, /sub/mymonitor, /sub/fsState,
-  //                /sub/paritymonitor, /sub/arraymonitor via the lifecycle helper.
+  //                /sub/paritymonitor, /sub/arraymonitor via the lifecycle helper
+  //                → debounced resync + store.setBusy(mymonitor).
 }

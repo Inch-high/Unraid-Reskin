@@ -135,8 +135,11 @@ export interface OperationState {
   counts: { disks: number; disabled: number; invalid: number; missing: number; new: number };
   unmountableMask: string;   // fsUnmountableMask → enables Format
   encryption: EncryptionState;
-  primary: PrimaryControl;
-  busy: 0 | 1 | 2 | 3;       // /sub/mymonitor — 0 idle, 1 parity, 2 mover, 3 btrfs
+  // Derived/live — NOT in the main-state.php JSON. `primary` is produced by
+  // deriveOperation() (the single source of truth, Task 7); `busy` is set by
+  // the store from /sub/mymonitor. Optional so the raw snapshot type-checks.
+  primary?: PrimaryControl;
+  busy?: 0 | 1 | 2 | 3;      // /sub/mymonitor — 0 idle, 1 parity, 2 mover, 3 btrfs
   moverEnabled: boolean;     // shareUser === 'e'
 }
 
