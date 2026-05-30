@@ -4,6 +4,15 @@ A clean, flat, responsive theme for Unraid 7.x. Inspired by TrueNAS SCALE with r
 
 > ⚠️ **Unofficial hobby project — not affiliated with, endorsed by, or supported by Lime Technology, Inc.** See [Disclaimer](#disclaimer) before installing.
 
+## What's rebuilt
+
+- **Shell** — left sidebar + slim topbar replacing the stock top-nav/footer.
+- **Dashboard** — hero strip + grouped cards (Array, Cache, Parity, Memory, Docker, VMs, and optional plugin cards).
+- **Docker** — folders, tags, search, filters, bulk actions, live update-progress panel.
+- **Main** — array/device management: every device with model + serial, state, temperature, reads/writes/errors, FS and usage; the full Array Operation panel (Start/Stop, parity, spin, encryption key entry); and the Unassigned Devices card (disks, remote SMB/NFS/ISO shares, historical devices, mount/unmount). All actions reuse Unraid's stock backend.
+
+Each surface has its own Modern/Stock toggle in **Settings → Theme**, and every replaced page falls back to stock instantly (toggle, `?modernui=off`, or uninstall).
+
 ## Install
 
 Two options:

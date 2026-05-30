@@ -1,0 +1,18 @@
+// /Main rebuild — light-DOM glue. The device cards live in Shadow DOM and
+// style themselves via tokens; this file only fixes the host page around our
+// mount (#modernui-main-root, emitted by ArrayDevices.page).
+//
+// Because all four Main:N overlays are title-less, the stock tabbed layout
+// (MainContentTabbed.php) still renders an empty <nav class="tabs"> shell.
+// Hide it when our mount is present so there's no stray empty tab bar. (:has
+// is supported by the Chromium/Firefox builds Unraid 7.3 targets.)
+#displaybox:has(#modernui-main-root) > nav.tabs {
+  display: none;
+}
+
+// Let our mount use the full content width (the stock content wrapper caps
+// at a narrower column for tabbed forms).
+#modernui-main-root {
+  display: block;
+  width: 100%;
+}

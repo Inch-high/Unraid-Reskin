@@ -15,7 +15,7 @@ const MODERNUI_TRACKED_OVERLAYS = [
 ];
 
 function modernui_tracked_overlay_table(): array {
-    return [
+    $table = [
         MODERNUI_DOCKER_PAGE => [
             'overlay'  => MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page',
             'strip_fn' => fn($s) => $s,
@@ -23,6 +23,12 @@ function modernui_tracked_overlay_table(): array {
         // DefaultPageLayout.php is in-place patched (markers stripped on
         // uninstall), not wholesale-replaced — exclude it here.
     ];
+    // The four /Main pages we replaced wholesale. If upstream changes any one,
+    // restore all originals + enter safe mode (handled by the loop below).
+    foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
+        $table[$target] = ['overlay' => $overlaySrc, 'strip_fn' => fn($s) => $s];
+    }
+    return $table;
 }
 
 // If an Unraid update changed the .page file we replaced, our backup SHA no

@@ -1,0 +1,19 @@
+Menu="Main:4"
+Markdown="false"
+---
+<?PHP
+/* Modern UI suppression overlay for the Unassigned Devices plugin's /Main
+ * section (Main:4). Intentionally empty + Title-less so the stock section
+ * renders nothing; the modern UI renders its own Unassigned Devices card inside
+ * #modernui-main-root (ArrayDevices.page, Main:1), fed by our read-only
+ * ud-state.php wrapper, with Mount/Unmount proxied to the plugin's own endpoint.
+ *
+ * This file is REPLACED only when the plugin is present, and is kept OUT of the
+ * core safe-mode loop: if a plugin update reclaims this page, the stock section
+ * simply returns and our card auto-hides (ud-state.php `available` checks for
+ * our marker) — the core /Main rebuild is never affected. Advanced operations
+ * (format, preclear, settings, scripts, add-share) remain available via
+ * Settings → Theme → Main: Stock.
+ *
+ * The word "modernui" in this comment is the marker ud-state.php looks for. */
+?>

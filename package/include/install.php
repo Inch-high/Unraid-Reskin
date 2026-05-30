@@ -9,6 +9,37 @@ const MODERNUI_OVERLAY_DIR    = '/usr/local/emhttp/plugins/unraid-modernui/overl
 // Discovered in Task 7 Step 0 — verify on Unraid 7.x box if changed in a future release.
 const MODERNUI_LAYOUT_FILE    = '/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout.php';
 const MODERNUI_DOCKER_PAGE    = '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page';
+// The /Main screen is an xmenu assembled from four dynamix .page files. We
+// replace all four: ArrayDevices (Main:1) carries the single mount point;
+// CacheDevices/BootDevice are empty; ArrayOperation keeps its Nchan attribute.
+// SHA-backed + restored exactly like the docker page.
+const MODERNUI_DYNAMIX_DIR    = '/usr/local/emhttp/plugins/dynamix';
+const MODERNUI_MAIN_PAGES     = ['ArrayDevices.page', 'CacheDevices.page', 'BootDevice.page', 'ArrayOperation.page'];
+
+// target_path => overlay_source_path for each replaced /Main page. Shared by
+// install (replace), upgrade (SHA verify + safe-mode), uninstall + save (restore).
+function modernui_main_overlay_table(): array {
+    $out = [];
+    foreach (MODERNUI_MAIN_PAGES as $name) {
+        $out[MODERNUI_DYNAMIX_DIR . '/' . $name] =
+            MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix/' . $name;
+    }
+    return $out;
+}
+
+// The optional Unassigned Devices plugin's /Main:4 page. Tracked SEPARATELY
+// from the core table and deliberately EXCLUDED from the upgrade safe-mode loop
+// — the plugin updates often, and a drift there must never disable the core
+// Main rebuild. Replaced only when the plugin is installed; if it reclaims its
+// page on update, our card auto-hides (ud-state.php marker check) and the stock
+// section returns until the next theme (re)install re-applies this overlay.
+const MODERNUI_UD_PAGE_TARGET = '/usr/local/emhttp/plugins/unassigned.devices/UnassignedDevices.page';
+function modernui_ud_overlay_src(): string {
+    return MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/unassigned.devices/UnassignedDevices.page';
+}
+function modernui_ud_plugin_present(): bool {
+    return is_file(MODERNUI_UD_PAGE_TARGET);
+}
 // Inline filemtime() expressions in the injected tags evaluate per-request
 // inside DefaultPageLayout.php (which is a PHP file), turning every cfg save
 // into a fresh URL and busting the browser's stale loader.js cache. Without
@@ -109,6 +140,7 @@ function modernui_generate_loader_js(bool $disabled): void {
     $shell     = $settings['shell']     ?? 'on';
     $sidebar   = $settings['sidebar']   ?? 'expanded';
     $docker    = $settings['docker']    ?? 'on';
+    $main      = $settings['main']      ?? 'on';
     $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
     $dockerShowStats = $settings['docker_show_stats'] ?? 'off';
     // When enabled, lazy-load the dashboard + docker bundles too. Each one
@@ -123,6 +155,9 @@ function modernui_generate_loader_js(bool $disabled): void {
         $extraScript .= "var dk=document.createElement('script');\n"
                       . "dk.src='/plugins/unraid-modernui/theme/dist/modernui-docker.js';\n"
                       . "document.head.appendChild(dk);\n";
+        $extraScript .= "var mn=document.createElement('script');\n"
+                      . "mn.src='/plugins/unraid-modernui/theme/dist/modernui-main.js';\n"
+                      . "document.head.appendChild(mn);\n";
     }
     $loader = "(function(){\n"
         . "var r=document.documentElement;\n"
@@ -132,6 +167,7 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "r.dataset.modernuiShell=" . json_encode($shell) . ";\n"
         . "r.dataset.modernuiSidebar=" . json_encode($sidebar) . ";\n"
         . "r.dataset.modernuiDocker=" . json_encode($docker) . ";\n"
+        . "r.dataset.modernuiMain=" . json_encode($main) . ";\n"
         . "r.dataset.modernuiDockerFolderDefault=" . json_encode($dockerFolderDefault) . ";\n"
         . "r.dataset.modernuiDockerStats=" . json_encode($dockerShowStats) . ";\n"
         . "var s=document.createElement('script');\n"
@@ -201,6 +237,19 @@ function modernui_install(): void {
         MODERNUI_DOCKER_PAGE,
         MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page'
     );
+
+    // Replace the four dynamix /Main .page files with our overlays. Same model:
+    // backend (emhttp / update.htm / emcmd / ToggleState.php / Boot.php) stays
+    // stock — only the .page front-end is ours.
+    foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
+        modernui_replace_file($target, $overlaySrc);
+    }
+
+    // Suppress the optional Unassigned Devices section (only if the plugin is
+    // present). Separate from the core pages + the safe-mode loop on purpose.
+    if (modernui_ud_plugin_present()) {
+        modernui_replace_file(MODERNUI_UD_PAGE_TARGET, modernui_ud_overlay_src());
+    }
 
     $disabled = modernui_is_disabled(MODERNUI_CFG_DIR);
     modernui_generate_loader_js($disabled);

@@ -21,6 +21,7 @@ $rmotion   = $settings['reduced_motion'] ?? 'auto';
 $dashboard = $settings['dashboard'] ?? 'on';
 $shell     = $settings['shell']     ?? 'on';
 $docker    = $settings['docker']    ?? 'on';
+$main      = $settings['main']      ?? 'on';
 $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
 
 // Unraid's auto_prepend_file (/usr/local/emhttp/webGui/include/local_prepend.php)
@@ -77,6 +78,15 @@ $csrf_token = $var['csrf_token'] ?? '';
 
 
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
+      <legend>Main page layout</legend>
+      <?= modernui_radio('main', 'on',  'Modern', $main) ?>
+      <?= modernui_radio('main', 'off', 'Stock',  $main) ?>
+      <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
+        Replace <code>/Main</code> (array &amp; device management) with a clean UI: every device with model &amp; serial, state, temperature, reads/writes/errors, filesystem and usage, plus the full Array Operation panel (Start/Stop, parity, spin, encryption key entry). Stock backend (<code>emhttp</code>, parity, spin, shutdown endpoints, nchan) is reused — only the page is ours. Switching to <strong>Stock</strong> restores Unraid's original page files.
+      </p>
+    </fieldset>
+
+    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Density</legend>
       <?= modernui_radio('density', 'comfortable', 'Comfortable', $density) ?>
       <?= modernui_radio('density', 'compact',     'Compact',     $density) ?>
@@ -107,7 +117,7 @@ $csrf_token = $var['csrf_token'] ?? '';
 
   <hr style="margin:32px 0 16px 0;">
   <h3 style="margin:0 0 8px 0;">About</h3>
-  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.4.2 (Phase 4). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
+  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.6.0 (Phase 6). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
   <p style="margin:0;font-size:13px;color:#666;">Unraid® webGui © Lime Technology, Inc. <a href="/webGui/include/Help.php" target="_blank">Manual</a></p>
 </div>
 

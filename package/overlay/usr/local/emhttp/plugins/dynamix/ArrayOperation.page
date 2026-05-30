@@ -1,0 +1,17 @@
+Menu="Main:5"
+Markdown="false"
+Nchan="device_list,disk_load,parity_list"
+---
+<?PHP
+/* Modern UI: intentionally empty BODY, but the Nchan attribute above is
+ * PRESERVED from stock. DefaultPageLayout merges every Main:N page's Nchan
+ * (regardless of Title/body) and starts the named workers, so keeping it here
+ * means emhttp keeps publishing device_list / disk_load / parity_list — the
+ * channels modernui-main.js subscribes to (/sub/devices, /sub/mymonitor,
+ * /sub/paritymonitor, …) for live device + parity updates.
+ *
+ * The Array Operation controls (Start/Stop, parity, spin, mover, power,
+ * encryption key entry) are rendered by modernui-main.js into
+ * #modernui-main-root (see ArrayDevices.page, Main:1). Title omitted so this
+ * page contributes no tab/title chrome. */
+?>

@@ -30,6 +30,15 @@ function modernui_uninstall(): void {
     // Restore Unraid's docker manager page from backup. Fallback is a no-op
     // (no strip needed — our overlay file replaced the original wholesale).
     modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn($s) => $s);
+    // Restore Unraid's four /Main .page files from backup (wholesale replace,
+    // so the strip fallback is a no-op).
+    foreach (modernui_main_overlay_table() as $target => $_overlaySrc) {
+        modernui_restore_from_backup($target, fn($s) => $s);
+    }
+    // Restore the Unassigned Devices plugin's page if we suppressed it.
+    if (is_file(MODERNUI_UD_PAGE_TARGET)) {
+        modernui_restore_from_backup(MODERNUI_UD_PAGE_TARGET, fn($s) => $s);
+    }
     // We keep MODERNUI_CFG_DIR (settings.cfg + disabled flag + docker-*.json)
     // so a reinstall remembers prefs and user-curated folders/tags survive.
     // The .plg remove block deletes the plugin payload itself.
