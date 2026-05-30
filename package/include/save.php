@@ -14,6 +14,7 @@ function modernui_validate_settings(array $input): array {
         'dashboard'             => 'on',
         'shell'                 => 'on',
         'docker'                => 'on',
+        'main'                  => 'on',
         'docker_folder_default' => 'expanded',
         'docker_show_stats'     => 'off',
     ];
@@ -26,6 +27,7 @@ function modernui_validate_settings(array $input): array {
         'dashboard'             => ['on', 'off'],
         'shell'                 => ['on', 'off'],
         'docker'                => ['on', 'off'],
+        'main'                  => ['on', 'off'],
         'docker_folder_default' => ['expanded', 'collapsed'],
         'docker_show_stats'     => ['on', 'off'],
     ];
@@ -42,16 +44,31 @@ function modernui_validate_settings(array $input): array {
     return ['ok' => true, 'values' => $out];
 }
 
+// Replace / restore the four /Main .page overlays as a unit. Both rely on
+// modernui_main_overlay_table() + modernui_replace_file / restore from
+// install.php + uninstall.php (required by the caller before these run).
+function modernui_replace_main_pages(): void {
+    foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
+        modernui_replace_file($target, $overlaySrc);
+    }
+}
+function modernui_restore_main_pages(): void {
+    foreach (modernui_main_overlay_table() as $target => $_overlaySrc) {
+        modernui_restore_from_backup($target, fn($s) => $s);
+    }
+}
+
 function modernui_handle_post(array $post): array {
-    require_once __DIR__ . '/install.php';   // pulls in modernui_install + modernui_generate_loader_js + modernui_replace_file
+    require_once __DIR__ . '/install.php';   // pulls in modernui_install + modernui_generate_loader_js + modernui_replace_file + modernui_main_overlay_table
     require_once __DIR__ . '/uninstall.php'; // pulls in modernui_restore_from_backup
 
     if (($post['action'] ?? '') === 'disable') {
         modernui_set_disabled(MODERNUI_SETTINGS_DIR, true);
         modernui_generate_loader_js(true);
-        // Restore stock DockerContainers.page so users have a true fallback,
-        // not a "disabled" placeholder. Re-applied on enable below.
+        // Restore stock pages so users have a true fallback, not a "disabled"
+        // placeholder. Re-applied on enable below.
         modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn($s) => $s);
+        modernui_restore_main_pages();
         return ['ok' => true, 'reload' => true];
     }
     if (($post['action'] ?? '') === 'enable') {
@@ -61,6 +78,10 @@ function modernui_handle_post(array $post): array {
             MODERNUI_DOCKER_PAGE,
             MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page'
         );
+        // Only re-apply the Main overlays if the Main layout is set to Modern.
+        if ((modernui_parse_cfg(MODERNUI_SETTINGS_PATH)['main'] ?? 'on') !== 'off') {
+            modernui_replace_main_pages();
+        }
         return ['ok' => true, 'reload' => true];
     }
 
@@ -86,6 +107,19 @@ function modernui_handle_post(array $post): array {
                 MODERNUI_DOCKER_PAGE,
                 MODERNUI_OVERLAY_DIR . '/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page'
             );
+        }
+    }
+
+    // Main layout toggle — same swap-the-file-on-disk semantics. Turning Main
+    // off restores all four stock /Main pages (true fallback for this critical
+    // page); turning it on re-applies our overlays.
+    $main_was = $existing['main'] ?? 'on';
+    $main_now = $v['values']['main'];
+    if ($main_was !== $main_now) {
+        if ($main_now === 'off') {
+            modernui_restore_main_pages();
+        } else {
+            modernui_replace_main_pages();
         }
     }
 

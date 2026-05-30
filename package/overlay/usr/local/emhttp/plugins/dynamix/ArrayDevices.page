@@ -1,0 +1,49 @@
+Menu="Main:1"
+Markdown="false"
+---
+<?PHP
+/* Modern UI replacement for dynamix/ArrayDevices.page (the /Main "Array Devices"
+ * section). /Main is an xmenu composed of Main:1 ArrayDevices, Main:2 CacheDevices,
+ * Main:3 BootDevice, Main:5 ArrayOperation. We replace all four with overlays:
+ * this one carries the single mount point; the others are empty (ArrayOperation
+ * keeps its Nchan attribute so emhttp keeps publishing the live channels).
+ *
+ * The `Title` attribute is intentionally omitted. In both tabbed and tabless
+ * layouts (DefaultPageLayout/MainContent{Tabbed,Tabless}.php), a page with no
+ * Title but with body text renders its content inline — no tab button, no title
+ * box — exactly the behaviour we want for a single full-page mount.
+ *
+ * The front-end bundle (modernui-main.js) mounts <modernui-main-page>, fetches
+ * /plugins/unraid-modernui/include/main-state.php for a snapshot (parsed from
+ * disks.ini + var.ini), then subscribes to Unraid's nchan device/parity/state
+ * channels. Every action reuses Unraid's stock endpoints (update.htm / emcmd,
+ * ToggleState.php, Boot.php) — emhttp does all array work.
+ *
+ * Safe mode / disabled: install.php records each replaced file's SHA. On the
+ * disks_mounted event, upgrade.php restores the stock originals and writes
+ * /boot/config/plugins/unraid-modernui/safemode if any drifted; save.php
+ * restores them on Disable / Main:Stock. Those paths mean the stock page is
+ * normally back on disk before this branch could matter — the guard below is
+ * purely defensive (flag set but our overlay still on disk).
+ */
+$modernui_safemode = is_file('/boot/config/plugins/unraid-modernui/safemode');
+$modernui_disabled = is_file('/boot/config/plugins/unraid-modernui/disabled');
+
+if ($modernui_safemode || $modernui_disabled):
+?>
+<div style="padding:24px;color:#888;font-family:system-ui,sans-serif;">
+  <h2 style="margin:0 0 8px;">Main</h2>
+  <p>Modern UI Main page is currently disabled. Open Settings &rarr; Theme and set
+  <em>Main page layout</em> to <strong>Stock</strong> (or Disable the theme) to restore
+  the stock array/device management UI, or uninstall Modern UI from Plugins.</p>
+</div>
+<?PHP else: ?>
+<!-- Modern UI Main page mount point. Hydrated by modernui-main.js. -->
+<div id="modernui-main-root" data-modernui-main="mounted" data-csrf="<?=htmlspecialchars($var['csrf_token'] ?? '')?>"></div>
+<noscript>
+  <p style="padding:24px;color:#888;font-family:system-ui,sans-serif;">
+    Modern UI Main page requires JavaScript. Append <code>?modernui=off</code> to the URL,
+    or set Settings &rarr; Theme &rarr; Main page layout to Stock, for the stock UI.
+  </p>
+</noscript>
+<?PHP endif; ?>

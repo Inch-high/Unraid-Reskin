@@ -321,7 +321,7 @@ Because a healthy box can't exhibit most of these states on demand, this functio
 - Exact `update.htm` response/redirect behaviour when posting via `fetch` vs the stock hidden `progressFrame` — do we need the iframe, or does `fetch` + manual resync suffice? (Capture on rig.)
 - Does `main-state.php` need `$var['csrf_token']` for the **read** (GET), or only the action POSTs? (Stock GET pages don't; confirm.)
 - Multi-pool boxes: confirm `pool_status_N` / `pool_deviceN` indexing is contiguous and matches `disks.ini` `type=Cache` grouping by pool leader.
-- Whether `/sub/devices` must be subscribed (page `Nchan=` attr preserved) for `emhttp` to keep `disks.ini` fresh, or if `disks.ini` updates regardless. (Affects whether the ArrayOperation overlay must keep the `Nchan=` line — current assumption: keep it.)
+- ~~Whether the ArrayOperation overlay must keep the `Nchan=` line.~~ **Resolved:** `DefaultPageLayout.php` merges every `Main:N` page's `Nchan` attribute (independent of `Title`/body) and starts the workers, so the overlay keeps `Nchan="device_list,disk_load,parity_list"` and the channels publish. Also resolved during Task 3: omitting `Title` (rather than preserving it) makes each overlay a "title-less content page" that renders inline with no tab/section chrome in both `MainContentTabbed.php` and `MainContentTabless.php` — so no need to touch the `Main.page` xmenu stub or force tabless.
 - `update.htm` vs `update.php` for array cmds — confirm which the 7.3.1 form actually targets (capture shows `update.htm`; verify params land).
 
 ## Implementation note for the planning phase

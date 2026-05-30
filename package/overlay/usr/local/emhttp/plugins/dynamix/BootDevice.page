@@ -1,0 +1,8 @@
+Menu="Main:3"
+Markdown="false"
+---
+<?PHP
+/* Modern UI: intentionally empty. The /Main "Boot Device" section is now
+ * rendered by modernui-main.js into #modernui-main-root (see ArrayDevices.page,
+ * Main:1). Title omitted so this page contributes no tab/title chrome. */
+?>

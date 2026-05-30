@@ -21,6 +21,7 @@ $rmotion   = $settings['reduced_motion'] ?? 'auto';
 $dashboard = $settings['dashboard'] ?? 'on';
 $shell     = $settings['shell']     ?? 'on';
 $docker    = $settings['docker']    ?? 'on';
+$main      = $settings['main']      ?? 'on';
 $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
 
 // Unraid's auto_prepend_file (/usr/local/emhttp/webGui/include/local_prepend.php)
@@ -75,6 +76,15 @@ $csrf_token = $var['csrf_token'] ?? '';
       </p>
     </fieldset>
 
+
+    <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
+      <legend>Main page layout</legend>
+      <?= modernui_radio('main', 'on',  'Modern', $main) ?>
+      <?= modernui_radio('main', 'off', 'Stock',  $main) ?>
+      <p style="margin:8px 0 0 0;font-size:12px;color:#666;">
+        Replace <code>/Main</code> (array &amp; device management) with a clean UI: every device with model &amp; serial, state, temperature, reads/writes/errors, filesystem and usage, plus the full Array Operation panel (Start/Stop, parity, spin, encryption key entry). Stock backend (<code>emhttp</code>, parity, spin, shutdown endpoints, nchan) is reused — only the page is ours. Switching to <strong>Stock</strong> restores Unraid's original page files.
+      </p>
+    </fieldset>
 
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Density</legend>

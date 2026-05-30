@@ -142,31 +142,15 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** four `package/overlay/.../dynamix/*.page`, `package/include/install.php`, `package/include/upgrade.php`, `package/include/uninstall.php`, `package/include/save.php`, `package/Theme.page`
 
-- [ ] **Step 1:** Create `package/overlay/usr/local/emhttp/plugins/dynamix/ArrayDevices.page` — preserve the stock header block (`Menu="Main:1"`, `Title`, `Tag`, `Cond`), body emits the mount point + fallback (mirror [DockerContainers.page](../../../package/overlay/usr/local/emhttp/plugins/dynamix.docker.manager/DockerContainers.page)):
-  ```php
-  <?php
-  $safemode = is_file('/boot/config/plugins/unraid-modernui/safemode');
-  $disabled = is_file('/boot/config/plugins/unraid-modernui/disabled');
-  if ($safemode || $disabled): ?>
-    <div style="padding:24px;color:#888;">Modern UI Main page is disabled. To restore stock UI, uninstall Modern UI or Settings → Theme → Disable.</div>
-  <?php else: ?>
-    <div id="modernui-main-root" data-modernui-main="mounted" data-csrf="<?=$var['csrf_token']??''?>"></div>
-    <noscript><p style="padding:24px;color:#888;">Modern UI Main page requires JavaScript. Append <code>?modernui=off</code> for stock UI.</p></noscript>
-  <?php endif; ?>
-  ```
-- [ ] **Step 2:** Create `CacheDevices.page` and `BootDevice.page` overlays — preserve their `Menu="Main:2"`/`Main:3"` headers, empty PHP body (`<?php /* content rendered by modernui-main */ ?>`).
-- [ ] **Step 3:** Create `ArrayOperation.page` overlay — **preserve the full header including `Nchan="device_list,disk_load,parity_list"`** and `Menu="Main:5"`; empty body. (This keeps `emhttp` publishing the live channels.)
-- [ ] **Step 4:** In [install.php](../../../package/include/install.php), add the four dynamix paths to the SHA-keyed `modernui_replace_file` list (follow the `DockerContainers.page` precedent — back up each original by SHA into `backups/`, then copy overlay).
-- [ ] **Step 5:** In `install.php`'s `modernui_generate_loader_js()`, append injection of `modernui-main.js` (alongside dashboard/docker at [install.php:118](../../../package/include/install.php:118)) and add `r.dataset.modernuiMain=` from `$settings['main'] ?? 'on'`.
-- [ ] **Step 6:** In `upgrade.php`, extend the `disks_mounted` SHA-verify loop to all four files; on drift restore all four + write `safemode`. In `uninstall.php`, restore all four originals.
-- [ ] **Step 7:** In `save.php`, accept + persist `main` (on/off). In [Theme.page](../../../package/Theme.page), add a "Main page layout: Modern / Stock" fieldset (clone the Docker fieldset, lines 69–76).
-- [ ] **Step 8:** Build + deploy + verify:
-  ```powershell
-  npm run build
-  $env:MODERNUI_SSH_PORT="2929"; npm run dev-mirror -- root@10.10.10.10
-  ```
-  Open `https://10.10.10.10/Main`, hard-refresh. **Expected:** the stock array/device tables and operation panel are gone; you see an empty `#modernui-main-root` (and console boot log). `?modernui=off` → stock `/Main` returns. Settings → Theme → Main: Stock → stock returns.
-- [ ] **Step 9 (safety check):** Verify uninstall restores all four files byte-for-byte (compare SHAs against `backups/`), and that drifting one file triggers safe mode (touch a stock file, fire `disks_mounted`, confirm restore + flag).
+- [x] **Step 1:** Created `ArrayDevices.page` overlay. **Refinement (verified against the box):** `Title` is *omitted* (not preserved). In both `MainContentTabbed.php` and `MainContentTabless.php`, a page with no `Title` but with body text renders its content inline with no tab button and no title box — the "title-less parent page" path — so the single mount renders chrome-free in both layout modes. Header is just `Menu="Main:1"` + `Markdown="false"`; body emits `#modernui-main-root` (+ `data-csrf`) with a safemode/disabled guard.
+- [x] **Step 2:** Created `CacheDevices.page` (`Main:2`) and `BootDevice.page` (`Main:3`) overlays — `Markdown="false"`, no `Title`, empty body.
+- [x] **Step 3:** Created `ArrayOperation.page` overlay — **preserves `Nchan="device_list,disk_load,parity_list"`** and `Menu="Main:5"`, no `Title`, empty body. (Verified: `DefaultPageLayout` merges every `Main:N` page's `Nchan` regardless of Title/body, so the channels keep publishing.)
+- [x] **Step 4:** Added a shared `modernui_main_overlay_table()` to [install.php](../../../package/include/install.php) and a replace loop in `modernui_install()` (reuses the SHA-backup `modernui_replace_file`).
+- [x] **Step 5:** `modernui_generate_loader_js()` now injects `modernui-main.js` and sets `r.dataset.modernuiMain` from `$settings['main'] ?? 'on'`.
+- [x] **Step 6:** `upgrade.php` tracked-overlay table now includes all four Main pages (drift → restore all + `safemode`); `uninstall.php` restores all four.
+- [x] **Step 7:** `save.php` registers `main` (on/off), adds `modernui_replace_main_pages()`/`modernui_restore_main_pages()`, and wires the toggle + **disable restores stock Main / enable re-applies** (true stock fallback for this critical page). `Theme.page` has a "Main page layout: Modern/Stock" fieldset. Verified: `php -l` clean on all four; `tests/unit-php/install-main-replace.test.php` added and passing; full PHP suite green (except the pre-existing, unrelated `save-docker-autostart` flake).
+- [ ] **Step 8 (DEFERRED — do not deploy a non-functional /Main to production):** The on-rig deploy + visual verify is intentionally held until the page is functional (after Tasks 6/9). Deploying now would replace the production array-management page with an empty mount. Plan: deploy once device tables + operation panel exist, then verify mount + `?modernui=off` + Main:Stock fallback, then immediately confirm restore. **Confirm with the user before first on-rig deploy.**
+- [ ] **Step 9 (safety check — with Step 8):** Verify uninstall restores all four files byte-for-byte (SHAs vs `backups/`), and drift on any one triggers safe mode (restore all + flag). Validated in unit tests; on-box confirmation pairs with Step 8.
 - [ ] Commit `feat(main): replace stock /Main pages with mount point + safe-mode + toggle`.
 
 ---
