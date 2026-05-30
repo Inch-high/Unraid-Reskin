@@ -216,15 +216,10 @@ The Docker rebuild already has a reusable `lifecycle.ts` (visibility-aware nchan
 
 **Files:** `src/ts/main/actions.ts`, `tests/unit-ts/main/actions.test.ts`
 
-- [ ] **Step 1:** `actions.test.ts` — assert each builder returns the exact `{url, params}` from the spec's Endpoints table (use the Task 1 network capture as ground truth): start/stop/format/check(+correct)/sync/clear/pause/resume/cancel/spinAll/spinDisk/clearStats/mover/reboot/shutdown/keyfileDelete. Assert `csrf_token` and `startState` are included where stock includes them.
-- [ ] **Step 2 (encrypted Start — its own tests, against `disks-enc-*.ini`):** assert the `startEncrypted()` builder/sequencer reproduces `prepareInput()` 1:1:
-  - Pool precheck: POST `Report.php {cmd:'state', pools:'<csv>'}`; abort Start on non-empty response.
-  - Passphrase path: reject non-`^[ -~]+$` input (no submit, surfaces the "Printable Characters Only" error); on valid input append `luksKey=base64(passphrase)` (assert exact base64) + `cmdStart=Start` + `startState`.
-  - Keyfile path: POST `update.php {#file:'unused', #include:'webGui/include/KeyUpload.php', file:<dataURL>}` **then** submit Start.
-  - `luksReformat` only included when explicitly enabled; `copy`/retype must equal `text` when reformat is on.
-  - Delete-keyfile builder: `update.php {#file:'unused', #include:'webGui/include/KeyUpload.php', #apply:'Delete'}`.
-- [ ] **Step 3:** Implement `actions.ts` — pure builders + a thin `submit(action)` that POSTs (form-urlencoded; reproduce `target=progressFrame` via hidden iframe or fetch+resync per the Task 1 finding). Take `csrf` + current `varIni`/`EncryptionState` as inputs.
-- [ ] **Step 4:** Green; build.
+- [x] **Step 1:** `actions.test.ts` — asserts each pure builder's exact `{url, params}`: start (plain + maintenance/confirm/parity-valid/reformat/luksKey), stop, format, check(+correct), sync, clear, pause, resume, cancel, ParityControl stamp, spinAll/spinDisk/spinPool, clearStats, mover (Move/Empty), reboot(+safemode)/shutdown, keyfile upload/delete, pool precheck. Plus a `submit()` test proving form-urlencoding + `csrf_token` append.
+- [x] **Step 2 (encrypted Start):** `submitEncryptedStart()` tested as a 1:1 `prepareInput()` sequence — pool precheck aborts on non-empty body (`wrong-pool-state`); non-ASCII passphrase rejected (`bad-passphrase`, **no** start posted, only the precheck call); passphrase path posts `luksKey=base64` + `cmdStart=Start`; keyfile path posts Report → `/update.php` upload → `/update.htm` start in order; `reformat` flows to `luksReformat=on`. (Mode *derivation* stays in PHP/`main-state.test.php`; retype-equality is enforced in the panel UI, Task 9.)
+- [x] **Step 3:** Implemented `actions.ts` — pure builders + `submit()` (fetch, form-urlencoded, `same-origin`, csrf appended; fetch+resync instead of the stock `progressFrame` reload so the page stays mounted) + `submitEncryptedStart` / `submitParityPause` / `submitParityResume` sequencers + `isValidPassphrase`/`base64Passphrase`.
+- [x] **Step 4:** 411 TS tests pass (+17); `src/ts/main` type-clean; builds.
 - [ ] Commit `feat(main): action proxies to stock array/spin/power endpoints (TDD)`.
 
 ---
