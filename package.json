@@ -1,8 +1,8 @@
 {
   "name": "unraid-modernui",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "private": true,
-  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.7: Docker page gains a per-container autostart pin + bulk autostart toggle, a transient \"Starting…\" state for post-action + post-reboot transitions (gated on server uptime so it doesn't misfire on crashed autostart containers), and a kebab menu that escapes folder overflow clipping via fixed positioning. Console/Logs now delegate to Unraid's openTerminal() helper instead of the non-existent Exec.php/Logging.php endpoints. Backend save-docker-autostart.php serializes concurrent writes under flock.",
+  "description": "Clean, flat, responsive theme for Unraid 7.x. v0.5.8: Docker page gains a floating update-progress panel (container name + byte-weighted overall % + inferred download speed, persisted across navigation via sessionStorage) and a one-click \"Update all\" action for every container with an available update. UX fixes: the folder default Expanded/Collapsed control no longer inverts manually-toggled folders, and the row/tag-modal checkbox tick is now mathematically centered (inline SVG). CI runs the TS test suite + asset build on every PR.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",
