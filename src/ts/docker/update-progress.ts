@@ -36,6 +36,11 @@ type Listener = () => void;
 interface Layer {
   percent?: number;   // 0–100
   total?: number;     // bytes; parsed from " X% of <size>" suffix
+  // True for chunked downloads that emit only a running byte count with no
+  // declared total. We can't know their completion ratio, so they're excluded
+  // from the percentage aggregate (otherwise they'd read as a permanent 100%
+  // and inflate it) but still feed the byte/speed totals.
+  chunked?: boolean;
 }
 
 // One byte-rate sample. We keep a short window of these to estimate speed —
@@ -44,6 +49,10 @@ interface Layer {
 interface Sample { at: number; bytes: number }
 
 const SPEED_WINDOW_MS = 2500;
+
+// Coalesce sessionStorage writes during a pull to at most one per this window.
+// See the throttle in createUpdateProgressStore for the rationale.
+const PERSIST_THROTTLE_MS = 750;
 
 // sessionStorage key + TTL for cross-navigation persistence. Without this,
 // navigating away from /Docker and back wipes the progress session, so the
@@ -143,10 +152,36 @@ export interface UpdateProgressStore {
   /** Process one raw nchan payload from /sub/docker. Recovers gracefully from
    *  payloads in unexpected shapes (returns silently). */
   handleMessage(raw: unknown): void;
-  /** Force-reset (e.g. when the page detects updates cleared via the snapshot
-   *  but the _DONE_ marker was missed because the tab was hidden). */
-  reset(): void;
   subscribe(fn: Listener): () => void;
+}
+
+/** Which container the panel should render as the single "active" card, and
+ *  which remaining names are "queued". Kept as a pure function so the panel's
+ *  trickiest branch — reconciling the restored progress session against the
+ *  live updating set — is unit-testable without a DOM. */
+export interface PanelView {
+  active: { name: string; data: UpdateProgress | null } | null;
+  queued: string[];
+}
+
+export function selectPanelView(updating: Set<string>, active: UpdateProgress | null): PanelView {
+  // Prefer the progress store's active container, but only if it's still in the
+  // live updating set — on a nav-in, the restored session may point at a
+  // container that already finished (reconcileUpdating dropped it).
+  const knownActive = active && active.name && updating.has(active.name)
+    ? { name: active.name, data: active }
+    : null;
+  // Fallback: exactly one container updating and no name match yet (fresh
+  // nav-in before any progress message). Promote it to active-with-no-data so
+  // it renders an indeterminate card instead of a misleading "Queued".
+  let renderableActive: PanelView['active'] = knownActive;
+  if (!renderableActive && updating.size === 1) {
+    const [only] = updating;
+    renderableActive = { name: only, data: active };
+  }
+  const queued: string[] = [];
+  for (const n of updating) if (!renderableActive || n !== renderableActive.name) queued.push(n);
+  return { active: renderableActive, queued };
 }
 
 // Format-string parser shared across the impl. Matches "X.Y UNIT" where UNIT
@@ -203,10 +238,34 @@ export function createUpdateProgressStore(
   let active: Internal | null = restored?.active ?? null;
   let activeName: string | null = restored?.activeName ?? null;
   const listeners = new Set<Listener>();
-  const notify = (): void => {
-    // Persist on every state change. Cheap (small payload, sync write) and
-    // means we never lose more than the most recent message on a hard nav.
+
+  // Persistence is throttled. Docker emits dozens of `progress` messages per
+  // second across layers; a synchronous JSON.stringify + sessionStorage.setItem
+  // on every one is a main-thread write storm during the exact window we want
+  // the UI to stay smooth. So:
+  //   • structural changes (new container, phase flip, batch done, restore)
+  //     persist immediately — these are what matters for "don't blank the
+  //     panel on nav", and they're rare.
+  //   • fine-grained progress updates schedule a coalesced trailing write at
+  //     most once per PERSIST_THROTTLE_MS.
+  // Worst case on a hard nav we lose up to PERSIST_THROTTLE_MS of percent
+  // granularity, never the active container/phase.
+  let persistTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastPersistAt = 0;
+  const persistNow = (): void => {
+    if (persistTimer !== null) { clearTimeout(persistTimer); persistTimer = null; }
+    lastPersistAt = Date.now();
     saveToStorage(active, activeName);
+  };
+  const schedulePersist = (): void => {
+    if (persistTimer !== null) return;   // trailing write already queued
+    const elapsed = Date.now() - lastPersistAt;
+    if (elapsed >= PERSIST_THROTTLE_MS) { persistNow(); return; }
+    persistTimer = setTimeout(persistNow, PERSIST_THROTTLE_MS - elapsed);
+  };
+  const notify = (persist: 'now' | 'throttle' = 'now'): void => {
+    if (persist === 'now') persistNow();
+    else schedulePersist();
     for (const l of listeners) l();
   };
 
@@ -214,21 +273,35 @@ export function createUpdateProgressStore(
     if (!active) return null;
     let percentSum = 0;
     let layerCount = 0;
-    let totalSum = 0;
-    let downloadedSum = 0;
+    let totalSum = 0;        // all layers with a total (incl. chunked) — for display/speed
+    let downloadedSum = 0;   // all downloaded bytes (incl. chunked)
+    let knownTotal = 0;      // layers with a real declared total (excl. chunked) — for %
+    let knownDownloaded = 0;
     for (const layer of active.layers.values()) {
       if (layer.percent !== undefined) {
         percentSum += layer.percent;
         layerCount += 1;
       }
       if (layer.total !== undefined && layer.percent !== undefined) {
+        const d = (layer.total * layer.percent) / 100;
         totalSum += layer.total;
-        downloadedSum += (layer.total * layer.percent) / 100;
+        downloadedSum += d;
+        if (!layer.chunked) {
+          knownTotal += layer.total;
+          knownDownloaded += d;
+        }
       }
     }
+    // Byte-weighted across layers with a known total — monotonic and size-aware,
+    // unlike a raw mean of per-layer percents (which moves backwards when a
+    // fresh layer joins at 0%), and ignoring chunked layers whose ratio we
+    // can't know. Falls back to the per-layer mean only when no layer has
+    // declared a real total yet (e.g. an all-chunked pull).
     const percent = active.phase === 'recreating'
       ? 100
-      : (layerCount > 0 ? percentSum / layerCount : 0);
+      : (knownTotal > 0
+          ? Math.min(100, (knownDownloaded / knownTotal) * 100)
+          : (layerCount > 0 ? percentSum / layerCount : 0));
 
     let speedBps: number | null = null;
     if (active.phase === 'pulling' && active.samples.length >= 2) {
@@ -329,14 +402,18 @@ export function createUpdateProgressStore(
         if (ofM) {
           const bytes = parseBytesField(ofM[1]);
           if (bytes > 0) layer.total = bytes;
-        } else if (layer.percent === undefined) {
-          // No "% of" → chunked, total unknown. Best-effort: take the bytes
-          // value as both total and progress so it contributes to the speed
-          // estimate but doesn't poison the percentage aggregate.
+        } else if (!pctM) {
+          // No "%" and no "of" → chunked download: a running cumulative byte
+          // count with no declared total. Guard on the message (`!pctM`), not
+          // the layer, so each chunk advances the byte count — guarding on
+          // `layer.percent` froze it after the first chunk. Flagged `chunked`
+          // so it feeds the byte/speed totals but is left out of the % aggregate
+          // (we can't know its completion ratio).
           const bytes = parseBytesField(text);
           if (bytes > 0) {
             layer.total = bytes;
             layer.percent = 100;
+            layer.chunked = true;
           }
         }
         active.layers.set(id, layer);
@@ -349,18 +426,11 @@ export function createUpdateProgressStore(
           }
         }
         stampSample(downloadedSum, Date.now());
-        notify();
+        notify('throttle');
         return;
       }
 
       // Other commands (addToID, show_Wait, stop_Wait) — ignored.
-    },
-
-    reset() {
-      if (!active && !activeName) return;
-      active = null;
-      activeName = null;
-      notify();
     },
 
     subscribe(fn) {

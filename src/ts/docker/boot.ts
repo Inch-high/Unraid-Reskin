@@ -225,10 +225,12 @@ export async function boot(): Promise<void> {
   // anyway, and (b) missing messages would leave the panel stuck on stale
   // data when the user comes back. If progress drifts, the next progress
   // event refreshes it and reconcileUpdating() picks up completion.
-  const Nchan = (window as { NchanSubscriber?: new (url: string, opts?: Record<string, unknown>) => { on(e: string, f: (...a: unknown[]) => void): void; start(): void } }).NchanSubscriber;
+  // Reuses the global NchanSubscriber type declared in lifecycle.ts. No
+  // visibility gating here (unlike createLiveSubscription) — see the note above.
+  const Nchan = window.NchanSubscriber;
   if (Nchan) {
     const sub = new Nchan('/sub/docker', { subscriber: 'websocket' });
-    sub.on('message', (raw: unknown) => progressStore.handleMessage(raw));
+    sub.on('message', (raw) => progressStore.handleMessage(raw));
     sub.start();
   }
 }

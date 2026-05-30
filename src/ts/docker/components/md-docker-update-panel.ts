@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { DockerStore } from '../store';
 import type { UpdateProgressStore } from '../update-progress';
+import { selectPanelView } from '../update-progress';
 import { formatBytes } from '../format';
 
 // Floating right-side panel that surfaces in-flight docker update progress.
@@ -112,6 +113,10 @@ export class MdDockerUpdatePanel extends LitElement {
   @state() private _tick = 0;
 
   setStores(docker: DockerStore, progress: UpdateProgressStore): void {
+    // Called from the page's updated() after every render. Genuinely
+    // idempotent: re-wiring the same store pair would needlessly churn
+    // subscriptions, so bail when nothing changed.
+    if (this._docker === docker && this._progress === progress) return;
     this._unsubDocker?.();
     this._unsubProgress?.();
     this._docker = docker;
@@ -131,30 +136,18 @@ export class MdDockerUpdatePanel extends LitElement {
     const updating = this._docker.getUpdating();
     if (updating.size === 0) return nothing;
 
-    const active = this._progress.getActive();
-    // Restored from sessionStorage on page nav: active.name could point at a
-    // container that finished while we were away (reconcileUpdating would
-    // have dropped it from the updating set on the new snapshot). Guard so
-    // we don't render a stale active card.
-    const knownActive = active && active.name && updating.has(active.name)
-      ? { name: active.name, data: active }
-      : null;
-    // Fallback when no name is matched but exactly one container is in flight
-    // (common case on a fresh nav-in before any progress message arrives):
-    // promote that one to "active with indeterminate state" so it doesn't
-    // sit on a misleading "Queued" label.
-    let renderableActive: { name: string; data: ReturnType<UpdateProgressStore['getActive']> } | null = knownActive;
-    if (!renderableActive && updating.size === 1) {
-      const [only] = updating;
-      renderableActive = { name: only, data: active }; // data may be null — _renderActive handles it
-    }
-
-    const queued: string[] = [];
-    for (const n of updating) if (!renderableActive || n !== renderableActive.name) queued.push(n);
+    // Reconcile the restored progress session against the live updating set.
+    // See selectPanelView for the stale-active + single-container fallback
+    // rules (extracted + unit-tested there).
+    const { active: renderableActive, queued } = selectPanelView(updating, this._progress.getActive());
 
     return html`
-      <div class="panel" role="status" aria-live="polite">
-        <div class="head">
+      <div class="panel">
+        <!-- Live region scoped to the count line only. The per-card percentages
+             change dozens of times a second during a pull; announcing those
+             would flood a screen reader. The "Updating N containers" summary
+             changes rarely and is the genuinely useful announcement. -->
+        <div class="head" role="status" aria-live="polite">
           <span class="sp"></span>
           Updating ${updating.size} container${updating.size === 1 ? '' : 's'}
         </div>
