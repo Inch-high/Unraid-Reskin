@@ -32,7 +32,16 @@ $disks = [[
     ]],
 ]];
 
-$state = modernui_ud_state($disks, $smb, $iso);
+// UD config (serial-keyed). [Config] is skipped; serials present in $disks are
+// not historical; the rest are previous devices.
+$config = [
+    'Config'                  => ['destructive_mode' => ''],
+    'WDC_WD40_ABC123'         => ['unassigned_dev' => 'sdz'],        // currently attached → NOT historical
+    'KINGSTON_SNV3S1000G_50026B768724BA9E' => ['unassigned_dev' => 'dev1', 'mountpoint.1' => '/mnt/disks/dev1'],
+    'Seagate_ZP2000GM30063_D3300D81'       => ['unassigned_dev' => 'dev2'],
+];
+
+$state = modernui_ud_state($disks, $smb, $iso, $config);
 $json = json_encode($state);
 
 // --- credential leakage guard (the critical one) ---------------------------
@@ -67,6 +76,16 @@ assert($p['mounted'] === true, 'partition mounted bool');
 assert($p['fsType'] === 'xfs', 'fstype mapped to fsType');
 
 assert($state['available'] === true, 'state available');
+
+// --- historical / previous devices -----------------------------------------
+$hist = $state['historical'];
+$histSerials = array_column($hist, 'serial');
+assert(!in_array('Config', $histSerials, true), '[Config] section excluded from historical');
+assert(!in_array('WDC_WD40_ABC123', $histSerials, true), 'currently-attached disk excluded from historical');
+assert(in_array('KINGSTON_SNV3S1000G_50026B768724BA9E', $histSerials, true), 'absent device IS historical');
+$k = null; foreach ($hist as $h) if ($h['serial'] === 'KINGSTON_SNV3S1000G_50026B768724BA9E') $k = $h;
+assert($k['device'] === 'dev1', 'historical remembers the assigned device name');
+assert($k['mountpoint'] === 'dev1', 'historical mountpoint is the basename of mountpoint.1');
 
 echo "all ud-state tests passed\n";
 exit(0);

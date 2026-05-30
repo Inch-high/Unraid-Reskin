@@ -2,7 +2,7 @@ import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MdMainCardBase } from './md-main-card';
 import './md-main-device-row';
-import type { UnassignedState, UnassignedDisk, UnassignedRemote } from '../types';
+import type { UnassignedState, UnassignedDisk, UnassignedRemote, UnassignedHistorical } from '../types';
 import { formatBytes, formatTemp, formatPct } from '../format';
 import * as A from '../actions';
 
@@ -85,6 +85,21 @@ export class MdMainUnassignedCard extends MdMainCardBase {
     return [head, ...parts];
   }
 
+  private _historicalRow(h: UnassignedHistorical) {
+    return html`
+      <div class="ud-row">
+        <div class="name"><span class="primary">${h.device}</span>
+          <span class="sub"><span class="dot off"></span>${h.standby ? 'standby (remembered)' : 'offline (remembered)'}</span></div>
+        <div class="mono">${h.serial}${h.mountpoint ? html` · ${h.mountpoint}` : ''}</div>
+        <div class="right"><span class="dash">—</span></div>
+        <div class="num"><span class="dash">—</span></div>
+        <div class="num"><span class="dash">—</span></div>
+        <div class="num"><span class="dash">—</span></div>
+        <div></div>
+        <div class="right"><span class="dash">—</span></div>
+      </div>`;
+  }
+
   private _remoteRow(r: UnassignedRemote) {
     const label = r.protocol === 'root' ? 'iso' : r.protocol;
     return html`
@@ -106,6 +121,7 @@ export class MdMainUnassignedCard extends MdMainCardBase {
     if (!s || !s.available) return html``;
     const hasDisks = s.disks.length > 0;
     const hasRemotes = s.remotes.length > 0;
+    const hasHistorical = (s.historical?.length ?? 0) > 0;
     return html`
       <div class="card">
         <div class="card-head"><div class="title"><h2>Unassigned Devices</h2></div></div>
@@ -116,10 +132,13 @@ export class MdMainUnassignedCard extends MdMainCardBase {
         </div>
         ${hasDisks ? s.disks.map((d) => this._diskRows(d)) : html`<div class="empty">No unassigned disks.</div>`}
         ${hasRemotes
-          ? html`<div class="subhead">Remote shares</div>${s.remotes.map((r) => this._remoteRow(r))}`
+          ? html`<div class="subhead">Remote SMB / NFS / ISO shares</div>${s.remotes.map((r) => this._remoteRow(r))}`
+          : html`<div class="subhead">Remote SMB / NFS / ISO shares</div><div class="empty">No remote shares configured.</div>`}
+        ${hasHistorical
+          ? html`<div class="subhead">Historical (previous) devices</div>${s.historical.map((h) => this._historicalRow(h))}`
           : ''}
-        <div class="footnote">Format, preclear, per-device settings, scripts, and adding remote shares:
-          use Settings → Theme → <strong>Main: Stock</strong>.</div>
+        <div class="footnote">Format, preclear, per-device settings, scripts, adding remote shares, and removing
+          historical devices: use Settings → Theme → <strong>Main: Stock</strong>.</div>
       </div>
     `;
   }

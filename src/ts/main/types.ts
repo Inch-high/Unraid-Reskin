@@ -201,8 +201,18 @@ export interface UnassignedRemote {
   freeBytes: number | null;
 }
 
+// A previously-seen device the plugin remembers (in its config) but which is
+// not currently attached.
+export interface UnassignedHistorical {
+  serial: string;
+  device: string;            // remembered device name (or 'none')
+  mountpoint: string;        // last mount point (basename)
+  standby: boolean;          // by-id symlink present → spun down vs fully offline
+}
+
 export interface UnassignedState {
   available: boolean;        // plugin present AND our suppression overlay active
   disks: UnassignedDisk[];
   remotes: UnassignedRemote[];
+  historical: UnassignedHistorical[];
 }

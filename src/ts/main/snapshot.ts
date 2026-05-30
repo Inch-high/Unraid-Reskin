@@ -34,9 +34,9 @@ export async function fetchUnassigned(): Promise<UnassignedState> {
       credentials: 'same-origin',
       cache: 'no-store',
     });
-    if (!res.ok) return { available: false, disks: [], remotes: [] };
+    if (!res.ok) return { available: false, disks: [], remotes: [], historical: [] };
     return (await res.json()) as UnassignedState;
   } catch {
-    return { available: false, disks: [], remotes: [] };
+    return { available: false, disks: [], remotes: [], historical: [] };
   }
 }

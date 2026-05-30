@@ -76,15 +76,53 @@ function modernui_ud_disk(array $d): array {
     ];
 }
 
+// Historical ("previous") devices — entries the plugin remembers in its config
+// (keyed by serial) that are NOT currently attached. Reproduces the historical
+// block in UnassignedDevices.php: skip the [Config] section and any serial that
+// matches a currently-present disk; expose the remembered device name + last
+// mount point. `standby` mirrors stock (a by-id symlink exists → spun down vs
+// fully offline).
+function modernui_ud_historical(array $config, array $currentSerials): array {
+    $out = [];
+    foreach ($config as $serial => $value) {
+        if ($serial === 'Config' || !is_array($value)) continue;
+        $present = false;
+        foreach ($currentSerials as $s) {
+            if ($s !== '' && (strpos($s, $serial) !== false || strpos($serial, $s) !== false)) { $present = true; break; }
+        }
+        if ($present) continue;
+        $dev = (string)($value['unassigned_dev'] ?? '');
+        $mp  = isset($value['mountpoint.1']) ? basename((string)$value['mountpoint.1']) : '';
+        $byId = @glob('/dev/disk/by-id/*-' . $serial . '*');
+        $out[] = [
+            'serial'     => (string)$serial,
+            'device'     => $dev !== '' ? $dev : 'none',
+            'mountpoint' => $mp,
+            'standby'    => is_array($byId) && count($byId) > 0,
+        ];
+    }
+    return $out;
+}
+
 // Build the normalized state from the plugin's data functions. Pass the raw
 // arrays in for testability (the HTTP path reads them live).
-function modernui_ud_state(array $rawDisks, array $smb, array $iso): array {
+function modernui_ud_state(array $rawDisks, array $smb, array $iso, array $config = []): array {
     $disks = [];
-    foreach ($rawDisks as $d) if (is_array($d)) $disks[] = modernui_ud_disk($d);
+    $currentSerials = [];
+    foreach ($rawDisks as $d) {
+        if (!is_array($d)) continue;
+        $disks[] = modernui_ud_disk($d);
+        if (!empty($d['serial'])) $currentSerials[] = (string)$d['serial'];
+    }
     $remotes = [];
     foreach ($smb as $m) if (is_array($m)) $remotes[] = modernui_ud_remote($m);
     foreach ($iso as $m) if (is_array($m)) $remotes[] = modernui_ud_remote($m);
-    return ['available' => true, 'disks' => $disks, 'remotes' => $remotes];
+    return [
+        'available'  => true,
+        'disks'      => $disks,
+        'remotes'    => $remotes,
+        'historical' => modernui_ud_historical($config, $currentSerials),
+    ];
 }
 
 // True only when the plugin is installed AND our suppression overlay is the
@@ -103,12 +141,14 @@ if (PHP_SAPI !== 'cli') {
     if (is_file('/boot/config/plugins/unraid-modernui/disabled')
         || is_file('/boot/config/plugins/unraid-modernui/safemode')
         || !modernui_ud_available()) {
-        echo json_encode(['available' => false, 'disks' => [], 'remotes' => []]);
+        echo json_encode(['available' => false, 'disks' => [], 'remotes' => [], 'historical' => []]);
         return;
     }
     require_once MODERNUI_UD_LIB;
     $disks = function_exists('get_all_disks_info') ? (array)get_all_disks_info() : [];
     $smb   = function_exists('get_samba_mounts')   ? (array)get_samba_mounts()   : [];
     $iso   = function_exists('get_iso_mounts')     ? (array)get_iso_mounts()     : [];
-    echo json_encode(modernui_ud_state($disks, $smb, $iso));
+    // lib.php populates $ud_config (serial-keyed plugin config) at global scope.
+    $config = isset($GLOBALS['ud_config']) && is_array($GLOBALS['ud_config']) ? $GLOBALS['ud_config'] : [];
+    echo json_encode(modernui_ud_state($disks, $smb, $iso, $config));
 }

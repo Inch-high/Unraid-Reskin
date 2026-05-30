@@ -24,16 +24,16 @@ afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = ''; });
 
 describe('md-main-unassigned-card', () => {
   it('renders nothing when unavailable', async () => {
-    const el = await mount({ available: false, disks: [], remotes: [] });
+    const el = await mount({ available: false, disks: [], remotes: [], historical: [] });
     expect(el.shadowRoot!.querySelector('.card')).toBeNull();
   });
 
   it('renders remote shares with mount state and an Unmount button', async () => {
-    const el = await mount({ available: true, disks: [], remotes: [remote()] });
+    const el = await mount({ available: true, disks: [], remotes: [remote()], historical: [] });
     const txt = el.shadowRoot!.textContent ?? '';
     expect(txt).toContain('Unassigned Devices');
     expect(txt).toContain('192.168.10.99_Backups');
-    expect(txt).toContain('Remote shares');
+    expect(txt).toContain('Remote SMB');
     const btn = el.shadowRoot!.querySelector('button') as HTMLButtonElement;
     expect(btn.textContent?.trim()).toBe('Unmount');   // mounted → Unmount
   });
@@ -41,7 +41,7 @@ describe('md-main-unassigned-card', () => {
   it('Mount/Unmount POSTs to the plugin endpoint with the device id', async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, status: 200, text: async () => 'true' }));
     vi.stubGlobal('fetch', fetchMock);
-    const el = await mount({ available: true, disks: [], remotes: [remote({ mounted: false })] });
+    const el = await mount({ available: true, disks: [], remotes: [remote({ mounted: false })], historical: [] });
     const btn = el.shadowRoot!.querySelector('button') as HTMLButtonElement;
     expect(btn.textContent?.trim()).toBe('Mount');
     btn.click();
@@ -53,9 +53,18 @@ describe('md-main-unassigned-card', () => {
   });
 
   it('shows the empty-disks note and the advanced-ops footnote', async () => {
-    const el = await mount({ available: true, disks: [], remotes: [] });
+    const el = await mount({ available: true, disks: [], remotes: [], historical: [{ serial: "KINGSTON_X", device: "dev1", mountpoint: "dev1", standby: false }] });
     const txt = el.shadowRoot!.textContent ?? '';
     expect(txt).toContain('No unassigned disks');
     expect(txt).toMatch(/Main: Stock/);
+  });
+
+  it('renders historical / previous devices', async () => {
+    const el = await mount({ available: true, disks: [], remotes: [],
+      historical: [{ serial: 'KINGSTON_SNV3S1000G_X', device: 'dev1', mountpoint: 'dev1', standby: false }] });
+    const txt = el.shadowRoot!.textContent ?? '';
+    expect(txt).toContain('Historical');
+    expect(txt).toContain('KINGSTON_SNV3S1000G_X');
+    expect(txt).toContain('dev1');
   });
 });
