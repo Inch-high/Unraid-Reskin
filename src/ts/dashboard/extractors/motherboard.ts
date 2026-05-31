@@ -24,7 +24,8 @@ export const motherboardExtractor: Extractor<MotherboardState> = {
   match: ({ source }) => {
     const titleAttr = source.getAttribute('title')?.toUpperCase() ?? '';
     if (titleAttr.includes('MOTHERBOARD')) return true;
-    const headerText = source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
+    const headerText =
+      source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
     return headerText.includes('MOTHERBOARD');
   },
   extract: ({ source }) => {

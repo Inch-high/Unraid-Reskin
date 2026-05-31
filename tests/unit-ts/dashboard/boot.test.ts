@@ -40,7 +40,9 @@ describe('dashboard DOM walk — multi-table', () => {
         <tbody id="pool_list0"><tr><td>cache</td></tr></tbody>
       </table>
     `;
-    const ids = collectDashboardTbodies().map((t) => t.id).filter(Boolean);
+    const ids = collectDashboardTbodies()
+      .map((t) => t.id)
+      .filter(Boolean);
     expect(ids).toEqual(['tblGPUDash1', 'docker_view', 'tblIPMIDash', 'array_list', 'pool_list0']);
     expect(collectDashboardTbodies().length).toBe(6); // 5 ids + 1 title-only
   });

@@ -12,24 +12,24 @@ export interface ActionRequest {
   params: Record<string, string>;
 }
 
-const UPDATE_HTM = '/update.htm';                              // array/parity/mover cmds → emcmd
-const UPDATE_PHP = '/update.php';                              // keyfile upload / delete
-const TOGGLE     = '/webGui/include/ToggleState.php';          // spin up/down, clear stats
-const BOOT       = '/webGui/include/Boot.php';                 // reboot / shutdown
-const PARITY_CTL = '/webGui/include/ParityControl.php';        // pause/resume timestamps
-const REPORT     = '/webGui/include/Report.php';               // pool-state precheck
+const UPDATE_HTM = '/update.htm'; // array/parity/mover cmds → emcmd
+const UPDATE_PHP = '/update.php'; // keyfile upload / delete
+const TOGGLE = '/webGui/include/ToggleState.php'; // spin up/down, clear stats
+const BOOT = '/webGui/include/Boot.php'; // reboot / shutdown
+const PARITY_CTL = '/webGui/include/ParityControl.php'; // pause/resume timestamps
+const REPORT = '/webGui/include/Report.php'; // pool-state precheck
 
 const KEYUPLOAD_INCLUDE = 'webGui/include/KeyUpload.php';
 
 // ---- Array start / stop / format ----------------------------------------
 
 export interface StartOpts {
-  mdState: string;          // current var.ini mdState → startState hidden field
+  mdState: string; // current var.ini mdState → startState hidden field
   startMode?: 'Normal' | 'Maintenance';
-  luksKeyB64?: string;      // base64 of the passphrase, when encrypted
-  luksReformat?: boolean;   // "permit reformat" (data-destructive; guarded in UI)
-  parityValid?: boolean;    // NEW_ARRAY "Parity is already valid" → md_invalidslot=99
-  confirmStart?: boolean;   // DISABLE_DISK / missing-pool-disk confirm checkbox
+  luksKeyB64?: string; // base64 of the passphrase, when encrypted
+  luksReformat?: boolean; // "permit reformat" (data-destructive; guarded in UI)
+  parityValid?: boolean; // NEW_ARRAY "Parity is already valid" → md_invalidslot=99
+  confirmStart?: boolean; // DISABLE_DISK / missing-pool-disk confirm checkbox
 }
 
 export function buildStart(opts: StartOpts): ActionRequest {
@@ -38,7 +38,7 @@ export function buildStart(opts: StartOpts): ActionRequest {
   if (opts.luksKeyB64) params.luksKey = opts.luksKeyB64;
   if (opts.luksReformat) params.luksReformat = 'on';
   if (opts.parityValid) params.md_invalidslot = '99';
-  if (opts.confirmStart) params.confirmStart = 'OFF';   // stock checkbox value; presence = confirmed
+  if (opts.confirmStart) params.confirmStart = 'OFF'; // stock checkbox value; presence = confirmed
   return { url: UPDATE_HTM, params };
 }
 
@@ -47,7 +47,10 @@ export function buildStop(mdState: string): ActionRequest {
 }
 
 export function buildFormat(unmountableMask: string): ActionRequest {
-  return { url: UPDATE_HTM, params: { cmdFormat: 'Format', unmountable_mask: unmountableMask, confirmFormat: 'OFF' } };
+  return {
+    url: UPDATE_HTM,
+    params: { cmdFormat: 'Format', unmountable_mask: unmountableMask, confirmFormat: 'OFF' },
+  };
 }
 
 // ---- Parity / sync / clear ------------------------------------------------
@@ -57,11 +60,21 @@ export function buildParityCheck(correcting: boolean): ActionRequest {
   if (correcting) params.optionCorrect = 'correct';
   return { url: UPDATE_HTM, params };
 }
-export function buildSync(): ActionRequest  { return { url: UPDATE_HTM, params: { cmdCheckSync: 'Sync' } }; }
-export function buildClear(): ActionRequest { return { url: UPDATE_HTM, params: { cmdCheckClear: 'Clear' } }; }
-export function buildParityPause(): ActionRequest  { return { url: UPDATE_HTM, params: { cmdCheckPause: 'Pause' } }; }
-export function buildParityResume(): ActionRequest { return { url: UPDATE_HTM, params: { cmdCheckResume: 'Resume' } }; }
-export function buildParityCancel(): ActionRequest { return { url: UPDATE_HTM, params: { cmdCheckCancel: '' } }; }
+export function buildSync(): ActionRequest {
+  return { url: UPDATE_HTM, params: { cmdCheckSync: 'Sync' } };
+}
+export function buildClear(): ActionRequest {
+  return { url: UPDATE_HTM, params: { cmdCheckClear: 'Clear' } };
+}
+export function buildParityPause(): ActionRequest {
+  return { url: UPDATE_HTM, params: { cmdCheckPause: 'Pause' } };
+}
+export function buildParityResume(): ActionRequest {
+  return { url: UPDATE_HTM, params: { cmdCheckResume: 'Resume' } };
+}
+export function buildParityCancel(): ActionRequest {
+  return { url: UPDATE_HTM, params: { cmdCheckCancel: '' } };
+}
 // Pause/resume first stamp ParityControl.php, then the cmd above is posted.
 export function buildParityControlStamp(action: 'pause' | 'resume'): ActionRequest {
   return { url: PARITY_CTL, params: { action } };
@@ -99,10 +112,16 @@ export function buildShutdown(): ActionRequest {
 // ---- Encryption -----------------------------------------------------------
 
 export function buildKeyfileUpload(dataUrl: string): ActionRequest {
-  return { url: UPDATE_PHP, params: { '#file': 'unused', '#include': KEYUPLOAD_INCLUDE, file: dataUrl } };
+  return {
+    url: UPDATE_PHP,
+    params: { '#file': 'unused', '#include': KEYUPLOAD_INCLUDE, file: dataUrl },
+  };
 }
 export function buildDeleteKeyfile(): ActionRequest {
-  return { url: UPDATE_PHP, params: { '#file': 'unused', '#include': KEYUPLOAD_INCLUDE, '#apply': 'Delete' } };
+  return {
+    url: UPDATE_PHP,
+    params: { '#file': 'unused', '#include': KEYUPLOAD_INCLUDE, '#apply': 'Delete' },
+  };
 }
 export function buildPoolPrecheck(poolNames: string[]): ActionRequest {
   return { url: REPORT, params: { cmd: 'state', pools: poolNames.join(',') } };
@@ -154,11 +173,11 @@ export async function submit(req: ActionRequest, csrfToken: string): Promise<Res
 // ---- Encrypted-start sequencer (prepareInput 1:1) -------------------------
 
 export interface EncryptedStartInput {
-  start: StartOpts;                 // base start opts (mdState, startMode, parityValid, confirmStart)
-  poolNames: string[];              // for the Report.php precheck
-  passphrase?: string;             // text method
-  keyfileDataUrl?: string;         // keyfile method (already read to a base64 data URL)
-  reformat?: boolean;              // permit reformat (guarded upstream)
+  start: StartOpts; // base start opts (mdState, startMode, parityValid, confirmStart)
+  poolNames: string[]; // for the Report.php precheck
+  passphrase?: string; // text method
+  keyfileDataUrl?: string; // keyfile method (already read to a base64 data URL)
+  reformat?: boolean; // permit reformat (guarded upstream)
 }
 
 export type EncryptedStartResult =

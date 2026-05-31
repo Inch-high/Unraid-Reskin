@@ -5,15 +5,32 @@ import type { MainDevice } from '../../../src/ts/main/types';
 
 function device(over: Partial<MainDevice> = {}): MainDevice {
   return {
-    name: 'disk1', role: 'data', deviceType: 'hdd', linuxDevice: 'sdk',
-    model: 'ST12000VN0008-2YS101', serial: 'ZRT0Q2AK',
-    status: 'ok', spin: 'active', spunDown: false, tempC: 38,
-    numReads: 1611274, numWrites: 909, numErrors: 0,
-    fsType: 'xfs', encrypted: false, luksState: null,
-    sizeBytes: 12_000_138_571_776, fsSizeBytes: 11_997_984_796_672,
-    fsUsedBytes: 9_000_020_344_832, fsFreeBytes: 2_997_964_451_840,
-    utilizationPct: 75, color: 'green-on', orb: 'green', smart: 'healthy',
-    detailHref: '/Main/Device?name=disk1', ...over,
+    name: 'disk1',
+    role: 'data',
+    deviceType: 'hdd',
+    linuxDevice: 'sdk',
+    model: 'ST12000VN0008-2YS101',
+    serial: 'ZRT0Q2AK',
+    status: 'ok',
+    spin: 'active',
+    spunDown: false,
+    tempC: 38,
+    numReads: 1611274,
+    numWrites: 909,
+    numErrors: 0,
+    fsType: 'xfs',
+    encrypted: false,
+    luksState: null,
+    sizeBytes: 12_000_138_571_776,
+    fsSizeBytes: 11_997_984_796_672,
+    fsUsedBytes: 9_000_020_344_832,
+    fsFreeBytes: 2_997_964_451_840,
+    utilizationPct: 75,
+    color: 'green-on',
+    orb: 'green',
+    smart: 'healthy',
+    detailHref: '/Main/Device?name=disk1',
+    ...over,
   };
 }
 
@@ -28,12 +45,14 @@ async function mount(d: MainDevice, util: 'bar' | 'ring' = 'bar'): Promise<MdMai
 
 describe('md-main-device-tile', () => {
   it('renders name, model, type tag, and detail link', async () => {
-    const el = await mount(device({ deviceType: 'nvme', name: 'cache', detailHref: '/Main/Device?name=cache' }));
+    const el = await mount(
+      device({ deviceType: 'nvme', name: 'cache', detailHref: '/Main/Device?name=cache' }),
+    );
     const txt = el.shadowRoot!.textContent ?? '';
     expect(txt).toContain('cache');
     expect(txt).toContain('ST12000VN0008-2YS101');
-    expect(txt).toContain('NVMe');                       // type tag label
-    expect(el.getAttribute('data-type')).toBe('nvme');   // host hook for accent icon
+    expect(txt).toContain('NVMe'); // type tag label
+    expect(el.getAttribute('data-type')).toBe('nvme'); // host hook for accent icon
     expect(el.shadowRoot!.querySelector('a')?.getAttribute('href')).toBe('/Main/Device?name=cache');
   });
 
@@ -42,7 +61,7 @@ describe('md-main-device-tile', () => {
     expect(el.hasAttribute('data-standby')).toBe(true);
     const txt = el.shadowRoot!.textContent ?? '';
     expect(txt).toContain('standby');
-    expect(txt).toContain('—');                          // temp dash
+    expect(txt).toContain('—'); // temp dash
   });
 
   it('flags a problem device (red border hook + red name)', async () => {
@@ -65,12 +84,21 @@ describe('md-main-device-tile', () => {
     const ring = el.shadowRoot!.querySelector('.ring') as HTMLElement;
     expect(ring).not.toBeNull();
     expect(ring.getAttribute('style')).toContain('--p:95');
-    expect(ring.classList.contains('full')).toBe(true);  // ≥95 → danger
+    expect(ring.classList.contains('full')).toBe(true); // ≥95 → danger
     expect(el.shadowRoot!.querySelector('.bar')).toBeNull();
   });
 
   it('shows a no-filesystem caption for parity instead of a gauge', async () => {
-    const el = await mount(device({ name: 'parity', role: 'parity', fsType: null, utilizationPct: null, fsSizeBytes: null, fsUsedBytes: null }));
+    const el = await mount(
+      device({
+        name: 'parity',
+        role: 'parity',
+        fsType: null,
+        utilizationPct: null,
+        fsSizeBytes: null,
+        fsUsedBytes: null,
+      }),
+    );
     const txt = el.shadowRoot!.textContent ?? '';
     expect(txt).toContain('no filesystem');
     expect(el.shadowRoot!.querySelector('.bar')).toBeNull();

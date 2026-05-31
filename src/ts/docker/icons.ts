@@ -51,7 +51,16 @@ const SVG_PATHS: Record<string, TemplateResult> = {
 };
 
 export const FOLDER_ICONS: ReadonlyArray<keyof typeof SVG_PATHS> = [
-  'folder', 'film', 'wifi', 'chart', 'book', 'bot', 'wrench', 'globe', 'layers', 'archive',
+  'folder',
+  'film',
+  'wifi',
+  'chart',
+  'book',
+  'bot',
+  'wrench',
+  'globe',
+  'layers',
+  'archive',
 ];
 
 export type IconName = keyof typeof SVG_PATHS;

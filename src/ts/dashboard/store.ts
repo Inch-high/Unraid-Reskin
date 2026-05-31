@@ -38,7 +38,7 @@ export function createStore(): DashboardStore {
     keys: () => data.keys(),
     subscribe: (cb) => {
       subscribers.add(cb);
-      return () => subscribers.delete(cb) as unknown as void;
+      return () => subscribers.delete(cb) as unknown as undefined;
     },
   };
 }

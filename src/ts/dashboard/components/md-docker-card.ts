@@ -8,7 +8,7 @@ type Filter = 'all' | 'running' | 'stopped';
 function stateColor(s: DockerContainer['state']): string {
   if (s === 'started') return 'var(--success)';
   if (s === 'stopped') return 'var(--danger)';
-  if (s === 'paused')  return 'var(--warning)';
+  if (s === 'paused') return 'var(--warning)';
   return 'var(--text-muted)';
 }
 
@@ -197,7 +197,11 @@ export class MdDockerCard extends LitElement {
   `;
 
   @property({ type: Object }) state: DockerState = {
-    kind: 'docker', folders: [], ungrouped: [], totalRunning: 0, totalCount: 0,
+    kind: 'docker',
+    folders: [],
+    ungrouped: [],
+    totalRunning: 0,
+    totalCount: 0,
   };
 
   @state() private _filter: Filter = 'all';
@@ -211,9 +215,11 @@ export class MdDockerCard extends LitElement {
   private _renderTile(c: DockerContainer) {
     return html`
       <div class="container-tile">
-        ${c.imgUrl
-          ? html`<img src="${c.imgUrl}" alt="">`
-          : html`<span style="width:24px;height:24px;background:var(--bg-elevated);border-radius:var(--radius-xs)"></span>`}
+        ${
+          c.imgUrl
+            ? html`<img src="${c.imgUrl}" alt="">`
+            : html`<span style="width:24px;height:24px;background:var(--bg-elevated);border-radius:var(--radius-xs)"></span>`
+        }
         <span class="name">${c.name}</span>
         <span class="dot" style="background: ${stateColor(c.state)}"></span>
       </div>
@@ -228,14 +234,16 @@ export class MdDockerCard extends LitElement {
     // touch the extractor's state shape.
     const allContainers = [...ungrouped, ...folders.flatMap((f) => f.containers)];
     const stopped = allContainers.filter((c) => c.state === 'stopped').length;
-    const paused  = allContainers.filter((c) => c.state === 'paused').length;
+    const paused = allContainers.filter((c) => c.state === 'paused').length;
     const unknown = allContainers.filter((c) => c.state === 'unknown').length;
 
     const meta = totalCount > 0 ? `${totalRunning} / ${totalCount} running` : '';
 
     return html`
       <md-card cardTitle="Docker Containers" meta=${meta}>
-        ${totalCount > 0 ? html`
+        ${
+          totalCount > 0
+            ? html`
           <div class="summary">
             <div class="total">
               <span class="big">${totalCount}</span>
@@ -254,30 +262,38 @@ export class MdDockerCard extends LitElement {
                 <span class="dot" style="background: var(--warning)"></span>
                 <span class="num">${paused}</span> paused
               </span>
-              ${unknown > 0 ? html`
+              ${
+                unknown > 0
+                  ? html`
                 <span class="count">
                   <span class="dot" style="background: var(--text-muted)"></span>
                   <span class="num">${unknown}</span> unknown
                 </span>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
             <div class="summary-bar">
               <span class="started" style="width: ${(totalRunning / totalCount) * 100}%"></span>
               <span class="stopped" style="width: ${(stopped / totalCount) * 100}%"></span>
-              <span class="paused"  style="width: ${(paused  / totalCount) * 100}%"></span>
+              <span class="paused"  style="width: ${(paused / totalCount) * 100}%"></span>
               ${unknown > 0 ? html`<span class="unknown" style="width: ${(unknown / totalCount) * 100}%"></span>` : ''}
             </div>
           </div>
-        ` : html`
+        `
+            : html`
           <div class="summary">
             <div class="total">
               <span class="big">0</span>
               <span class="small">containers</span>
             </div>
           </div>
-        `}
+        `
+        }
 
-        ${totalCount > 0 ? html`
+        ${
+          totalCount > 0
+            ? html`
           <details class="container-list" data-hero-expander="container-list">
             <summary>
               <span class="chevron"></span>
@@ -288,11 +304,17 @@ export class MdDockerCard extends LitElement {
             <div class="container-body">
               <div class="filters">
                 <span class="chip" ?data-active=${this._filter === 'all'}
-                      @click=${() => (this._filter = 'all')}>All</span>
+                      @click=${() => {
+                        this._filter = 'all';
+                      }}>All</span>
                 <span class="chip" ?data-active=${this._filter === 'running'}
-                      @click=${() => (this._filter = 'running')}>Running</span>
+                      @click=${() => {
+                        this._filter = 'running';
+                      }}>Running</span>
                 <span class="chip" ?data-active=${this._filter === 'stopped'}
-                      @click=${() => (this._filter = 'stopped')}>Stopped</span>
+                      @click=${() => {
+                        this._filter = 'stopped';
+                      }}>Stopped</span>
               </div>
               ${folders.map((f) => {
                 const visible = this._filtered(f.containers);
@@ -307,15 +329,21 @@ export class MdDockerCard extends LitElement {
                   </div>
                 `;
               })}
-              ${ungrouped.length > 0 ? html`
+              ${
+                ungrouped.length > 0
+                  ? html`
                 <div class="folder-label"><span>Ungrouped</span></div>
                 <div class="container-grid">
                   ${this._filtered(ungrouped).map((c) => this._renderTile(c))}
                 </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
           </details>
-        ` : ''}
+        `
+            : ''
+        }
       </md-card>
     `;
   }

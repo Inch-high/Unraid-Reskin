@@ -1,4 +1,5 @@
 <?php
+
 // TDD for main-state.php — the read-only disks.ini + var.ini → MainPageState
 // JSON snapshot. Feeds the captured fixtures and asserts the typed shape.
 
@@ -20,7 +21,9 @@ $array = $state['array'];
 assert(count($array['devices']) === 14, 'array must have 2 parity + 12 data = 14 devices; got ' . count($array['devices']));
 
 $byName = [];
-foreach ($array['devices'] as $d) $byName[$d['name']] = $d;
+foreach ($array['devices'] as $d) {
+    $byName[$d['name']] = $d;
+}
 
 assert($byName['parity']['role'] === 'parity', 'parity role');
 assert($byName['parity']['fsType'] === null, 'parity has no filesystem');
@@ -46,8 +49,10 @@ assert(modernui_map_device_type('data', 'sdspin', $sysfs) === 'hdd', 'rotational
 assert(modernui_map_device_type('data', 'sdmissing', $sysfs) === 'hdd', 'unreadable sysfs → hdd fallback');
 @unlink("{$sysfs}/sdspin/queue/rotational");
 @unlink("{$sysfs}/sdsolid/queue/rotational");
-@rmdir("{$sysfs}/sdspin/queue"); @rmdir("{$sysfs}/sdspin");
-@rmdir("{$sysfs}/sdsolid/queue"); @rmdir("{$sysfs}/sdsolid");
+@rmdir("{$sysfs}/sdspin/queue");
+@rmdir("{$sysfs}/sdspin");
+@rmdir("{$sysfs}/sdsolid/queue");
+@rmdir("{$sysfs}/sdsolid");
 @rmdir($sysfs);
 
 // model + serial split (the user-requested 1:1 field)
@@ -133,8 +138,10 @@ foreach (['missing' => 'missing-key', 'wrong' => 'wrong-key', 'enter-new' => 'en
     $encDisks = modernui_parse_ini_sections($fix . "/disks-enc-{$file}.ini");
     $varStopped = modernui_parse_var_ini($fix . '/var-stopped.ini');
     $s = modernui_main_state($encDisks, $varStopped, '');
-    assert($s['operation']['encryption']['mode'] === $mode,
-        "disks-enc-{$file}.ini → encryption mode '{$mode}'; got '" . $s['operation']['encryption']['mode'] . "'");
+    assert(
+        $s['operation']['encryption']['mode'] === $mode,
+        "disks-enc-{$file}.ini → encryption mode '{$mode}'; got '" . $s['operation']['encryption']['mode'] . "'"
+    );
 }
 
 echo "all main-state tests passed\n";

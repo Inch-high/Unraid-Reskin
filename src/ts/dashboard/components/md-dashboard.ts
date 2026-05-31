@@ -180,13 +180,15 @@ export class ModernuiDashboard extends LitElement {
     return html`
       <div class="content" aria-busy="true" aria-live="polite">
         <div class="sk-hero-grid">
-          ${[0, 1, 2, 3].map(() => html`
+          ${[0, 1, 2, 3].map(
+            () => html`
             <div class="sk-hero">
               <div class="sk sk-label"></div>
               <div class="sk sk-big"></div>
               <div class="sk sk-sub"></div>
             </div>
-          `)}
+          `,
+          )}
         </div>
         <div class="layout">
           <aside class="sidebar">
@@ -239,7 +241,11 @@ export class ModernuiDashboard extends LitElement {
     const unknown = widgets.filter((w): w is UnknownWidget => w.kind === 'unknown');
 
     const hasStorage = arrays.length + caches.length + parities.length + disklocations.length > 0;
-    const hasCompute = gpus.length + ipmis.length + (processors.length === 0 && memories.length > 0 ? memories.length : 0) > 0;
+    const hasCompute =
+      gpus.length +
+        ipmis.length +
+        (processors.length === 0 && memories.length > 0 ? memories.length : 0) >
+      0;
     const hasWorkloads = dockers.length + vms.length > 0;
     const hasNetwork = interfaces.length > 0;
     const hasPower = upses.length > 0;
@@ -257,24 +263,36 @@ export class ModernuiDashboard extends LitElement {
         ></md-hero-strip>
         <div class="layout">
           <aside class="sidebar">
-            ${hasSidebarHero ? html`
+            ${
+              hasSidebarHero
+                ? html`
               <md-section label="Compute">
                 <md-processor-card
                   .state=${processors[0]}
                   .memoryState=${memories[0] ?? null}
                 ></md-processor-card>
               </md-section>
-            ` : ''}
-            ${hasNetwork ? html`
+            `
+                : ''
+            }
+            ${
+              hasNetwork
+                ? html`
               <md-section label="Network">
                 ${interfaces.map((s) => html`<md-interface-card .state=${s}></md-interface-card>`)}
               </md-section>
-            ` : ''}
+            `
+                : ''
+            }
           </aside>
           <div class="main">
-            ${hasStorage ? html`
+            ${
+              hasStorage
+                ? html`
               <md-section label="Storage">
-                ${disklocations.length > 0 ? html`
+                ${
+                  disklocations.length > 0
+                    ? html`
                   <md-disklocation-card
                     .state=${disklocations[0]}
                     .arrayState=${arrays[0] ?? null}
@@ -282,44 +300,68 @@ export class ModernuiDashboard extends LitElement {
                     .parityState=${parities[0] ?? null}
                     data-wide
                   ></md-disklocation-card>
-                ` : html`
+                `
+                    : html`
                   ${arrays.map((s) => html`<md-array-card .state=${s}></md-array-card>`)}
                   ${caches.map((s) => html`<md-cache-card .state=${s}></md-cache-card>`)}
                   ${parities.map((s) => html`<md-parity-card .state=${s}></md-parity-card>`)}
-                `}
+                `
+                }
               </md-section>
-            ` : ''}
-            ${hasCompute ? html`
+            `
+                : ''
+            }
+            ${
+              hasCompute
+                ? html`
               <md-section label="Devices">
                 ${processors.length === 0 ? memories.map((s) => html`<md-memory-card .state=${s}></md-memory-card>`) : ''}
                 ${gpus.map((s) => html`<md-gpu-card .state=${s}></md-gpu-card>`)}
                 ${ipmis.map((s) => html`<md-ipmi-card .state=${s}></md-ipmi-card>`)}
               </md-section>
-            ` : ''}
-            ${hasWorkloads ? html`
+            `
+                : ''
+            }
+            ${
+              hasWorkloads
+                ? html`
               <md-section label="Workloads">
                 ${dockers.map((s) => html`<md-docker-card .state=${s} data-wide></md-docker-card>`)}
                 ${vms.map((s) => html`<md-vms-card .state=${s}></md-vms-card>`)}
               </md-section>
-            ` : ''}
-            ${hasPower ? html`
+            `
+                : ''
+            }
+            ${
+              hasPower
+                ? html`
               <md-section label="Power">
                 ${upses.map((s) => html`<md-ups-card .state=${s}></md-ups-card>`)}
               </md-section>
-            ` : ''}
-            ${hasSystem ? html`
+            `
+                : ''
+            }
+            ${
+              hasSystem
+                ? html`
               <md-section label="System">
                 ${identities.map((s) => html`<md-identity-card .state=${s}></md-identity-card>`)}
                 ${motherboards.map((s) => html`<md-motherboard-card .state=${s}></md-motherboard-card>`)}
                 ${shares.map((s) => html`<md-shares-card .state=${s}></md-shares-card>`)}
                 ${users.map((s) => html`<md-users-card .state=${s}></md-users-card>`)}
               </md-section>
-            ` : ''}
-            ${unknown.length > 0 ? html`
+            `
+                : ''
+            }
+            ${
+              unknown.length > 0
+                ? html`
               <md-section label="Plugins (untyped)">
                 ${unknown.map((w) => html`<md-plugin-card .state=${w}></md-plugin-card>`)}
               </md-section>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
       </div>

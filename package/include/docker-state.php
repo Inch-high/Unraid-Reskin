@@ -1,4 +1,5 @@
 <?php
+
 // One-shot snapshot of the docker page state.
 //
 // Wraps Unraid's DockerTemplates::getAllInfo() (the stock backend, untouched)
@@ -26,7 +27,8 @@ if (is_file(MODERNUI_DOCKER_CLIENT)) {
     require_once MODERNUI_DOCKER_CLIENT;               // populates $dockerManPaths + $driver
 }
 
-function modernui_docker_state(bool $withStats = false): array {
+function modernui_docker_state(bool $withStats = false): array
+{
     global $dockerManPaths, $driver;  // bound from DockerClient.php's top-level scope
 
     modernui_maybe_migrate_folder_view2();
@@ -45,7 +47,9 @@ function modernui_docker_state(bool $withStats = false): array {
             $rawContainers = $client->getDockerContainers();
             $byName = [];
             foreach ((array)$rawContainers as $ct) {
-                if (isset($ct['Name'])) $byName[$ct['Name']] = $ct;
+                if (isset($ct['Name'])) {
+                    $byName[$ct['Name']] = $ct;
+                }
             }
 
             // Sizes + live CPU/RAM are both expensive (sizes walks each
@@ -86,24 +90,34 @@ function modernui_docker_state(bool $withStats = false): array {
 // autostart in progress" heuristic so it doesn't misfire on every page visit.
 // /proc/uptime exposes "<uptime> <idle>" — first float is seconds since boot.
 // Returns null if the file is unreadable (won't happen on Linux, but defensive).
-function modernui_read_uptime_seconds(): ?int {
+function modernui_read_uptime_seconds(): ?int
+{
     $raw = @file_get_contents('/proc/uptime');
-    if (!is_string($raw) || $raw === '') return null;
+    if (!is_string($raw) || $raw === '') {
+        return null;
+    }
     $first = strtok($raw, ' ');
-    if ($first === false) return null;
+    if ($first === false) {
+        return null;
+    }
     return (int)(float)$first;
 }
 
 // Walks /containers/json?size=true and returns map of {shortId => SizeRw bytes}.
 // One docker socket call covers all containers (vs. N inspect calls). Errors are
 // swallowed because the size column is non-critical — if it fails, vdisk shows —.
-function modernui_fetch_sizes(DockerClient $client): array {
+function modernui_fetch_sizes(DockerClient $client): array
+{
     try {
         $json = $client->getDockerJSON('/containers/json?all=true&size=true');
-        if (!is_array($json)) return [];
+        if (!is_array($json)) {
+            return [];
+        }
         $out = [];
         foreach ($json as $row) {
-            if (!isset($row['Id'])) continue;
+            if (!isset($row['Id'])) {
+                continue;
+            }
             $out[substr((string)$row['Id'], 0, 12)] = (int)($row['SizeRw'] ?? 0);
         }
         return $out;
@@ -114,9 +128,12 @@ function modernui_fetch_sizes(DockerClient $client): array {
 
 // Parse a docker-style size string like "25.34MiB" or "1.5GiB" into bytes.
 // MiB/GiB/TiB use 1024 base; KB/MB/GB use 1000 base — matches Docker CLI.
-function modernui_parse_size_string(string $s): int {
+function modernui_parse_size_string(string $s): int
+{
     $s = trim($s);
-    if (!preg_match('/^([\d.]+)\s*([A-Za-z]*)$/', $s, $m)) return 0;
+    if (!preg_match('/^([\d.]+)\s*([A-Za-z]*)$/', $s, $m)) {
+        return 0;
+    }
     $val = (float)$m[1];
     $unit = strtoupper($m[2] ?: 'B');
     $multipliers = [
@@ -131,15 +148,22 @@ function modernui_parse_size_string(string $s): int {
 
 // Map of shortId => ['cpu' => float|null, 'mem' => int|null] using `docker stats`.
 // Stopped containers don't appear in output. Errors return empty map.
-function modernui_fetch_docker_stats(): array {
+function modernui_fetch_docker_stats(): array
+{
     $out = @shell_exec("docker stats --no-stream --format='{{.ID}};{{.CPUPerc}};{{.MemUsage}}' 2>/dev/null");
-    if (!is_string($out) || $out === '') return [];
+    if (!is_string($out) || $out === '') {
+        return [];
+    }
     $result = [];
     foreach (explode("\n", trim($out)) as $line) {
         $parts = explode(';', $line);
-        if (count($parts) < 3) continue;
+        if (count($parts) < 3) {
+            continue;
+        }
         $shortId = trim($parts[0]);
-        if ($shortId === '') continue;
+        if ($shortId === '') {
+            continue;
+        }
         $cpu = (float)str_replace('%', '', trim($parts[1]));
         // MemUsage is "X.XXMiB / Y.YYGiB" — used / limit. Take the used part.
         $memUsed = trim(explode('/', $parts[2])[0] ?? '');
@@ -152,11 +176,16 @@ function modernui_fetch_docker_stats(): array {
 // Pull a usable MAC address from the Networks dict. Containers attached to a
 // custom bridge or br0.* have one network with a MacAddress; host/none mode has
 // no MAC. Returns null when the field is absent.
-function modernui_extract_mac(array $networks): ?string {
+function modernui_extract_mac(array $networks): ?string
+{
     foreach ($networks as $net) {
-        if (!is_array($net)) continue;
+        if (!is_array($net)) {
+            continue;
+        }
         $mac = $net['MacAddress'] ?? '';
-        if (is_string($mac) && $mac !== '') return strtolower($mac);
+        if (is_string($mac) && $mac !== '') {
+            return strtolower($mac);
+        }
     }
     return null;
 }
@@ -164,7 +193,8 @@ function modernui_extract_mac(array $networks): ?string {
 // Build a single typed container record by merging getAllInfo() row + the matching
 // getDockerContainers() entry. The "info" row has icon/url/autostart/template/updated;
 // "ct" has Image/Status/Id/Ports/NetworkMode/Networks. $stat is from `docker stats`.
-function modernui_normalize_container(string $name, array $info, array $ct, ?int $vdisk = null, ?array $stat = null): array {
+function modernui_normalize_container(string $name, array $info, array $ct, ?int $vdisk = null, ?array $stat = null): array
+{
     $running = !empty($info['running']) || !empty($ct['Running']);
     $paused  = !empty($info['paused'])  || !empty($ct['Paused']);
     $state   = $paused ? 'paused' : ($running ? 'started' : 'stopped');
@@ -206,7 +236,8 @@ function modernui_normalize_container(string $name, array $info, array $ct, ?int
 // display-friendly port from the resolved WebUI URL (which already contains the
 // canonical "IP:port" the user reaches the container at). Falls back to ip-only
 // for vlan/macvlan containers that don't have a webui.
-function modernui_normalize_ports(array $rawPorts, string $url): array {
+function modernui_normalize_ports(array $rawPorts, string $url): array
+{
     if ($url !== '' && preg_match('#https?://([^/]+)#', $url, $m)) {
         $authority = $m[1];
         $parts = explode(':', $authority, 2);
@@ -221,7 +252,9 @@ function modernui_normalize_ports(array $rawPorts, string $url): array {
     }
     // No URL — try to extract an IP from vlan/host mode raw ports.
     foreach ($rawPorts as $networkMode => $entries) {
-        if (!is_array($entries)) continue;
+        if (!is_array($entries)) {
+            continue;
+        }
         foreach ($entries as $k => $v) {
             $ip = is_string($v) ? $v : (is_string($k) ? $k : '');
             if ($ip !== '' && $ip !== 'host') {

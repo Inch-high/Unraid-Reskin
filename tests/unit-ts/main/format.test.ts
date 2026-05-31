@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatBytes, formatTemp, formatCount, formatPct, splitModelSerial } from '../../../src/ts/main/format';
+import {
+  formatBytes,
+  formatTemp,
+  formatCount,
+  formatPct,
+  splitModelSerial,
+} from '../../../src/ts/main/format';
 
 describe('formatBytes', () => {
   it('renders decimal (base-1000) units like stock /Main', () => {
@@ -11,7 +17,7 @@ describe('formatBytes', () => {
   it('handles null/invalid', () => {
     expect(formatBytes(null)).toBe('—');
     expect(formatBytes(undefined)).toBe('—');
-    expect(formatBytes(NaN)).toBe('—');
+    expect(formatBytes(Number.NaN)).toBe('—');
   });
 });
 
@@ -41,10 +47,12 @@ describe('formatPct', () => {
 describe('splitModelSerial', () => {
   it('splits on the last underscore', () => {
     expect(splitModelSerial('ST12000VN0008-2YS101_ZRT0Q2AK')).toEqual({
-      model: 'ST12000VN0008-2YS101', serial: 'ZRT0Q2AK',
+      model: 'ST12000VN0008-2YS101',
+      serial: 'ZRT0Q2AK',
     });
     expect(splitModelSerial('Seagate_ZP2000GM30063_D3300D81')).toEqual({
-      model: 'Seagate_ZP2000GM30063', serial: 'D3300D81',
+      model: 'Seagate_ZP2000GM30063',
+      serial: 'D3300D81',
     });
     expect(splitModelSerial('noserial')).toEqual({ model: 'noserial', serial: '' });
   });

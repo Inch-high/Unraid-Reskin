@@ -80,7 +80,8 @@ export const upsExtractor: Extractor<UpsState> = {
     if (source.id === 'tblUPSNUTDash') return true;
     const titleAttr = source.getAttribute('title')?.toUpperCase() ?? '';
     if (titleAttr.includes('UPS')) return true;
-    const headerText = source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
+    const headerText =
+      source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
     return headerText.includes('UPS');
   },
   extract: ({ source }) => {
@@ -106,20 +107,24 @@ export const upsExtractor: Extractor<UpsState> = {
     const loadW = live.loadW ?? tbodyLoadW;
     // If we got live watts from the footer but no loadPct in the tbody, infer
     // it back from nominalPowerW so the UPS card's "Load" row still shows a %.
-    const loadPct = tbodyLoadPct ?? (
-      live.loadW !== null && nominalPowerW !== null && nominalPowerW > 0
+    const loadPct =
+      tbodyLoadPct ??
+      (live.loadW !== null && nominalPowerW !== null && nominalPowerW > 0
         ? Math.round((live.loadW / nominalPowerW) * 100)
-        : null
-    );
+        : null);
 
     // The cold UPS tbody renders spinner+<em> placeholders for every live
     // field; apcupsd / nut JS replaces them once the daemon reports. If we see
     // any of those placeholders, mark loading=true so the Power hero card can
     // show a skeleton rather than the misleading "—" / "UPS status unknown".
-    const hasSpinner = source.querySelector('.fa-spinner') !== null
-      || source.querySelector('em') !== null;
-    const loading = hasSpinner && status === 'unknown' && batteryChargePct === null
-      && loadPct === null && runtimeMinutes === null;
+    const hasSpinner =
+      source.querySelector('.fa-spinner') !== null || source.querySelector('em') !== null;
+    const loading =
+      hasSpinner &&
+      status === 'unknown' &&
+      batteryChargePct === null &&
+      loadPct === null &&
+      runtimeMinutes === null;
     return {
       kind: 'ups',
       status,

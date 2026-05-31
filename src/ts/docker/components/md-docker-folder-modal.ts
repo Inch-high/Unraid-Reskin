@@ -8,8 +8,14 @@ import { icon, FOLDER_ICONS, type IconName } from '../icons';
 // event with the next folders array when the user clicks Save.
 
 const COLOR_SWATCHES = [
-  '#ff8c2f', '#3b82f6', '#22c55e', '#a78bfa',
-  '#ef4444', '#f59e0b', '#14b8a6', '#6b7280',
+  '#ff8c2f',
+  '#3b82f6',
+  '#22c55e',
+  '#a78bfa',
+  '#ef4444',
+  '#f59e0b',
+  '#14b8a6',
+  '#6b7280',
 ];
 
 @customElement('md-docker-folder-modal')
@@ -233,12 +239,18 @@ export class MdDockerFolderModal extends LitElement {
 
   private _updateActive(patch: Partial<DockerFolder>): void {
     if (!this._activeId) return;
-    this._draft = this._draft.map((f) => f.id === this._activeId ? { ...f, ...patch } : f);
+    this._draft = this._draft.map((f) => (f.id === this._activeId ? { ...f, ...patch } : f));
   }
 
   private _addFolder(): void {
     const id = 'f-' + Math.random().toString(36).slice(2, 10);
-    const f: DockerFolder = { id, name: 'New folder', icon: 'folder', color: '#ff8c2f', containerNames: [] };
+    const f: DockerFolder = {
+      id,
+      name: 'New folder',
+      icon: 'folder',
+      color: '#ff8c2f',
+      containerNames: [],
+    };
     this._draft = [...this._draft, f];
     this._activeId = id;
   }
@@ -261,7 +273,9 @@ export class MdDockerFolderModal extends LitElement {
       if (f.id === this._activeId) {
         return {
           ...f,
-          containerNames: has ? f.containerNames.filter((n) => n !== name) : [...f.containerNames, name],
+          containerNames: has
+            ? f.containerNames.filter((n) => n !== name)
+            : [...f.containerNames, name],
         };
       }
       if (!has && f.containerNames.includes(name)) {
@@ -272,10 +286,13 @@ export class MdDockerFolderModal extends LitElement {
   }
 
   private _save(): void {
-    this.dispatchEvent(new CustomEvent<{ folders: DockerFolder[] }>('docker-save-folders', {
-      detail: { folders: this._draft },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ folders: DockerFolder[] }>('docker-save-folders', {
+        detail: { folders: this._draft },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _close(): void {
@@ -289,7 +306,9 @@ export class MdDockerFolderModal extends LitElement {
     const allNames = new Set(this.containers.map((c) => c.name));
 
     return html`
-      <div class="backdrop" @click=${(e: Event) => { if (e.target === e.currentTarget) this._close(); }}>
+      <div class="backdrop" @click=${(e: Event) => {
+        if (e.target === e.currentTarget) this._close();
+      }}>
         <div class="modal" role="dialog" aria-modal="true">
 
           <header class="head">
@@ -303,18 +322,24 @@ export class MdDockerFolderModal extends LitElement {
           <div class="body">
             <aside class="aside">
               <h3>Folders · ${this._draft.length}</h3>
-              ${this._draft.map((f) => html`
-                <div class="aside-row" ?data-active=${f.id === this._activeId} @click=${() => { this._activeId = f.id; }}>
+              ${this._draft.map(
+                (f) => html`
+                <div class="aside-row" ?data-active=${f.id === this._activeId} @click=${() => {
+                  this._activeId = f.id;
+                }}>
                   <span class="swatch" style="background:${f.color}2e;color:${f.color}">${icon(f.icon as IconName, 14)}</span>
                   <span>${f.name}</span>
                   <span class="count">${f.containerNames.length}</span>
                 </div>
-              `)}
+              `,
+              )}
               <button class="aside-add" @click=${this._addFolder}>${icon('plus', 12)} New folder</button>
             </aside>
 
             <div class="main">
-              ${active ? html`
+              ${
+                active
+                  ? html`
                 <div class="field">
                   <label>Folder name</label>
                   <input type="text" .value=${active.name}
@@ -324,21 +349,25 @@ export class MdDockerFolderModal extends LitElement {
                 <div class="field">
                   <label>Color</label>
                   <div class="swatch-row">
-                    ${COLOR_SWATCHES.map((c) => html`
+                    ${COLOR_SWATCHES.map(
+                      (c) => html`
                       <span class="swatch-pick" style="background:${c}"
                             ?data-selected=${active.color === c}
                             @click=${() => this._updateActive({ color: c })}></span>
-                    `)}
+                    `,
+                    )}
                   </div>
                 </div>
 
                 <div class="field">
                   <label>Icon</label>
                   <div class="icon-row">
-                    ${FOLDER_ICONS.map((n) => html`
+                    ${FOLDER_ICONS.map(
+                      (n) => html`
                       <span class="icon-pick" ?data-selected=${active.icon === n}
                             @click=${() => this._updateActive({ icon: n })}>${icon(n, 16)}</span>
-                    `)}
+                    `,
+                    )}
                   </div>
                 </div>
 
@@ -348,34 +377,42 @@ export class MdDockerFolderModal extends LitElement {
                     <div>
                       <h4>In ${active.name} <span class="count">${active.containerNames.length}</span></h4>
                       <ul class="members-list">
-                        ${active.containerNames.filter((n) => allNames.has(n)).map((n) => {
-                          const c = this.containers.find((x) => x.name === n);
-                          if (!c) return nothing;
-                          return html`
+                        ${active.containerNames
+                          .filter((n) => allNames.has(n))
+                          .map((n) => {
+                            const c = this.containers.find((x) => x.name === n);
+                            if (!c) return nothing;
+                            return html`
                             <li class="member" @click=${() => this._toggleMembership(n)}>
                               <span class="mini-icon">${c.iconUrl ? html`<img src=${c.iconUrl}>` : (c.name[0] ?? '?').toUpperCase()}</span>
                               <span class="name">${c.name}</span>
                               <span class=${'dot ' + stateDotClass(c.state)}></span>
                             </li>
                           `;
-                        })}
+                          })}
                       </ul>
                     </div>
                     <div>
                       <h4>Available <span class="count">${this.containers.length - active.containerNames.length}</span></h4>
                       <ul class="members-list">
-                        ${this.containers.filter((c) => !active.containerNames.includes(c.name)).map((c) => html`
+                        ${this.containers
+                          .filter((c) => !active.containerNames.includes(c.name))
+                          .map(
+                            (c) => html`
                           <li class="member" @click=${() => this._toggleMembership(c.name)}>
                             <span class="mini-icon">${c.iconUrl ? html`<img src=${c.iconUrl}>` : (c.name[0] ?? '?').toUpperCase()}</span>
                             <span class="name">${c.name}</span>
                             <span class=${'dot ' + stateDotClass(c.state)}></span>
                           </li>
-                        `)}
+                        `,
+                          )}
                       </ul>
                     </div>
                   </div>
                 </div>
-              ` : html`<p class="hint">No folder selected. Click "New folder" to create one.</p>`}
+              `
+                  : html`<p class="hint">No folder selected. Click "New folder" to create one.</p>`
+              }
             </div>
           </div>
 
@@ -395,8 +432,11 @@ export class MdDockerFolderModal extends LitElement {
 }
 
 function stateDotClass(s: string): string {
-  return s === 'started' ? 'dot-success'
-       : s === 'paused' ? 'dot-warning'
-       : s === 'stopped' ? 'dot-danger'
-       : 'dot-muted';
+  return s === 'started'
+    ? 'dot-success'
+    : s === 'paused'
+      ? 'dot-warning'
+      : s === 'stopped'
+        ? 'dot-danger'
+        : 'dot-muted';
 }

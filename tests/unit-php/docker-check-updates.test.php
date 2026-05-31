@@ -1,4 +1,5 @@
 <?php
+
 // Tests for the async check-for-updates endpoint contract:
 //   • status helpers read/clean lock + status files correctly
 //   • a stale PID lock (process no longer alive) is treated as "not running"
@@ -15,7 +16,7 @@ define('MODERNUI_TESTING', true);
 // define() guards will see ours and skip the production /var/lock paths.
 $tmpDir = sys_get_temp_dir() . '/modernui-check-updates-test-' . uniqid();
 mkdir($tmpDir, 0755, true);
-define('MODERNUI_CHECK_UPDATES_LOCK',   $tmpDir . '/check.pid');
+define('MODERNUI_CHECK_UPDATES_LOCK', $tmpDir . '/check.pid');
 define('MODERNUI_CHECK_UPDATES_STATUS', $tmpDir . '/check.status.json');
 
 require_once __DIR__ . '/../../package/include/docker-check-updates.php';

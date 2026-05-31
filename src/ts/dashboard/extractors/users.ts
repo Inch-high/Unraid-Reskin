@@ -8,11 +8,14 @@ function textOf(el: Element | null | undefined): string {
 function parseIntOrNull(raw: string): number | null {
   const trimmed = raw.trim();
   if (!trimmed || trimmed === '-') return null;
-  const n = parseInt(trimmed, 10);
+  const n = Number.parseInt(trimmed, 10);
   return Number.isNaN(n) ? null : n;
 }
 
-function parseHeaderCounts(source: HTMLTableSectionElement): { totalCount: number; unprotectedCount: number } {
+function parseHeaderCounts(source: HTMLTableSectionElement): {
+  totalCount: number;
+  unprotectedCount: number;
+} {
   const text = source.textContent ?? '';
   const m = text.match(/User count:\s*(\d+)\s*with\s*(\d+)\s*unprotected/i);
   if (!m) return { totalCount: 0, unprotectedCount: 0 };

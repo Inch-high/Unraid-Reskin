@@ -11,7 +11,7 @@ export interface Extractor<T> {
 }
 
 export const unknownExtractor: Extractor<UnknownWidget> = {
-  match: () => true,  // catch-all: always matches as a last-resort fallback
+  match: () => true, // catch-all: always matches as a last-resort fallback
   extract: ({ source }) => {
     const id = source.id || '';
     const firstClass = source.classList.length > 0 ? source.classList[0] : '';

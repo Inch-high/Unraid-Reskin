@@ -1,4 +1,5 @@
 <?php
+
 // Regression guard: requiring install.php or uninstall.php must NOT run their
 // CLI bodies as a side effect. upgrade.php pulls both in for shared helpers
 // (modernui_replace_file, modernui_restore_from_backup); before the fix in

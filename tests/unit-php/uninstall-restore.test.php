@@ -1,4 +1,5 @@
 <?php
+
 define('MODERNUI_TESTING', true);
 require_once __DIR__ . '/../../package/include/uninstall.php';
 

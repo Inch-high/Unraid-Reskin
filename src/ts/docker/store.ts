@@ -39,13 +39,20 @@ function loadCollapsedFromStorage(): Set<string> {
     const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
     if (!raw) return new Set();
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return new Set(parsed.filter((x): x is string => typeof x === 'string'));
-  } catch { /* corrupt key — discard */ }
+    if (Array.isArray(parsed))
+      return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch {
+    /* corrupt key — discard */
+  }
   return new Set();
 }
 
 function saveCollapsedToStorage(s: Set<string>): void {
-  try { localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...s])); } catch { /* quota */ }
+  try {
+    localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...s]));
+  } catch {
+    /* quota */
+  }
 }
 
 export interface DockerStore {
@@ -113,7 +120,9 @@ export interface DockerStore {
 // exceeds 90s, so we err well on the high side. Watchdog only kicks in for
 // genuinely stuck transitions; the snapshot poll clears probes much sooner in
 // the happy path.
-interface StartingProbe { startedAt: number; }
+interface StartingProbe {
+  startedAt: number;
+}
 const STARTING_TIMEOUT_MS = 10 * 60_000;
 
 // Per-name baseline captured at markUpdating(). Used by setState() to decide
@@ -161,7 +170,9 @@ function loadUpdatingFromStorage(): Map<string, UpdateProbe> {
       });
     }
     return out;
-  } catch { return new Map(); }
+  } catch {
+    return new Map();
+  }
 }
 
 function saveUpdatingToStorage(probes: Map<string, UpdateProbe>): void {
@@ -173,7 +184,9 @@ function saveUpdatingToStorage(probes: Map<string, UpdateProbe>): void {
     const obj: Record<string, UpdateProbe> = {};
     for (const [k, v] of probes) obj[k] = v;
     localStorage.setItem(UPDATING_STORAGE_KEY, JSON.stringify(obj));
-  } catch { /* quota — silent best-effort */ }
+  } catch {
+    /* quota — silent best-effort */
+  }
 }
 
 export function createDockerStore(): DockerStore {
@@ -246,9 +259,7 @@ export function createDockerStore(): DockerStore {
       const c = next.containers.find((x) => x.name === name);
       const elapsed = now - probe.startedAt;
       const done =
-        !c ||
-        c.state === 'started' || c.state === 'paused' ||
-        elapsed > STARTING_TIMEOUT_MS;
+        !c || c.state === 'started' || c.state === 'paused' || elapsed > STARTING_TIMEOUT_MS;
       if (done) {
         startingProbes.delete(name);
         starting.delete(name);
@@ -316,14 +327,11 @@ export function createDockerStore(): DockerStore {
         after.memBytes === before.memBytes &&
         after.uptime === before.uptime &&
         after.updateAvailable === before.updateAvailable
-      ) return;
+      )
+        return;
       state = {
         ...state,
-        containers: [
-          ...state.containers.slice(0, idx),
-          after,
-          ...state.containers.slice(idx + 1),
-        ],
+        containers: [...state.containers.slice(0, idx), after, ...state.containers.slice(idx + 1)],
       };
       notify();
     },
@@ -471,7 +479,7 @@ export function createDockerStore(): DockerStore {
 
     subscribe(fn) {
       listeners.add(fn);
-      return () => listeners.delete(fn) as unknown as void;
+      return () => listeners.delete(fn) as unknown as undefined;
     },
   };
 }
@@ -481,7 +489,7 @@ export function createDockerStore(): DockerStore {
 // =========================================================================
 
 export interface GroupedContainers {
-  folderId: string | null;   // null for "Ungrouped"
+  folderId: string | null; // null for "Ungrouped"
   folder: DockerFolder | null;
   containers: DockerContainerFull[];
 }
@@ -535,7 +543,7 @@ export function groupContainers(
         assignedNames.add(name);
       }
     }
-    if (inFolder.length === 0) continue;  // hide empty folders post-filter
+    if (inFolder.length === 0) continue; // hide empty folders post-filter
     groups.push({ folderId: folder.id, folder, containers: inFolder });
   }
 

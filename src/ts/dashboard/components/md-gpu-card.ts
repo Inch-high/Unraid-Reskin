@@ -60,12 +60,23 @@ export class MdGpuCard extends LitElement {
   `;
 
   @property({ type: Object }) state: GpuState = {
-    kind: 'gpu', model: '', vendor: '', driver: '', pciBus: '',
-    utilizationPct: null, memoryUsedPct: null,
-    encoderUtilPct: null, decoderUtilPct: null,
-    gpuClockMHz: null, memoryMHz: null,
-    fanRpm: null, powerW: null, temperatureC: null,
-    perfState: '', activeApps: 0, throttling: false,
+    kind: 'gpu',
+    model: '',
+    vendor: '',
+    driver: '',
+    pciBus: '',
+    utilizationPct: null,
+    memoryUsedPct: null,
+    encoderUtilPct: null,
+    decoderUtilPct: null,
+    gpuClockMHz: null,
+    memoryMHz: null,
+    fanRpm: null,
+    powerW: null,
+    temperatureC: null,
+    perfState: '',
+    activeApps: 0,
+    throttling: false,
   };
 
   @state() private _history: number[] = [];

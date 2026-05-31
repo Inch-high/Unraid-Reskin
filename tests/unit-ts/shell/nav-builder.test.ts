@@ -5,8 +5,15 @@ describe('CURATED_NAV baseline', () => {
   it('lists the nine spec entries in order', () => {
     const labels = CURATED_NAV.map((n) => n.label);
     expect(labels).toEqual([
-      'Dashboard', 'Storage', 'Docker', 'VMs',
-      'Users', 'Plugins', 'Settings', 'Tools', 'Apps',
+      'Dashboard',
+      'Storage',
+      'Docker',
+      'VMs',
+      'Users',
+      'Plugins',
+      'Settings',
+      'Tools',
+      'Apps',
     ]);
   });
 
@@ -31,8 +38,8 @@ describe('buildNav — curated only (no auto-discovery)', () => {
   it('returns the curated tree unchanged when every anchor matches a curated URL', () => {
     const anchors = [
       { href: '/Dashboard', text: 'Dashboard' },
-      { href: '/Docker',    text: 'Docker' },
-      { href: '/Settings',  text: 'Settings' },
+      { href: '/Docker', text: 'Docker' },
+      { href: '/Settings', text: 'Settings' },
     ];
     expect(buildNav(anchors)).toEqual(CURATED_NAV);
   });
@@ -41,8 +48,8 @@ describe('buildNav — curated only (no auto-discovery)', () => {
 describe('buildNav — auto-discovery merge', () => {
   it('appends an "Other" section for anchors not in the curated tree', () => {
     const anchors: StockAnchor[] = [
-      { href: '/Dashboard',  text: 'Dashboard' },          // curated
-      { href: '/Tailscale',  text: 'Tailscale' },          // unknown
+      { href: '/Dashboard', text: 'Dashboard' }, // curated
+      { href: '/Tailscale', text: 'Tailscale' }, // unknown
       { href: '/CADashboard', text: 'CA Custom Dashboard' }, // unknown
     ];
     const tree = buildNav(anchors);
@@ -76,11 +83,11 @@ describe('buildNav — auto-discovery merge', () => {
     // (href="javascript:..."). They previously leaked into the Other section
     // as sub-items labelled "#" that went nowhere on click.
     const anchors: StockAnchor[] = [
-      { href: '#',                       text: '' },
-      { href: '#some-anchor',            text: 'In-page' },
-      { href: 'javascript:doStuff()',    text: 'JS trigger' },
-      { href: 'JavaScript:do()',         text: 'mixed case' },
-      { href: '/RealPage',               text: 'Real Page' },
+      { href: '#', text: '' },
+      { href: '#some-anchor', text: 'In-page' },
+      { href: 'javascript:doStuff()', text: 'JS trigger' },
+      { href: 'JavaScript:do()', text: 'mixed case' },
+      { href: '/RealPage', text: 'Real Page' },
     ];
     const tree = buildNav(anchors);
     const other = tree.find((n) => n.label === 'Other');

@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../../package/include/helpers.php';
 
 $tmp = tempnam(sys_get_temp_dir(), 'modernui_test_');

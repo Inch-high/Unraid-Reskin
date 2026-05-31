@@ -18,17 +18,20 @@ export class MdMainPoolCard extends MdMainCardBase {
     if (!p) return html``;
     const statusClass = ['online', 'degraded', 'offline'].includes(p.status) ? p.status : 'unknown';
     const profile = [p.fsType, p.fsProfile].filter(Boolean).join(' · ');
-    const usage = p.sizeBytes !== null
-      ? `${formatBytes(p.usedBytes)} used of ${formatBytes(p.sizeBytes)}${p.utilizationPct !== null ? ` (${formatPct(p.utilizationPct)})` : ''}`
-      : '';
+    const usage =
+      p.sizeBytes !== null
+        ? `${formatBytes(p.usedBytes)} used of ${formatBytes(p.sizeBytes)}${p.utilizationPct !== null ? ` (${formatPct(p.utilizationPct)})` : ''}`
+        : '';
     const meta = [profile, usage].filter(Boolean).join(' · ');
 
     return html`
       <div class="section-head">
         <span class="section-title">${p.label}</span>
-        ${p.statusText
-          ? html`<span class="pill ${statusClass}">${p.statusText.replace(/^Status:\s*/i, '') || p.status}</span>`
-          : ''}
+        ${
+          p.statusText
+            ? html`<span class="pill ${statusClass}">${p.statusText.replace(/^Status:\s*/i, '') || p.status}</span>`
+            : ''
+        }
         ${meta ? html`<span class="section-meta">${meta}</span>` : ''}
       </div>
       ${this.renderTiles(p.devices, this.util)}

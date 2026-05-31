@@ -8,10 +8,16 @@ export type UtilStyle = 'bar' | 'ring';
 
 // Device-type → icon key (icons.ts) and short tag label.
 const TYPE_ICON: Record<DeviceType, string> = {
-  hdd: 'harddisk', ssd: 'ssd', nvme: 'nvme', usb: 'usb',
+  hdd: 'harddisk',
+  ssd: 'ssd',
+  nvme: 'nvme',
+  usb: 'usb',
 };
 const TYPE_LABEL: Record<DeviceType, string> = {
-  hdd: 'HDD', ssd: 'SSD', nvme: 'NVMe', usb: 'USB',
+  hdd: 'HDD',
+  ssd: 'SSD',
+  nvme: 'NVMe',
+  usb: 'USB',
 };
 
 // Statuses that read as a problem (red name + red border) — mirrors the row.
@@ -19,15 +25,24 @@ const PROBLEM: DeviceStatus[] = ['invalid', 'wrong', 'disabled', 'missing', 'unm
 
 function statusLabel(d: MainDevice): string {
   switch (d.status) {
-    case 'ok':          return d.spunDown ? 'standby' : 'active';
-    case 'new':         return 'new device';
-    case 'invalid':     return 'invalid';
-    case 'wrong':       return 'wrong';
-    case 'disabled':    return 'disabled';
-    case 'missing':     return 'missing';
-    case 'unmountable': return 'unmountable';
-    case 'notpresent':  return 'not installed';
-    default:            return '';
+    case 'ok':
+      return d.spunDown ? 'standby' : 'active';
+    case 'new':
+      return 'new device';
+    case 'invalid':
+      return 'invalid';
+    case 'wrong':
+      return 'wrong';
+    case 'disabled':
+      return 'disabled';
+    case 'missing':
+      return 'missing';
+    case 'unmountable':
+      return 'unmountable';
+    case 'notpresent':
+      return 'not installed';
+    default:
+      return '';
   }
 }
 
@@ -35,8 +50,13 @@ function smartGlyph(s: SmartHealth): string {
   return s === 'healthy' ? '✓' : s === 'warning' ? '!' : s === 'failed' ? '✕' : '?';
 }
 function smartClass(s: SmartHealth): string {
-  return s === 'healthy' ? 'smart-ok' : s === 'warning' ? 'smart-warn'
-    : s === 'failed' ? 'smart-fail' : 'muted';
+  return s === 'healthy'
+    ? 'smart-ok'
+    : s === 'warning'
+      ? 'smart-warn'
+      : s === 'failed'
+        ? 'smart-fail'
+        : 'muted';
 }
 
 @customElement('md-main-device-tile')

@@ -7,7 +7,7 @@ function statusPill(s: VmRow['state']) {
   const map: Record<VmRow['state'], { text: string; color: string }> = {
     started: { text: 'Started', color: 'var(--success)' },
     stopped: { text: 'Stopped', color: 'var(--danger)' },
-    paused:  { text: 'Paused',  color: 'var(--warning)' },
+    paused: { text: 'Paused', color: 'var(--warning)' },
     unknown: { text: 'Unknown', color: 'var(--text-muted)' },
   };
   const { text, color } = map[s];
@@ -63,15 +63,20 @@ export class MdVmsCard extends LitElement {
   `;
 
   @property({ type: Object }) state: VmsState = {
-    kind: 'vms', vms: [], totalRunning: 0, totalCount: 0,
+    kind: 'vms',
+    vms: [],
+    totalRunning: 0,
+    totalCount: 0,
   };
 
   private _renderRow(v: VmRow) {
     return html`
       <div class="vm-row">
-        ${v.iconUrl
-          ? html`<img src="${v.iconUrl}" alt="">`
-          : html`<span class="icon-fallback"></span>`}
+        ${
+          v.iconUrl
+            ? html`<img src="${v.iconUrl}" alt="">`
+            : html`<span class="icon-fallback"></span>`
+        }
         <span class="name">${v.name}</span>
         ${statusPill(v.state)}
       </div>
@@ -83,9 +88,11 @@ export class MdVmsCard extends LitElement {
     const meta = totalCount === 0 ? '' : `${totalRunning} / ${totalCount} running`;
     return html`
       <md-card cardTitle="Virtual Machines" meta=${meta}>
-        ${vms.length === 0
-          ? html`<div class="empty">No VMs configured</div>`
-          : html`<div class="vm-list">${vms.map((v) => this._renderRow(v))}</div>`}
+        ${
+          vms.length === 0
+            ? html`<div class="empty">No VMs configured</div>`
+            : html`<div class="vm-list">${vms.map((v) => this._renderRow(v))}</div>`
+        }
       </md-card>
     `;
   }

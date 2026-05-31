@@ -1,4 +1,5 @@
 <?php
+
 // Guard install.php's CLI runner so requiring it here does not try to touch /boot or /usr/local on Windows.
 define('MODERNUI_TESTING', true);
 require_once __DIR__ . '/../../package/include/install.php';

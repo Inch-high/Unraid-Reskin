@@ -165,9 +165,7 @@ describe('gpuExtractor', () => {
     expect(result.throttling).toBe(false);
     // At least one of util / temp / power was non-null in this snapshot.
     expect(
-      result.utilizationPct !== null ||
-      result.temperatureC !== null ||
-      result.powerW !== null,
+      result.utilizationPct !== null || result.temperatureC !== null || result.powerW !== null,
     ).toBe(true);
   });
 

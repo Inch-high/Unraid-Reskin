@@ -1,7 +1,16 @@
-import type { DisklocationState, DisklocationGroup, DiskSlot, DiskSlotColor, DiskSlotState } from '../types';
+import type {
+  DisklocationState,
+  DisklocationGroup,
+  DiskSlot,
+  DiskSlotColor,
+  DiskSlotState,
+} from '../types';
 import type { Extractor } from './unknown';
 
-function parseHeaderCounts(tbody: HTMLTableSectionElement): { assignedCount: number; totalCount: number } {
+function parseHeaderCounts(tbody: HTMLTableSectionElement): {
+  assignedCount: number;
+  totalCount: number;
+} {
   const text = tbody.textContent ?? '';
   const m = text.match(/(\d+)\s+of\s+(\d+)/);
   if (!m) return { assignedCount: 0, totalCount: 0 };
@@ -18,7 +27,8 @@ function parseSlotState(slotEl: Element): DiskSlotState {
   const cls = orb.className;
   if (cls.includes('green-orb-disklocation')) return 'active';
   if (cls.includes('green-blink-disklocation')) return 'standby';
-  if (cls.includes('yellow-orb-disklocation') || cls.includes('red-orb-disklocation')) return 'active';
+  if (cls.includes('yellow-orb-disklocation') || cls.includes('red-orb-disklocation'))
+    return 'active';
   return 'empty';
 }
 
@@ -79,7 +89,7 @@ function parseGroupName(container: Element): string {
   for (const child of Array.from(wrapper.children)) {
     if (child === container) continue;
     const b = child.querySelector('b');
-    if (b && b.textContent) return b.textContent.trim();
+    if (b?.textContent) return b.textContent.trim();
   }
   return '';
 }

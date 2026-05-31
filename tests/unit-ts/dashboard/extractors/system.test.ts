@@ -55,7 +55,7 @@ describe('systemExtractor', () => {
 
   it('extracts at least one pie slice', () => {
     const result = systemExtractor.extract({ source: tbody });
-    expect((result?.pies.length ?? 0)).toBeGreaterThanOrEqual(1);
+    expect(result?.pies.length ?? 0).toBeGreaterThanOrEqual(1);
   });
 
   it('extracts 4 pies from the standard fixture', () => {
@@ -130,7 +130,7 @@ describe('systemExtractor', () => {
     expect(result.pies[0].detail).toBe('Percent of total used memory (62.6 GiB)');
   });
 
-  it('extracts the human-readable used amount from each pie\'s var span', () => {
+  it("extracts the human-readable used amount from each pie's var span", () => {
     const wrapper = document.createElement('table');
     wrapper.innerHTML = `
       <tbody title="Memory Utilization">
@@ -151,7 +151,7 @@ describe('systemExtractor', () => {
     expect(result.pies[1].used).toBe('45.8 GiB');
   });
 
-  it('parses the total size from each pie\'s tooltip detail string', () => {
+  it("parses the total size from each pie's tooltip detail string", () => {
     const wrapper = document.createElement('table');
     wrapper.innerHTML = `
       <tbody title="Memory Utilization">

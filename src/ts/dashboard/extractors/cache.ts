@@ -25,9 +25,7 @@ function parseStatus(tbody: HTMLTableSectionElement): CacheState['status'] {
   // Header has '<span id="pool_status_N"> Status: ONLINE</span>' once the
   // websocket payload has been applied. Some layouts also embed an inline
   // ONLINE/OFFLINE label inside the disk-row status cell.
-  const headerText = (
-    tbody.querySelector('[id^="pool_status_"]')?.textContent ?? ''
-  ).toLowerCase();
+  const headerText = (tbody.querySelector('[id^="pool_status_"]')?.textContent ?? '').toLowerCase();
   const bodyText = (tbody.textContent ?? '').toLowerCase();
   const haystack = `${headerText} ${bodyText}`;
   if (/\bdegraded\b/.test(haystack)) return 'degraded';
@@ -61,8 +59,8 @@ export const cacheExtractor: Extractor<CacheState> = {
     return false;
   },
   extract: ({ source }) => {
-    const diskRows = Array.from(source.querySelectorAll('tr')).filter((row) =>
-      row.querySelector('.orb, [class*="-orb"]') !== null,
+    const diskRows = Array.from(source.querySelectorAll('tr')).filter(
+      (row) => row.querySelector('.orb, [class*="-orb"]') !== null,
     );
 
     const disks: DiskRow[] = diskRows.map((row) => ({

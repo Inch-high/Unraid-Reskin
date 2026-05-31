@@ -75,12 +75,12 @@ export type DiskSlotColor = 'green' | 'yellow' | 'red' | 'blue' | 'grey';
 export type DiskSlotState = 'active' | 'standby' | 'empty';
 
 export interface DiskSlot {
-  position: number;            // grid order from style="order:N"
-  occupied: boolean;           // true for both 'active' and 'standby' — empty bays are false
+  position: number; // grid order from style="order:N"
+  occupied: boolean; // true for both 'active' and 'standby' — empty bays are false
   orbColor: DiskSlotColor;
   state: DiskSlotState;
-  diskName: string | null;     // device identifier parsed from the slot's /Main/Device?name=… link (e.g. "disk1", "parity", "cache")
-  label: string;               // slot number text from <b>N</b>
+  diskName: string | null; // device identifier parsed from the slot's /Main/Device?name=… link (e.g. "disk1", "parity", "cache")
+  label: string; // slot number text from <b>N</b>
   inlineBgColor: string | null; // The inline background-color of the slot box, if any
 }
 
@@ -98,8 +98,8 @@ export interface DisklocationGroup {
 
 export interface DisklocationState {
   kind: 'disklocation';
-  assignedCount: number;       // "14 of 19 drives assigned" → 14
-  totalCount: number;          // → 19
+  assignedCount: number; // "14 of 19 drives assigned" → 14
+  totalCount: number; // → 19
   // The disklocation plugin emits one .grid-container per physical tier with
   // a user-defined name + column count. Order preserved as in the source DOM
   // so consumers render each tier in the same vertical sequence the user laid
@@ -109,14 +109,14 @@ export interface DisklocationState {
 
 export interface CoreLoad {
   index: number;
-  threadLabel: string;  // "CPU 0 - HT 16"
+  threadLabel: string; // "CPU 0 - HT 16"
   loadPct: number;
 }
 
 export interface ProcessorState {
   kind: 'processor';
-  model: string;             // "AMD EPYC 8124P 16-Core @ 2450 MHz"
-  cores: number;             // parsed from /(\d+)-Core/ in model
+  model: string; // "AMD EPYC 8124P 16-Core @ 2450 MHz"
+  cores: number; // parsed from /(\d+)-Core/ in model
   totalPowerW: number | null;
   temperatureC: number | null;
   overallLoadPct: number | null;
@@ -124,11 +124,11 @@ export interface ProcessorState {
 }
 
 export interface MemorySlice {
-  label: string;            // "RAM usage", "Boot device", "Log filesystem", "Docker vdisk"
+  label: string; // "RAM usage", "Boot device", "Log filesystem", "Docker vdisk"
   percentUsed: number;
-  detail: string;           // tooltip text "Percent of total used memory (62.6 GiB)"
-  used: string;             // human "34.1 GiB" - read from span.varN sibling of span.sysN
-  total: string;            // human "126 GiB" - parsed from detail's parenthesised tail
+  detail: string; // tooltip text "Percent of total used memory (62.6 GiB)"
+  used: string; // human "34.1 GiB" - read from span.varN sibling of span.sysN
+  total: string; // human "126 GiB" - parsed from detail's parenthesised tail
 }
 
 export interface MemoryState {
@@ -138,20 +138,20 @@ export interface MemoryState {
 
 export interface GpuState {
   kind: 'gpu';
-  model: string;             // "NVIDIA RTX A2000 12GB"
-  vendor: string;            // "NVIDIA"
-  driver: string;            // driver version string
-  pciBus: string;            // "1 (4) Lanes (Max): 16 (16)" or just the bus identifier
-  utilizationPct: number | null;  // gpu-util1: GPU controller activity %
-  memoryUsedPct: number | null;   // gpu-memutil1: memory controller activity % (NOT VRAM allocation)
-  encoderUtilPct: number | null;  // gpu-encutil1: hardware encoder %
-  decoderUtilPct: number | null;  // gpu-decutil1: hardware decoder %
-  gpuClockMHz: number | null;     // gpu-clock1: core clock (always non-zero on a powered card)
-  memoryMHz: number | null;       // gpu-memclock1: memory clock
-  fanRpm: number | null;          // gpu-fan1: fan % (0-100); the "RPM" suffix in the Unraid label is a misnomer
+  model: string; // "NVIDIA RTX A2000 12GB"
+  vendor: string; // "NVIDIA"
+  driver: string; // driver version string
+  pciBus: string; // "1 (4) Lanes (Max): 16 (16)" or just the bus identifier
+  utilizationPct: number | null; // gpu-util1: GPU controller activity %
+  memoryUsedPct: number | null; // gpu-memutil1: memory controller activity % (NOT VRAM allocation)
+  encoderUtilPct: number | null; // gpu-encutil1: hardware encoder %
+  decoderUtilPct: number | null; // gpu-decutil1: hardware decoder %
+  gpuClockMHz: number | null; // gpu-clock1: core clock (always non-zero on a powered card)
+  memoryMHz: number | null; // gpu-memclock1: memory clock
+  fanRpm: number | null; // gpu-fan1: fan % (0-100); the "RPM" suffix in the Unraid label is a misnomer
   powerW: number | null;
   temperatureC: number | null;
-  perfState: string;              // gpu-perfstate1: "P0".."P12"
+  perfState: string; // gpu-perfstate1: "P0".."P12"
   activeApps: number;
   throttling: boolean;
 }
@@ -172,7 +172,7 @@ export interface DockerContainer {
   name: string;
   state: 'started' | 'stopped' | 'paused' | 'unknown';
   imgUrl: string | null;
-  folderName: string | null;   // null if not in a folder.view2 grouping
+  folderName: string | null; // null if not in a folder.view2 grouping
 }
 
 export interface DockerFolder {
@@ -185,7 +185,7 @@ export interface DockerFolder {
 
 export interface DockerState {
   kind: 'docker';
-  folders: DockerFolder[];      // populated when folder.view2 is installed
+  folders: DockerFolder[]; // populated when folder.view2 is installed
   ungrouped: DockerContainer[]; // containers not in any folder
   totalRunning: number;
   totalCount: number;
@@ -226,15 +226,15 @@ export interface VmsState {
 // listing interfaces; per-row data is injected into ids like #main0, #port0,
 // #link0 by JS. We surface the list + currently-selected interface.
 export interface NetworkInterface {
-  name: string;          // "bond0", "eth0", "eth1", "lo"
-  mainText: string;      // contents of #mainN once populated (mode/speed/duplex)
+  name: string; // "bond0", "eth0", "eth1", "lo"
+  mainText: string; // contents of #mainN once populated (mode/speed/duplex)
 }
 
 export interface InterfaceState {
   kind: 'interface';
   interfaces: NetworkInterface[];
   selectedName: string;
-  inboundText: string;   // contents of #inbound (e.g. "237.1 Kbps")
+  inboundText: string; // contents of #inbound (e.g. "237.1 Kbps")
   outboundText: string;
 }
 
@@ -245,10 +245,10 @@ export type UpsStatus = 'on-line' | 'on-battery' | 'low-battery' | 'replace-batt
 export interface UpsState {
   kind: 'ups';
   status: UpsStatus;
-  statusText: string;        // raw text from .nut_status
+  statusText: string; // raw text from .nut_status
   batteryChargePct: number | null;
   loadPct: number | null;
-  loadW: number | null;       // computed (loadPct% * nominalPowerW)
+  loadW: number | null; // computed (loadPct% * nominalPowerW)
   runtimeMinutes: number | null;
   nominalPowerW: number | null;
   nominalVA: number | null;
@@ -267,20 +267,20 @@ export interface UpsState {
 // server name, description, time. Body shows model, registration, uptime, case icon.
 export interface IdentityState {
   kind: 'identity';
-  serverName: string;        // "HL15Rack"
-  description: string;       // "Media server"
-  model: string;             // "Custom"
-  registration: string;      // "Unraid OS Pro"
-  uptimeText: string;        // populated client-side from .uptime
-  caseClass: string | null;  // e.g. "case-45Drives-HL15" — for icon rendering
+  serverName: string; // "HL15Rack"
+  description: string; // "Media server"
+  model: string; // "Custom"
+  registration: string; // "Unraid OS Pro"
+  uptimeText: string; // populated client-side from .uptime
+  caseClass: string | null; // e.g. "case-45Drives-HL15" — for icon rendering
 }
 
 // Motherboard widget — three plain-text lines after the header.
 export interface MotherboardState {
   kind: 'motherboard';
-  vendor: string;            // "Giga Computing ME03-CE0-000 , Version 01000100"
-  biosVendor: string;        // "GIGABYTE, Version F12"
-  biosDated: string;         // "Sun 12 Apr 2026 12:00 AM"
+  vendor: string; // "Giga Computing ME03-CE0-000 , Version 01000100"
+  biosVendor: string; // "GIGABYTE, Version F12"
+  biosDated: string; // "Sun 12 Apr 2026 12:00 AM"
 }
 
 // Shares widget — list of shares with name, description, security, stream count.
@@ -290,13 +290,13 @@ export interface ShareRow {
   name: string;
   description: string;
   security: ShareSecurity;
-  streams: number | null;    // null when the count span is empty
+  streams: number | null; // null when the count span is empty
 }
 
 export interface SharesState {
   kind: 'shares';
   shares: ShareRow[];
-  totalCount: number;        // parsed from header "Share count: 10 with..."
+  totalCount: number; // parsed from header "Share count: 10 with..."
   publicSmbCount: number;
   publicNfsCount: number;
 }

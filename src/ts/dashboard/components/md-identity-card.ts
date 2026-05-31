@@ -114,9 +114,11 @@ export class MdIdentityCard extends LitElement {
             </div>
           </div>
           <div class="right">
-            ${s.caseClass
-              ? html`<div class="case"><i class=${s.caseClass}></i></div>`
-              : html`<div class="case-empty"></div>`}
+            ${
+              s.caseClass
+                ? html`<div class="case"><i class=${s.caseClass}></i></div>`
+                : html`<div class="case-empty"></div>`
+            }
           </div>
         </div>
       </md-card>

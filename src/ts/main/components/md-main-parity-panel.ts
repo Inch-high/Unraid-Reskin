@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import type { TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { ParityState, OperationState } from '../types';
 import { formatBytes, formatPct } from '../format';
@@ -37,8 +38,14 @@ export class MdMainParityPanel extends LitElement {
     await A.submit(req, this.csrf);
     this.resync();
   }
-  private async _pause(): Promise<void> { await A.submitParityPause(this.csrf); this.resync(); }
-  private async _resume(): Promise<void> { await A.submitParityResume(this.csrf); this.resync(); }
+  private async _pause(): Promise<void> {
+    await A.submitParityPause(this.csrf);
+    this.resync();
+  }
+  private async _resume(): Promise<void> {
+    await A.submitParityResume(this.csrf);
+    this.resync();
+  }
 
   render() {
     const p = this.parity;
@@ -46,19 +53,32 @@ export class MdMainParityPanel extends LitElement {
     const started = this.operation?.fsState === 'Started';
 
     if (p.running || p.paused) {
-      const op = p.action === 'recon' ? 'Sync' : p.action === 'clear' ? 'Disk-Clear' : 'Parity-Check';
+      const op =
+        p.action === 'recon' ? 'Sync' : p.action === 'clear' ? 'Disk-Clear' : 'Parity-Check';
       return html`
         <div class="row">
           <span class="meta"><strong>${op}</strong> in progress</span>
           <span class="bar"><span style=${`width:${p.pct ?? 0}%`}></span></span>
-          <span class="meta">${formatPct(p.pct)}${p.posBytes !== null && p.sizeBytes !== null
-            ? html` · ${formatBytes(p.posBytes)} / ${formatBytes(p.sizeBytes)}` : ''}</span>
+          <span class="meta">${formatPct(p.pct)}${
+            p.posBytes !== null && p.sizeBytes !== null
+              ? html` · ${formatBytes(p.posBytes)} / ${formatBytes(p.sizeBytes)}`
+              : ''
+          }</span>
         </div>
         <div class="row">
-          ${p.paused
-            ? html`<button @click=${this._resume}>Resume</button>`
-            : html`<button @click=${this._pause}>Pause</button>`}
-          <button @click=${() => { if (confirm('Cancel the running parity operation? Canceling may leave the array unprotected.')) void this._run(A.buildParityCancel()); }}>Cancel</button>
+          ${
+            p.paused
+              ? html`<button @click=${this._resume}>Resume</button>`
+              : html`<button @click=${this._pause}>Pause</button>`
+          }
+          <button @click=${() => {
+            if (
+              confirm(
+                'Cancel the running parity operation? Canceling may leave the array unprotected.',
+              )
+            )
+              void this._run(A.buildParityCancel());
+          }}>Cancel</button>
           ${p.errors !== null ? html`<span class="meta">${p.errors} error(s)</span>` : ''}
         </div>
       `;
@@ -67,7 +87,7 @@ export class MdMainParityPanel extends LitElement {
     if (!started) return html``;
 
     // Idle + Started: offer the applicable operation.
-    let control;
+    let control: TemplateResult;
     if (p.action === 'recon') {
       control = html`<button @click=${() => this._run(A.buildSync())}>Sync</button>
         <span class="meta">Will start the parity sync / rebuild.</span>`;
@@ -78,16 +98,21 @@ export class MdMainParityPanel extends LitElement {
       control = html`
         <button @click=${() => this._run(A.buildParityCheck(this._correct))}>Check</button>
         <label class="check"><input type="checkbox" .checked=${this._correct}
-          @change=${(e: Event) => { this._correct = (e.target as HTMLInputElement).checked; }}>
+          @change=${(e: Event) => {
+            this._correct = (e.target as HTMLInputElement).checked;
+          }}>
           Write corrections to parity</label>`;
     }
 
     return html`
       <div class="row">${control}</div>
-      ${p.last
-        ? html`<div class="meta">Last check completed <strong>${p.last.date}</strong>${p.last.durationText
-            ? html` · ${p.last.durationText}` : ''} · ${p.last.errors} error(s)</div>`
-        : ''}
+      ${
+        p.last
+          ? html`<div class="meta">Last check completed <strong>${p.last.date}</strong>${
+              p.last.durationText ? html` · ${p.last.durationText}` : ''
+            } · ${p.last.errors} error(s)</div>`
+          : ''
+      }
     `;
   }
 }

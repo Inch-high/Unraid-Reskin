@@ -17,15 +17,31 @@ if (!existsSync(distRoot)) mkdirSync(distRoot);
 // it (a fresh clone without renormalize, a third-party editor that re-saved with
 // CRLF, etc).
 const TEXT_EXTS = new Set([
-  '.page', '.php', '.cfg', '.plg', '.html', '.css', '.scss',
-  '.js', '.mjs', '.ts', '.json', '.md', '.sh', '.svg', '.xml',
+  '.page',
+  '.php',
+  '.cfg',
+  '.plg',
+  '.html',
+  '.css',
+  '.scss',
+  '.js',
+  '.mjs',
+  '.ts',
+  '.json',
+  '.md',
+  '.sh',
+  '.svg',
+  '.xml',
 ]);
 
 function normalizeCrlf(dir) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
-    if (st.isDirectory()) { normalizeCrlf(full); continue; }
+    if (st.isDirectory()) {
+      normalizeCrlf(full);
+      continue;
+    }
     if (!TEXT_EXTS.has(extname(name))) continue;
     const buf = readFileSync(full);
     if (!buf.includes(0x0d)) continue; // no CR present, leave alone
@@ -39,7 +55,13 @@ function normalizeCrlf(dir) {
 
 normalizeCrlf(pkgDir);
 
-const version = JSON.parse(spawnSync('node', ['-e', "process.stdout.write(JSON.stringify(require('./package.json').version))"], { cwd: root, encoding: 'utf8' }).stdout);
+const version = JSON.parse(
+  spawnSync(
+    'node',
+    ['-e', "process.stdout.write(JSON.stringify(require('./package.json').version))"],
+    { cwd: root, encoding: 'utf8' },
+  ).stdout,
+);
 const out = join(distRoot, `unraid-modernui-${version}.txz`);
 
 // On Windows we use built-in tar (Win10+, libarchive/bsdtar) explicitly — Git-for-Windows GNU tar
@@ -51,7 +73,9 @@ const tarBin = isWin ? 'C:\\Windows\\System32\\tar.exe' : 'tar';
 const tarArgs = ['-cJf', out, '-C', pkgDir, '.'];
 const result = spawnSync(tarBin, tarArgs, { stdio: 'inherit' });
 if (result.status !== 0) {
-  console.error('tar failed. On Windows ensure you have a recent Win10 build (tar.exe is built-in).');
+  console.error(
+    'tar failed. On Windows ensure you have a recent Win10 build (tar.exe is built-in).',
+  );
   process.exit(1);
 }
 console.log(`Packaged → ${out}`);

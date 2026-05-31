@@ -11,9 +11,16 @@
     "test": "npm run test:ts && npm run test:php",
     "test:ts": "vitest run",
     "test:php": "node tests/unit-php/run-all.mjs",
-    "test:integration": "node tests/integration/install-uninstall.mjs"
+    "test:integration": "node tests/integration/install-uninstall.mjs",
+    "lint": "npm run lint:js && npm run lint:php",
+    "lint:js": "biome ci",
+    "lint:php": "node tools/php-cs-fixer.mjs --check",
+    "format": "npm run format:js && npm run format:php",
+    "format:js": "biome check --write",
+    "format:php": "node tools/php-cs-fixer.mjs"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "jsdom": "^24.0.0",
     "sass": "^1.77.0",
     "typescript": "^5.4.0",

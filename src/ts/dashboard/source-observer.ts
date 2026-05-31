@@ -8,7 +8,7 @@ export interface SourceObserver {
 export function createSourceObserver(
   source: Element,
   onChange: () => void,
-  debounceMs: number = 50,
+  debounceMs = 50,
 ): SourceObserver {
   let timer: number | null = null;
   let observer: MutationObserver | null = null;

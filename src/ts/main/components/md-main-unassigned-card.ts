@@ -1,7 +1,12 @@
 import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MdMainCardBase } from './md-main-card';
-import type { UnassignedState, UnassignedDisk, UnassignedRemote, UnassignedHistorical } from '../types';
+import type {
+  UnassignedState,
+  UnassignedDisk,
+  UnassignedRemote,
+  UnassignedHistorical,
+} from '../types';
 import { formatBytes, formatTemp, formatPct } from '../format';
 import * as A from '../actions';
 
@@ -69,7 +74,8 @@ export class MdMainUnassignedCard extends MdMainCardBase {
         <div class="num">${formatBytes(d.sizeBytes)}</div>
         <div></div><div></div><div></div><div></div>
       </div>`;
-    const parts = d.partitions.map((p) => html`
+    const parts = d.partitions.map(
+      (p) => html`
       <div class="ud-row">
         <div class="name"><span class="primary">${p.device}</span>
           <span class="sub"><span class="dot ${p.mounted ? 'on' : 'off'}"></span>${p.mounted ? 'mounted' : 'not mounted'}</span></div>
@@ -80,7 +86,8 @@ export class MdMainUnassignedCard extends MdMainCardBase {
         <div class="num">${formatBytes(p.freeBytes)}</div>
         <div>${this._utilCell(p.usedBytes, p.sizeBytes, null)}</div>
         <div class="right"><button @click=${() => this._toggle(p.device, p.mounted)}>${p.mounted ? 'Unmount' : 'Mount'}</button></div>
-      </div>`);
+      </div>`,
+    );
     return [head, ...parts];
   }
 
@@ -130,12 +137,16 @@ export class MdMainUnassignedCard extends MdMainCardBase {
           <span>Utilization</span><span class="right">Action</span>
         </div>
         ${hasDisks ? s.disks.map((d) => this._diskRows(d)) : html`<div class="empty">No unassigned disks.</div>`}
-        ${hasRemotes
-          ? html`<div class="subhead">Remote SMB / NFS / ISO shares</div>${s.remotes.map((r) => this._remoteRow(r))}`
-          : html`<div class="subhead">Remote SMB / NFS / ISO shares</div><div class="empty">No remote shares configured.</div>`}
-        ${hasHistorical
-          ? html`<div class="subhead">Historical (previous) devices</div>${s.historical.map((h) => this._historicalRow(h))}`
-          : ''}
+        ${
+          hasRemotes
+            ? html`<div class="subhead">Remote SMB / NFS / ISO shares</div>${s.remotes.map((r) => this._remoteRow(r))}`
+            : html`<div class="subhead">Remote SMB / NFS / ISO shares</div><div class="empty">No remote shares configured.</div>`
+        }
+        ${
+          hasHistorical
+            ? html`<div class="subhead">Historical (previous) devices</div>${s.historical.map((h) => this._historicalRow(h))}`
+            : ''
+        }
         <div class="footnote">Format, preclear, per-device settings, scripts, adding remote shares, and removing
           historical devices: use Settings → Theme → <strong>Main: Stock</strong>.</div>
       </div>

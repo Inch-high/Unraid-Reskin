@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { matchPlugin, REGISTRY, type PluginEntry } from '../../../src/ts/shell/plugin-mirror';
 
 const BOTTOM_REGISTRY: PluginEntry[] = [
-  { name: 'dynamix.system.temp', selector: '.dynamix-system-temp', slot: 'cpu-temp', label: 'CPU temp' },
+  {
+    name: 'dynamix.system.temp',
+    selector: '.dynamix-system-temp',
+    slot: 'cpu-temp',
+    label: 'CPU temp',
+  },
   { name: 'dynamix.ups', selector: '.nut_status', slot: 'ups', label: 'UPS' },
 ];
 

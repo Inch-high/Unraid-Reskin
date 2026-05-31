@@ -8,7 +8,7 @@ export function formatBytes(bytes: number | null | undefined, precision = 1): st
   const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
   const exp = Math.min(units.length - 1, Math.floor(Math.log(abs) / Math.log(1024)));
   const v = bytes / Math.pow(1024, exp);
-  const p = exp === 0 ? 0 : precision;          // bytes show no decimals
+  const p = exp === 0 ? 0 : precision; // bytes show no decimals
   return `${v.toFixed(p)} ${units[exp]}`;
 }
 

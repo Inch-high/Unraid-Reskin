@@ -21,7 +21,13 @@ if (build.status !== 0) process.exit(build.status);
 const pack = spawnSync('npm', ['run', 'package'], { cwd: root, stdio: 'inherit', shell: true });
 if (pack.status !== 0) process.exit(pack.status);
 
-const version = JSON.parse(spawnSync('node', ['-e', "process.stdout.write(JSON.stringify(require('./package.json').version))"], { cwd: root, encoding: 'utf8' }).stdout);
+const version = JSON.parse(
+  spawnSync(
+    'node',
+    ['-e', "process.stdout.write(JSON.stringify(require('./package.json').version))"],
+    { cwd: root, encoding: 'utf8' },
+  ).stdout,
+);
 const txz = join(root, `dist/unraid-modernui-${version}.txz`);
 
 // 2. Ensure remote cfg dir exists, then scp

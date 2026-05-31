@@ -2,7 +2,13 @@
 // We do not own the imperative side; we POST to Events.php exactly like the
 // stock UI does. State changes propagate back through the nchan stream.
 
-import type { DockerContainerFull, DockerFolder, DockerTag, DockerFoldersFile, DockerTagsFile } from './types';
+import type {
+  DockerContainerFull,
+  DockerFolder,
+  DockerTag,
+  DockerFoldersFile,
+  DockerTagsFile,
+} from './types';
 
 export type DockerAction = 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update';
 
@@ -16,9 +22,9 @@ const EVENTS_ENDPOINT = '/plugins/dynamix.docker.manager/include/Events.php';
 // channel; we ignore it and rely on docker-state.php polling to detect
 // completion.
 const START_COMMAND_ENDPOINT = '/webGui/include/StartCommand.php';
-const SAVE_FOLDERS    = '/plugins/unraid-modernui/include/save-docker-folders.php';
-const SAVE_TAGS       = '/plugins/unraid-modernui/include/save-docker-tags.php';
-const SAVE_AUTOSTART  = '/plugins/unraid-modernui/include/save-docker-autostart.php';
+const SAVE_FOLDERS = '/plugins/unraid-modernui/include/save-docker-folders.php';
+const SAVE_TAGS = '/plugins/unraid-modernui/include/save-docker-tags.php';
+const SAVE_AUTOSTART = '/plugins/unraid-modernui/include/save-docker-autostart.php';
 
 // CSRF token is published by Unraid's auto_prepend onto `window.csrf_token`.
 // We read it once per call so the value stays fresh if the page persists.
@@ -87,17 +93,20 @@ export async function executeBulk(
   const failed: string[] = [];
   const workers: Promise<void>[] = [];
   for (let i = 0; i < concurrency; i++) {
-    workers.push((async (): Promise<void> => {
-      while (queue.length > 0) {
-        const name = queue.shift();
-        if (!name) return;
-        try { await executeContainer(name, action); }
-        catch (err) {
-          failed.push(name);
-          console.warn(`[modernui-docker] bulk ${action} failed for ${name}:`, err);
+    workers.push(
+      (async (): Promise<void> => {
+        while (queue.length > 0) {
+          const name = queue.shift();
+          if (!name) return;
+          try {
+            await executeContainer(name, action);
+          } catch (err) {
+            failed.push(name);
+            console.warn(`[modernui-docker] bulk ${action} failed for ${name}:`, err);
+          }
         }
-      }
-    })());
+      })(),
+    );
   }
   await Promise.all(workers);
   return { failed };
@@ -124,7 +133,8 @@ export interface DockerSnapshot {
 // no `/containers/json?size=true` RW-layer walk). nchan live updates fill in
 // CPU/RAM within seconds anyway.
 export async function fetchSnapshot(opts: { withStats?: boolean } = {}): Promise<DockerSnapshot> {
-  const url = '/plugins/unraid-modernui/include/docker-state.php' + (opts.withStats ? '?stats=1' : '');
+  const url =
+    '/plugins/unraid-modernui/include/docker-state.php' + (opts.withStats ? '?stats=1' : '');
   const res = await fetch(url, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(`docker-state.php ${res.status}`);
   return res.json();
@@ -138,7 +148,7 @@ export async function saveFolders(folders: DockerFolder[]): Promise<void> {
   const body: DockerFoldersFile = { version: 1, folders };
   const res = await postUrlEncoded(SAVE_FOLDERS, { payload: JSON.stringify(body) });
   if (!res.ok) throw new Error(`save-docker-folders ${res.status}`);
-  const json = await res.json() as { ok: boolean; error?: string };
+  const json = (await res.json()) as { ok: boolean; error?: string };
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
@@ -146,22 +156,28 @@ export async function saveFolders(folders: DockerFolder[]): Promise<void> {
 // on the server; rc.docker reads that file at boot time to start containers
 // sequentially. Existing wait values for entries we don't touch are preserved
 // by the endpoint.
-export interface AutostartChange { name: string; enabled: boolean }
+export interface AutostartChange {
+  name: string;
+  enabled: boolean;
+}
 
 export async function saveAutostart(changes: AutostartChange[]): Promise<void> {
   if (changes.length === 0) return;
   const body = JSON.stringify({ changes });
   const res = await postUrlEncoded(SAVE_AUTOSTART, { payload: body });
   if (!res.ok) throw new Error(`save-docker-autostart ${res.status}`);
-  const json = await res.json() as { ok: boolean; error?: string };
+  const json = (await res.json()) as { ok: boolean; error?: string };
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
-export async function saveTags(tags: DockerTag[], assignments: Record<string, string[]>): Promise<void> {
+export async function saveTags(
+  tags: DockerTag[],
+  assignments: Record<string, string[]>,
+): Promise<void> {
   const body: DockerTagsFile = { version: 1, tags, assignments };
   const res = await postUrlEncoded(SAVE_TAGS, { payload: JSON.stringify(body) });
   if (!res.ok) throw new Error(`save-docker-tags ${res.status}`);
-  const json = await res.json() as { ok: boolean; error?: string };
+  const json = (await res.json()) as { ok: boolean; error?: string };
   if (!json.ok) throw new Error(json.error ?? 'save failed');
 }
 
@@ -170,15 +186,27 @@ export async function saveTags(tags: DockerTag[], assignments: Record<string, st
 // on a 30-container host) and returns immediately. Caller polls
 // getCheckUpdatesStatus() until { running: false } and then re-fetches the
 // snapshot to pick up the new `updateAvailable` flags.
-export interface CheckUpdatesStart { queued: boolean; running: boolean }
-export interface CheckUpdatesStatus { running: boolean; finishedAt: number | null; error: string | null }
+export interface CheckUpdatesStart {
+  queued: boolean;
+  running: boolean;
+}
+export interface CheckUpdatesStatus {
+  running: boolean;
+  finishedAt: number | null;
+  error: string | null;
+}
 
 const CHECK_UPDATES_URL = '/plugins/unraid-modernui/include/docker-check-updates.php';
 
 export async function checkForUpdates(): Promise<CheckUpdatesStart> {
   const res = await postUrlEncoded(CHECK_UPDATES_URL, {});
   if (!res.ok) throw new Error(`check-updates ${res.status}`);
-  const json = await res.json() as { ok: boolean; queued?: boolean; running?: boolean; error?: string };
+  const json = (await res.json()) as {
+    ok: boolean;
+    queued?: boolean;
+    running?: boolean;
+    error?: string;
+  };
   if (!json.ok) throw new Error(json.error ?? 'check failed');
   return { queued: json.queued ?? false, running: json.running ?? true };
 }
@@ -186,7 +214,11 @@ export async function checkForUpdates(): Promise<CheckUpdatesStart> {
 export async function getCheckUpdatesStatus(): Promise<CheckUpdatesStatus> {
   const res = await fetch(CHECK_UPDATES_URL, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(`check-updates status ${res.status}`);
-  const json = await res.json() as { running?: boolean; finishedAt?: number | null; error?: string | null };
+  const json = (await res.json()) as {
+    running?: boolean;
+    finishedAt?: number | null;
+    error?: string | null;
+  };
   return {
     running: json.running ?? false,
     finishedAt: json.finishedAt ?? null,
@@ -231,7 +263,9 @@ function openTerminal(): OpenTerminalFn | null {
 // their click did something, instead of failing silently in the console.
 function warnTerminalMissing(): void {
   console.warn('[modernui-docker] openTerminal() missing — Unraid chrome not loaded?');
-  alert('Terminal helper unavailable. Reload the page and try again — if it persists, the Unraid chrome may not be loading on this view.');
+  alert(
+    'Terminal helper unavailable. Reload the page and try again — if it persists, the Unraid chrome may not be loading on this view.',
+  );
 }
 
 export function openLogs(c: DockerContainerFull): void {
@@ -239,13 +273,19 @@ export function openLogs(c: DockerContainerFull): void {
   // docker case detects more==='.log' and runs `docker logs -f` instead of
   // `docker exec -it`.
   const t = openTerminal();
-  if (!t) { warnTerminalMissing(); return; }
+  if (!t) {
+    warnTerminalMissing();
+    return;
+  }
   t('docker', c.name, '.log');
 }
 
 export function openConsole(c: DockerContainerFull): void {
   const t = openTerminal();
-  if (!t) { warnTerminalMissing(); return; }
+  if (!t) {
+    warnTerminalMissing();
+    return;
+  }
   t('docker', c.name, c.shell || 'sh');
 }
 

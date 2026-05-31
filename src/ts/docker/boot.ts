@@ -23,17 +23,22 @@ export function isDockerPageEnabled(doc: Document): boolean {
 // use 1024 base, MB/GB use 1000 base per Docker CLI conventions.
 const SIZE_RX = /^([\d.]+)\s*([A-Za-z]*)$/;
 const SIZE_MULT: Record<string, number> = {
-  '': 1, B: 1,
-  KB: 1000, KIB: 1024,
-  MB: 1_000_000, MIB: 1024 ** 2,
-  GB: 1_000_000_000, GIB: 1024 ** 3,
-  TB: 1_000_000_000_000, TIB: 1024 ** 4,
+  '': 1,
+  B: 1,
+  KB: 1000,
+  KIB: 1024,
+  MB: 1_000_000,
+  MIB: 1024 ** 2,
+  GB: 1_000_000_000,
+  GIB: 1024 ** 3,
+  TB: 1_000_000_000_000,
+  TIB: 1024 ** 4,
 };
 function parseSize(s: string): number | undefined {
   const m = SIZE_RX.exec(s.trim());
   if (!m) return undefined;
   const mult = SIZE_MULT[m[2].toUpperCase()] ?? 1;
-  const n = parseFloat(m[1]) * mult;
+  const n = Number.parseFloat(m[1]) * mult;
   return Number.isFinite(n) ? Math.round(n) : undefined;
 }
 
@@ -46,7 +51,9 @@ function parseSize(s: string): number | undefined {
 //
 // where MemUsage is "X.XXMiB / Y.YYGiB" (used / limit). One message contains
 // every running container in one newline-separated batch.
-function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: string) => DockerDelta[] {
+function makeDeltaParser(
+  store: ReturnType<typeof createDockerStore>,
+): (raw: string) => DockerDelta[] {
   return (raw: string) => {
     if (typeof raw !== 'string' || raw.length === 0) return [];
 
@@ -63,7 +70,9 @@ function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: str
           }
           return [];
         });
-      } catch { return []; }
+      } catch {
+        return [];
+      }
     }
 
     // Newline-delimited "id;cpu;mem" — the docker_load nchan worker shape.
@@ -77,7 +86,7 @@ function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: str
       const c = resolveById(store, id);
       if (!c) continue;
       const cpuRaw = parts[1].replace('%', '').trim();
-      const cpuPct = cpuRaw === '' ? undefined : parseFloat(cpuRaw);
+      const cpuPct = cpuRaw === '' ? undefined : Number.parseFloat(cpuRaw);
       const memUsed = parts[2].split('/')[0]?.trim() ?? '';
       const memBytes = parseSize(memUsed);
       out.push({
@@ -90,7 +99,10 @@ function makeDeltaParser(store: ReturnType<typeof createDockerStore>): (raw: str
   };
 }
 
-function resolveById(store: ReturnType<typeof createDockerStore>, id: string): { name: string } | null {
+function resolveById(
+  store: ReturnType<typeof createDockerStore>,
+  id: string,
+): { name: string } | null {
   if (!id) return null;
   const list = store.getState().containers;
   for (const c of list) {
@@ -104,7 +116,7 @@ export async function boot(): Promise<void> {
   if (!onDockerPage()) return;
 
   const root = document.querySelector<HTMLElement>('#modernui-docker-root');
-  if (!root) return;            // mount point absent → stock page is rendering, bail silently
+  if (!root) return; // mount point absent → stock page is rendering, bail silently
 
   const store = createDockerStore();
   store.setFilters(filtersFromQuery(window.location.search));

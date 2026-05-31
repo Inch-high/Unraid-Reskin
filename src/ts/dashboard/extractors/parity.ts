@@ -6,7 +6,8 @@ function parseStatus(tbody: HTMLTableSectionElement): ParityStatus {
   const text = tbody.textContent ?? '';
   const lower = text.toLowerCase();
   if (lower.includes('parity is valid')) return 'valid';
-  if (lower.includes('parity check running') || lower.includes('parity-check running')) return 'running';
+  if (lower.includes('parity check running') || lower.includes('parity-check running'))
+    return 'running';
   if (tbody.querySelector('.running')) return 'running';
   if (lower.includes('parity is invalid')) return 'invalid';
   if (lower.includes('no parity disk') || lower.includes('parity is disabled')) return 'disabled';
@@ -54,7 +55,8 @@ export const parityExtractor: Extractor<ParityState> = {
     if (source.classList.contains('parity')) return true;
     const titleAttr = source.getAttribute('title')?.toLowerCase() ?? '';
     if (titleAttr.includes('parity')) return true;
-    const headerText = source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
+    const headerText =
+      source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
     return headerText.includes('PARITY') && !headerText.includes('VIRTUAL');
   },
   extract: ({ source }) => ({

@@ -102,27 +102,36 @@ export class MdDockerToolbar extends LitElement {
 
   private _setQuery(e: Event): void {
     const v = (e.target as HTMLInputElement).value;
-    this.dispatchEvent(new CustomEvent('docker-filters', {
-      detail: { ...this.filters, query: v },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-filters', {
+        detail: { ...this.filters, query: v },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _setState(state: DockerFilters['state']): void {
-    this.dispatchEvent(new CustomEvent('docker-filters', {
-      detail: { ...this.filters, state },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-filters', {
+        detail: { ...this.filters, state },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _toggleTag(id: string): void {
     const next = this.filters.tagIds.includes(id)
       ? this.filters.tagIds.filter((x) => x !== id)
       : [...this.filters.tagIds, id];
-    this.dispatchEvent(new CustomEvent('docker-filters', {
-      detail: { ...this.filters, tagIds: next },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-filters', {
+        detail: { ...this.filters, tagIds: next },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _tagCount(id: string): number {
@@ -135,17 +144,23 @@ export class MdDockerToolbar extends LitElement {
 
   private _setFolderDefault(value: 'expanded' | 'collapsed'): void {
     if (value === this.folderDefault) return;
-    this.dispatchEvent(new CustomEvent<{ value: 'expanded' | 'collapsed' }>('docker-folder-default', {
-      detail: { value },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ value: 'expanded' | 'collapsed' }>('docker-folder-default', {
+        detail: { value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _toggleStats(): void {
-    this.dispatchEvent(new CustomEvent<{ on: boolean }>('docker-show-stats', {
-      detail: { on: !this.showStats },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ on: boolean }>('docker-show-stats', {
+        detail: { on: !this.showStats },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   render() {
@@ -167,7 +182,9 @@ export class MdDockerToolbar extends LitElement {
           <button class="chip" ?data-active=${f.state === 'running'} @click=${() => this._setState('running')}>Running <span class="count">${running}</span></button>
           <button class="chip" ?data-active=${f.state === 'stopped'} @click=${() => this._setState('stopped')}>Stopped <span class="count">${stopped}</span></button>
         </div>
-        ${this.tags.length > 0 ? html`
+        ${
+          this.tags.length > 0
+            ? html`
           <div class="group">
             <span class="label">Tag</span>
             ${this.tags.map((t) => {
@@ -182,7 +199,9 @@ export class MdDockerToolbar extends LitElement {
               `;
             })}
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
         <span class="spacer"></span>
         <div class="group">
           <span class="label">Stats</span>
@@ -209,6 +228,6 @@ export class MdDockerToolbar extends LitElement {
 function hexToRgba(hex: string, alpha: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return `rgba(255,140,47,${alpha})`;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   return `rgba(${(n >> 16) & 0xff},${(n >> 8) & 0xff},${n & 0xff},${alpha})`;
 }

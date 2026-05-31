@@ -69,7 +69,7 @@ export class MdMainEncryptionFields extends LitElement {
     } else {
       valid = this._keyfileDataUrl.length > 0;
     }
-    if (reformat) valid = valid && this._reformatAck;   // second explicit confirmation
+    if (reformat) valid = valid && this._reformatAck; // second explicit confirmation
     return {
       passphrase: this._method === 'text' ? this._pass : undefined,
       keyfileDataUrl: this._method === 'file' ? this._keyfileDataUrl : undefined,
@@ -91,36 +91,59 @@ export class MdMainEncryptionFields extends LitElement {
     this._method = (e.target as HTMLSelectElement).value as 'text' | 'file';
     this._emit();
   }
-  private _onPass(e: Event): void { this._pass = (e.target as HTMLInputElement).value; this._emit(); }
-  private _onRetype(e: Event): void { this._retype = (e.target as HTMLInputElement).value; this._emit(); }
-  private _onShow(e: Event): void { this._show = (e.target as HTMLInputElement).checked; }
+  private _onPass(e: Event): void {
+    this._pass = (e.target as HTMLInputElement).value;
+    this._emit();
+  }
+  private _onRetype(e: Event): void {
+    this._retype = (e.target as HTMLInputElement).value;
+    this._emit();
+  }
+  private _onShow(e: Event): void {
+    this._show = (e.target as HTMLInputElement).checked;
+  }
   private _onReformat(e: Event): void {
     this._reformat = (e.target as HTMLInputElement).checked;
     if (!this._reformat) this._reformatAck = false;
     this._emit();
   }
-  private _onReformatAck(e: Event): void { this._reformatAck = (e.target as HTMLInputElement).checked; this._emit(); }
+  private _onReformatAck(e: Event): void {
+    this._reformatAck = (e.target as HTMLInputElement).checked;
+    this._emit();
+  }
   private _onFile(e: Event): void {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) { this._keyfileDataUrl = ''; this._emit(); return; }
+    if (!file) {
+      this._keyfileDataUrl = '';
+      this._emit();
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => { this._keyfileDataUrl = String(reader.result ?? ''); this._emit(); };
+    reader.onload = () => {
+      this._keyfileDataUrl = String(reader.result ?? '');
+      this._emit();
+    };
     reader.readAsDataURL(file);
   }
 
   private _statusLabel(): string {
     switch (this.encryption?.mode) {
-      case 'enter-new':   return 'Enter new key';
-      case 'missing-key': return 'Missing key';
-      case 'wrong-key':   return 'Wrong key';
-      default:            return '';
+      case 'enter-new':
+        return 'Enter new key';
+      case 'missing-key':
+        return 'Missing key';
+      case 'wrong-key':
+        return 'Wrong key';
+      default:
+        return '';
     }
   }
 
   render() {
     const reformat = this._allowsReformat && this._reformat;
-    const mismatch = this._method === 'text' && reformat && this._retype.length > 0 && this._pass !== this._retype;
+    const mismatch =
+      this._method === 'text' && reformat && this._retype.length > 0 && this._pass !== this._retype;
     return html`
       <div class="grid">
         <span>Encryption status:</span>
@@ -132,8 +155,9 @@ export class MdMainEncryptionFields extends LitElement {
           <option value="file">Keyfile</option>
         </select>
 
-        ${this._method === 'text'
-          ? html`
+        ${
+          this._method === 'text'
+            ? html`
             <label for="enc-pass">Passphrase:</label>
             <div class="row">
               <input id="enc-pass" type=${this._show ? 'text' : 'password'} maxlength="512"
@@ -141,27 +165,32 @@ export class MdMainEncryptionFields extends LitElement {
                 placeholder="use printable characters only" autocomplete="off">
               <label class="check"><input type="checkbox" @change=${this._onShow}> show</label>
             </div>
-            ${reformat
-              ? html`<label for="enc-retype">Retype passphrase:</label>
+            ${
+              reformat
+                ? html`<label for="enc-retype">Retype passphrase:</label>
                   <div class="row">
                     <input id="enc-retype" type=${this._show ? 'text' : 'password'} maxlength="512"
                       .value=${this._retype} @input=${this._onRetype} autocomplete="off">
                     ${mismatch ? html`<span class="mismatch">passphrases don't match</span>` : ''}
                   </div>`
-              : ''}`
-          : html`
+                : ''
+            }`
+            : html`
             <label for="enc-file">Keyfile:</label>
-            <input id="enc-file" type="file" @change=${this._onFile}>`}
+            <input id="enc-file" type="file" @change=${this._onFile}>`
+        }
 
-        ${this._allowsReformat
-          ? html`
+        ${
+          this._allowsReformat
+            ? html`
             <span></span>
             <label class="check danger-ack">
               <input type="checkbox" .checked=${this._reformat} @change=${this._onReformat}>
               permit reformat (re-encrypt this device)
             </label>
-            ${this._reformat
-              ? html`
+            ${
+              this._reformat
+                ? html`
                 <div class="warn">
                   ⚠ Reformatting <strong>permanently erases all data</strong> on the affected device(s)
                   and creates a new encrypted filesystem. This cannot be undone.
@@ -171,13 +200,17 @@ export class MdMainEncryptionFields extends LitElement {
                   <input type="checkbox" .checked=${this._reformatAck} @change=${this._onReformatAck}>
                   Yes — I understand this erases data and I want to reformat.
                 </label>`
-              : ''}`
-          : ''}
+                : ''
+            }`
+            : ''
+        }
 
-        ${this.encryption?.keyfilePresent
-          ? html`<span></span>
+        ${
+          this.encryption?.keyfilePresent
+            ? html`<span></span>
               <span><button class="link" @click=${this._onDeleteKeyfile}>Delete encryption keyfile</button></span>`
-          : ''}
+            : ''
+        }
       </div>
     `;
   }

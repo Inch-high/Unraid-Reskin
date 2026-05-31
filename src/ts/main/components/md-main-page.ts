@@ -65,7 +65,9 @@ export class ModernuiMainPage extends LitElement {
   @state() private _unassigned: UnassignedState | null = null;
 
   /** Set by boot.ts after fetching ud-state.php (and on resync). */
-  setUnassigned(u: UnassignedState): void { this._unassigned = u; }
+  setUnassigned(u: UnassignedState): void {
+    this._unassigned = u;
+  }
 
   setStore(store: MainStore): void {
     this._unsub?.();
@@ -136,13 +138,13 @@ export class ModernuiMainPage extends LitElement {
       </div>
       <md-main-capacity-hero .array=${s.array} .isProtected=${s.operation.protected}></md-main-capacity-hero>
       <md-main-array-card .array=${s.array} .util=${util}></md-main-array-card>
-      ${s.pools.map(
-        (p) => html`<md-main-pool-card .pool=${p} .util=${util}></md-main-pool-card>`,
-      )}
+      ${s.pools.map((p) => html`<md-main-pool-card .pool=${p} .util=${util}></md-main-pool-card>`)}
       ${s.boot ? html`<md-main-boot-card .device=${s.boot} .util=${util}></md-main-boot-card>` : ''}
-      ${this._unassigned && this._unassigned.available
-        ? html`<md-main-unassigned-card .state=${this._unassigned} .csrf=${s.csrfToken} .resync=${this.resync}></md-main-unassigned-card>`
-        : ''}
+      ${
+        this._unassigned?.available
+          ? html`<md-main-unassigned-card .state=${this._unassigned} .csrf=${s.csrfToken} .resync=${this.resync}></md-main-unassigned-card>`
+          : ''
+      }
     `;
   }
 }

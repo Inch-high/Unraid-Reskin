@@ -5,11 +5,11 @@ import './md-card';
 
 function statusPill(s: UpsStatus) {
   const map: Record<UpsStatus, { text: string; color: string }> = {
-    'on-line':          { text: 'On line',         color: 'var(--success)' },
-    'on-battery':       { text: 'On battery',      color: 'var(--warning)' },
-    'low-battery':      { text: 'Low battery',     color: 'var(--danger)' },
-    'replace-battery':  { text: 'Replace battery', color: 'var(--danger)' },
-    'unknown':          { text: 'Unknown',         color: 'var(--text-muted)' },
+    'on-line': { text: 'On line', color: 'var(--success)' },
+    'on-battery': { text: 'On battery', color: 'var(--warning)' },
+    'low-battery': { text: 'Low battery', color: 'var(--danger)' },
+    'replace-battery': { text: 'Replace battery', color: 'var(--danger)' },
+    unknown: { text: 'Unknown', color: 'var(--text-muted)' },
   };
   const { text, color } = map[s];
   return html`<span style="

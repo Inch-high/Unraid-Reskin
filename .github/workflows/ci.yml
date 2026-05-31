@@ -6,6 +6,11 @@
 # the server-side endpoints (request-shape validation in save.php, the
 # disks.ini → MainPageState mapping in main-state.php) can't regress unnoticed
 # between dev-box runs.
+#
+# A parallel `lint` job enforces code formatting: Biome (formatter + a tuned
+# linter) over the TS/JS, and PHP-CS-Fixer (@PSR12) over the server-side PHP.
+# Both run in check-only mode and fail the build on any unformatted file. Run
+# `npm run format` locally to auto-fix before pushing.
 
 name: CI
 
@@ -22,6 +27,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Formatting/lint gate — fails the build on any unformatted TS/JS or PHP file.
+  # Kept separate from `test` so a style failure reads distinctly from a logic
+  # failure, and the two jobs run concurrently.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # PHP-CS-Fixer runs under PHP; 8.2 matches Unraid 7.x. The pinned
+      # php-cs-fixer.phar is fetched on demand by tools/php-cs-fixer.mjs.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint TS/JS (Biome)
+        run: npm run lint:js
+
+      - name: Lint PHP (PHP-CS-Fixer, @PSR12)
+        run: npm run lint:php
+
   test:
     runs-on: ubuntu-latest
     steps:

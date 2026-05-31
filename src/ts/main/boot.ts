@@ -58,7 +58,9 @@ export async function boot(): Promise<void> {
       }
       // Optional Unassigned Devices state (separate, best-effort — never blocks
       // the core snapshot). The card hides itself when unavailable.
-      fetchUnassigned().then((u) => page.setUnassigned(u)).catch(() => undefined);
+      fetchUnassigned()
+        .then((u) => page.setUnassigned(u))
+        .catch(() => undefined);
     }, 150);
   };
 
@@ -77,7 +79,9 @@ export async function boot(): Promise<void> {
   }
 
   // Initial Unassigned Devices fetch (best-effort; card hides if unavailable).
-  fetchUnassigned().then((u) => page.setUnassigned(u)).catch(() => undefined);
+  fetchUnassigned()
+    .then((u) => page.setUnassigned(u))
+    .catch(() => undefined);
 
   // Live updates. The ArrayOperation.page overlay keeps the
   // Nchan="device_list,disk_load,parity_list" attribute, so emhttp publishes
@@ -87,15 +91,18 @@ export async function boot(): Promise<void> {
   createMainLive({
     resync,
     channels: [
-      { url: '/sub/devices',       handle: () => resync() },
-      { url: '/sub/fsState',       handle: () => resync() },
+      { url: '/sub/devices', handle: () => resync() },
+      { url: '/sub/fsState', handle: () => resync() },
       { url: '/sub/paritymonitor', handle: () => resync() },
-      { url: '/sub/arraymonitor',  handle: () => resync() },
-      { url: '/sub/mymonitor',     handle: (raw) => {
+      { url: '/sub/arraymonitor', handle: () => resync() },
+      {
+        url: '/sub/mymonitor',
+        handle: (raw) => {
           const busy = parseBusy(raw);
           if (busy !== null) store.setBusy(busy);
           resync();
-        } },
+        },
+      },
     ],
   });
 }

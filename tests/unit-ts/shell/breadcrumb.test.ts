@@ -23,7 +23,7 @@ describe('pathToBreadcrumb', () => {
   it('falls back to capitalized URL segments for unknown paths', () => {
     expect(pathToBreadcrumb('/Tailscale/Status', CURATED_NAV)).toEqual([
       { label: 'Tailscale', url: '/Tailscale' },
-      { label: 'Status',    url: '/Tailscale/Status' },
+      { label: 'Status', url: '/Tailscale/Status' },
     ]);
   });
 

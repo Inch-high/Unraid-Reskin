@@ -67,7 +67,10 @@ const fetchCmd =
   `curl -sS -H 'Host: localhost' --cookie '${cookieName}=${sessionId}' ` +
   `http://localhost/Dashboard`;
 
-const fetched = spawnSync('ssh', [...sshFlags, host, fetchCmd], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+const fetched = spawnSync('ssh', [...sshFlags, host, fetchCmd], {
+  encoding: 'utf8',
+  maxBuffer: 16 * 1024 * 1024,
+});
 if (fetched.status !== 0) {
   console.error('SSH/curl failed:', fetched.stderr);
   process.exit(1);
@@ -101,7 +104,10 @@ const attrRe = (name) => new RegExp(`${name}\\s*=\\s*["']([^"']+)["']`, 'i');
 
 const usedNames = new Map(); // base name -> count, used for disambiguation
 function uniqueName(base) {
-  const safe = base.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  const safe = base
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
   const key = safe || 'anon';
   const n = usedNames.get(key) ?? 0;
   usedNames.set(key, n + 1);
@@ -116,11 +122,7 @@ for (let i = 0; i < matches.length; i++) {
   const idMatch = openTag.match(attrRe('id'));
   const titleMatch = openTag.match(attrRe('title'));
   const classMatch = openTag.match(attrRe('class'));
-  const base =
-    (idMatch && idMatch[1]) ||
-    (titleMatch && titleMatch[1]) ||
-    (classMatch && classMatch[1]) ||
-    `anon_${i}`;
+  const base = idMatch?.[1] || titleMatch?.[1] || classMatch?.[1] || `anon_${i}`;
   const safeName = uniqueName(base);
   const outPath = join(outDir, `${safeName}.html`);
   writeFileSync(outPath, tb + '\n');

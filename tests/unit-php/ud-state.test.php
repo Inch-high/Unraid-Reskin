@@ -1,4 +1,5 @@
 <?php
+
 // Verifies ud-state.php normalizes the Unassigned Devices data into a clean,
 // CREDENTIAL-STRIPPED shape. The single most important assertion: the share
 // password / user command are NEVER present in the emitted JSON.
@@ -83,7 +84,12 @@ $histSerials = array_column($hist, 'serial');
 assert(!in_array('Config', $histSerials, true), '[Config] section excluded from historical');
 assert(!in_array('WDC_WD40_ABC123', $histSerials, true), 'currently-attached disk excluded from historical');
 assert(in_array('KINGSTON_SNV3S1000G_50026B768724BA9E', $histSerials, true), 'absent device IS historical');
-$k = null; foreach ($hist as $h) if ($h['serial'] === 'KINGSTON_SNV3S1000G_50026B768724BA9E') $k = $h;
+$k = null;
+foreach ($hist as $h) {
+    if ($h['serial'] === 'KINGSTON_SNV3S1000G_50026B768724BA9E') {
+        $k = $h;
+    }
+}
 assert($k['device'] === 'dev1', 'historical remembers the assigned device name');
 assert($k['mountpoint'] === 'dev1', 'historical mountpoint is the basename of mountpoint.1');
 

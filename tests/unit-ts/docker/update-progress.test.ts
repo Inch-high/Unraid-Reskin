@@ -1,21 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createUpdateProgressStore, parseBytesField, selectPanelView } from '../../../src/ts/docker/update-progress';
+import {
+  createUpdateProgressStore,
+  parseBytesField,
+  selectPanelView,
+} from '../../../src/ts/docker/update-progress';
 import type { UpdateProgress } from '../../../src/ts/docker/update-progress';
 
 // Build the same nchan payloads stock update_container.php publishes. The
 // protocol is "<cmd>\0<arg1>\0<arg2>" with NUL separators. Helpers below
 // construct them so the tests read like the actual stream.
-const addLog   = (html: string): string => `addLog\0${html}`;
+const addLog = (html: string): string => `addLog\0${html}`;
 const progress = (id: string, text: string): string => `progress\0${id}\0${text}`;
-const DONE     = '_DONE_';
+const DONE = '_DONE_';
 
-const LEGEND_PULL  = (image: string): string =>
+const LEGEND_PULL = (image: string): string =>
   `<fieldset class='docker'><legend>Pulling image: ${image}</legend><p></p></fieldset>`;
-const LEGEND_STOP  = (name: string): string =>
+const LEGEND_STOP = (name: string): string =>
   `<fieldset class='docker'><legend>Stopping container: ${name}</legend></fieldset>`;
-const LEGEND_EXEC  = `<fieldset class='docker'><legend>Command execution</legend></fieldset>`;
+const LEGEND_EXEC = `<fieldset class='docker'><legend>Command execution</legend></fieldset>`;
 
-const resolveTo = (table: Record<string, string>) => (image: string): string | null => table[image] ?? null;
+const resolveTo =
+  (table: Record<string, string>) =>
+  (image: string): string | null =>
+    table[image] ?? null;
 
 describe('parseBytesField', () => {
   it('parses common docker size formats', () => {
@@ -29,9 +36,13 @@ describe('parseBytesField', () => {
 describe('update-progress store — message parsing', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    try { sessionStorage.removeItem('modernui-docker-update-progress'); } catch {}
+    try {
+      sessionStorage.removeItem('modernui-docker-update-progress');
+    } catch {}
   });
-  afterEach(() => { vi.useRealTimers(); });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('idle: no active progress until a Pulling image: log lands', () => {
     const store = createUpdateProgressStore(resolveTo({}));
@@ -42,7 +53,9 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('Pulling image: starts a session and resolves container name from image', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'lscr.io/linuxserver/plex:latest': 'plex' }));
+    const store = createUpdateProgressStore(
+      resolveTo({ 'lscr.io/linuxserver/plex:latest': 'plex' }),
+    );
     store.handleMessage(addLog(LEGEND_PULL('lscr.io/linuxserver/plex:latest')));
     const a = store.getActive();
     expect(a).not.toBeNull();
@@ -53,23 +66,23 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('aggregates percentage byte-weighted across layers (not a raw mean)', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
-    store.handleMessage(progress('a', ' 50% of 100 MB'));   // 50 MB of 100 MB
-    store.handleMessage(progress('b', ' 100% of 50 MB'));   // 50 MB of 50 MB
+    store.handleMessage(progress('a', ' 50% of 100 MB')); // 50 MB of 100 MB
+    store.handleMessage(progress('b', ' 100% of 50 MB')); // 50 MB of 50 MB
     const a = store.getActive()!;
     // Byte-weighted: 100 MB downloaded / 150 MB total = 66.7% (a raw mean of
     // the two layer percents would wrongly read 75%).
     expect(a.percent).toBeCloseTo(66.67, 1);
     expect(a.totalBytes).toBeCloseTo(150_000_000, 0);
-    expect(a.downloadedBytes).toBeCloseTo(100_000_000, 0);  // 50 + 50
+    expect(a.downloadedBytes).toBeCloseTo(100_000_000, 0); // 50 + 50
   });
 
   it('byte-weighted percent reflects real total when a fresh layer joins', () => {
     // A raw mean lurches when layers interleave: layer a at 80% reads 80%,
     // then layer b appears at 0% and a mean would collapse to 40% regardless
     // of layer sizes. Byte-weighting ties the figure to actual bytes moved.
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 80% of 100 MB'));
     expect(store.getActive()!.percent).toBeCloseTo(80, 1);
@@ -79,15 +92,15 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('computes download speed from byte deltas over the rolling window', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
 
     vi.setSystemTime(1000);
-    store.handleMessage(progress('a', ' 10% of 100 MB'));    // 10 MB at t=1.0
-    expect(store.getActive()!.speedBps).toBeNull();          // one sample
+    store.handleMessage(progress('a', ' 10% of 100 MB')); // 10 MB at t=1.0
+    expect(store.getActive()!.speedBps).toBeNull(); // one sample
 
     vi.setSystemTime(2000);
-    store.handleMessage(progress('a', ' 50% of 100 MB'));    // 50 MB at t=2.0
+    store.handleMessage(progress('a', ' 50% of 100 MB')); // 50 MB at t=2.0
     const a = store.getActive()!;
     expect(a.speedBps).not.toBeNull();
     // (50 - 10) MB / 1s ≈ 40 MB/s
@@ -95,7 +108,7 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('switches phase to recreating when stop/run legend appears', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 100% of 100 MB'));
     expect(store.getActive()!.phase).toBe('pulling');
@@ -111,7 +124,7 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('Pulling image for a second container resets state', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex', 'sonarr': 'sonarr' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex', sonarr: 'sonarr' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 50% of 100 MB'));
 
@@ -124,7 +137,7 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('_DONE_ clears active state', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 50% of 100 MB'));
     expect(store.getActive()).not.toBeNull();
@@ -133,7 +146,7 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('chunked downloads (no "% of" suffix) still produce non-zero progress', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     // Stock script's else-branch: just a bytes value, no percentage.
     store.handleMessage(progress('a', '45 MB'));
@@ -146,7 +159,7 @@ describe('update-progress store — message parsing', () => {
     // Regression: guarding on the layer (not the message) froze a chunked
     // layer after its first chunk — every later "N MB" was dropped, so the
     // byte total and speed estimate stalled.
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', '45 MB'));
     expect(store.getActive()!.totalBytes).toBeCloseTo(45_000_000, 0);
@@ -160,10 +173,10 @@ describe('update-progress store — message parsing', () => {
     // Mixed pull: one real layer at 25%, plus a chunked layer with no total.
     // The chunked layer must be excluded from the byte-weighted percentage
     // (it would otherwise read as a permanent 100% and drag the figure up).
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
-    store.handleMessage(progress('a', ' 25% of 200 MB'));   // known: 50 MB / 200 MB
-    store.handleMessage(progress('b', '90 MB'));            // chunked, no total
+    store.handleMessage(progress('a', ' 25% of 200 MB')); // known: 50 MB / 200 MB
+    store.handleMessage(progress('b', '90 MB')); // chunked, no total
     // Percent reflects only the known layer: 50 MB / 200 MB = 25%.
     expect(store.getActive()!.percent).toBeCloseTo(25, 1);
   });
@@ -172,10 +185,10 @@ describe('update-progress store — message parsing', () => {
     const store = createUpdateProgressStore(resolveTo({}));
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage('addToID\x00abc\x00Downloading'); // ignored
-    store.handleMessage('show_Wait\x00123');              // ignored — \x00 (not \0123 — strict-mode octal escape error)
-    store.handleMessage('stop_Wait\x00123');              // ignored
-    store.handleMessage('');                              // empty
-    store.handleMessage('rawhtml-no-nul');                // no command separator
+    store.handleMessage('show_Wait\x00123'); // ignored — \x00 (not \0123 — strict-mode octal escape error)
+    store.handleMessage('stop_Wait\x00123'); // ignored
+    store.handleMessage(''); // empty
+    store.handleMessage('rawhtml-no-nul'); // no command separator
     // none of these mutate the state — active still has just the pull session
     const a = store.getActive()!;
     expect(a.image).toBe('plex');
@@ -183,7 +196,7 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('subscribers fire on every state-changing message', () => {
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     const spy = vi.fn();
     store.subscribe(spy);
     store.handleMessage(addLog(LEGEND_PULL('plex')));
@@ -196,7 +209,7 @@ describe('update-progress store — message parsing', () => {
     // Repro of the nav-away bug: session was wiped on page nav so the panel
     // showed "Queued" until the next "Pulling image:" log re-established.
     // With sessionStorage persistence, a fresh store sees the prior state.
-    const store1 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store1 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store1.handleMessage(addLog(LEGEND_PULL('plex')));
     store1.handleMessage(progress('a', ' 50% of 100 MB'));
     store1.handleMessage(progress('b', ' 25% of 100 MB'));
@@ -205,7 +218,7 @@ describe('update-progress store — message parsing', () => {
     vi.runOnlyPendingTimers();
 
     // Simulate navigating away + back — store2 hydrates from sessionStorage.
-    const store2 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store2 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     const a = store2.getActive();
     expect(a).not.toBeNull();
     expect(a!.name).toBe('plex');
@@ -221,7 +234,7 @@ describe('update-progress store — message parsing', () => {
     // the digest cache lagged reconcile detection. _DONE_ is the canonical
     // end-of-batch signal — caller wires it to clearAllUpdating + resync.
     const onBatchComplete = vi.fn();
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }), onBatchComplete);
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }), onBatchComplete);
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 50% of 100 MB'));
     expect(onBatchComplete).not.toHaveBeenCalled();
@@ -231,7 +244,7 @@ describe('update-progress store — message parsing', () => {
 
   it('onBatchComplete does NOT fire on parse errors or unrelated messages', () => {
     const onBatchComplete = vi.fn();
-    const store = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }), onBatchComplete);
+    const store = createUpdateProgressStore(resolveTo({ plex: 'plex' }), onBatchComplete);
     store.handleMessage(addLog(LEGEND_PULL('plex')));
     store.handleMessage(progress('a', ' 50% of 100 MB'));
     store.handleMessage('rawhtml-no-nul');
@@ -240,23 +253,23 @@ describe('update-progress store — message parsing', () => {
   });
 
   it('_DONE_ clears persisted state', () => {
-    const store1 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store1 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store1.handleMessage(addLog(LEGEND_PULL('plex')));
     store1.handleMessage(progress('a', ' 50% of 100 MB'));
     store1.handleMessage(DONE);
 
-    const store2 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store2 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     expect(store2.getActive()).toBeNull();
   });
 
   it('expired persisted state is discarded (>5 min)', () => {
     vi.setSystemTime(1_000_000);
-    const store1 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store1 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     store1.handleMessage(addLog(LEGEND_PULL('plex')));
     store1.handleMessage(progress('a', ' 50% of 100 MB'));
     // Advance past TTL.
     vi.setSystemTime(1_000_000 + 6 * 60_000);
-    const store2 = createUpdateProgressStore(resolveTo({ 'plex': 'plex' }));
+    const store2 = createUpdateProgressStore(resolveTo({ plex: 'plex' }));
     expect(store2.getActive()).toBeNull();
   });
 
@@ -276,8 +289,13 @@ describe('update-progress store — message parsing', () => {
 
 describe('selectPanelView — active vs queued reconciliation', () => {
   const progress = (name: string | null): UpdateProgress => ({
-    name, image: 'img', percent: 42, totalBytes: 0, downloadedBytes: 0,
-    speedBps: null, phase: 'pulling',
+    name,
+    image: 'img',
+    percent: 42,
+    totalBytes: 0,
+    downloadedBytes: 0,
+    speedBps: null,
+    phase: 'pulling',
   });
 
   it('no updating containers → nothing active, nothing queued', () => {

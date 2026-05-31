@@ -43,14 +43,20 @@ export class MdCacheCard extends LitElement {
   `;
 
   @property({ type: Object }) state: CacheState = {
-    kind: 'cache', poolName: 'cache', status: 'unknown', usedGB: null, totalGB: null, disks: [],
+    kind: 'cache',
+    poolName: 'cache',
+    status: 'unknown',
+    usedGB: null,
+    totalGB: null,
+    disks: [],
   };
 
   render() {
     const { poolName, usedGB, totalGB, disks } = this.state;
-    const meta = usedGB !== null && totalGB !== null
-      ? `${formatSize(usedGB)} / ${formatSize(totalGB)}`
-      : `${disks.length} disks`;
+    const meta =
+      usedGB !== null && totalGB !== null
+        ? `${formatSize(usedGB)} / ${formatSize(totalGB)}`
+        : `${disks.length} disks`;
 
     return html`
       <md-card cardTitle=${capitalise(poolName)} meta=${meta}>
@@ -58,7 +64,8 @@ export class MdCacheCard extends LitElement {
           ${disks.map((d) => html`<div class="led" style="background: ${stateColor(d.state)}"></div>`)}
         </div>
         <div class="disk-list">
-          ${disks.map((d) => html`
+          ${disks.map(
+            (d) => html`
             <div class="disk">
               <span class="name">${d.name}</span>
               <span class="state">
@@ -71,7 +78,8 @@ export class MdCacheCard extends LitElement {
               </div>
               <span class="pct ${d.utilizationPct === null ? 'empty' : ''}">${d.utilizationPct !== null ? `${Math.round(d.utilizationPct)}%` : '—'}</span>
             </div>
-          `)}
+          `,
+          )}
         </div>
       </md-card>
     `;

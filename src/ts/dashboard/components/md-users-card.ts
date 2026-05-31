@@ -53,7 +53,10 @@ export class MdUsersCard extends LitElement {
   `;
 
   @property({ type: Object }) state: UsersState = {
-    kind: 'users', users: [], totalCount: 0, unprotectedCount: 0,
+    kind: 'users',
+    users: [],
+    totalCount: 0,
+    unprotectedCount: 0,
   };
 
   private _badge(value: number | null) {
@@ -74,17 +77,19 @@ export class MdUsersCard extends LitElement {
 
   render() {
     const { users, totalCount, unprotectedCount } = this.state;
-    const meta = totalCount === 0
-      ? ''
-      : unprotectedCount === 0
-        ? `${totalCount}`
-        : `${totalCount} · ${unprotectedCount} unprotected`;
+    const meta =
+      totalCount === 0
+        ? ''
+        : unprotectedCount === 0
+          ? `${totalCount}`
+          : `${totalCount} · ${unprotectedCount} unprotected`;
 
     return html`
       <md-card cardTitle="Users" meta=${meta}>
-        ${users.length === 0
-          ? html`<div class="empty">No users configured</div>`
-          : html`
+        ${
+          users.length === 0
+            ? html`<div class="empty">No users configured</div>`
+            : html`
             <div class="user-list">
               <div class="row head">
                 <span>Name</span>
@@ -94,7 +99,8 @@ export class MdUsersCard extends LitElement {
               </div>
               ${users.map((u) => this._renderRow(u))}
             </div>
-          `}
+          `
+        }
       </md-card>
     `;
   }

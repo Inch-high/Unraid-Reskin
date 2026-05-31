@@ -121,8 +121,12 @@ export class MdDockerUpdatePanel extends LitElement {
     this._unsubProgress?.();
     this._docker = docker;
     this._progress = progress;
-    this._unsubDocker = docker.subscribe(() => { this._tick++; });
-    this._unsubProgress = progress.subscribe(() => { this._tick++; });
+    this._unsubDocker = docker.subscribe(() => {
+      this._tick++;
+    });
+    this._unsubProgress = progress.subscribe(() => {
+      this._tick++;
+    });
   }
 
   disconnectedCallback(): void {
@@ -139,7 +143,10 @@ export class MdDockerUpdatePanel extends LitElement {
     // Reconcile the restored progress session against the live updating set.
     // See selectPanelView for the stale-active + single-container fallback
     // rules (extracted + unit-tested there).
-    const { active: renderableActive, queued } = selectPanelView(updating, this._progress.getActive());
+    const { active: renderableActive, queued } = selectPanelView(
+      updating,
+      this._progress.getActive(),
+    );
 
     return html`
       <div class="panel">
@@ -178,7 +185,7 @@ export class MdDockerUpdatePanel extends LitElement {
         <div class="name" title=${name}>${name}</div>
         <div class="meta">
           <span class="phase">${indet ? 'Recreating' : `${Math.round(pct)}%`}</span>
-          <span>${indet ? '' : (p.speedBps !== null ? `${formatBytes(p.speedBps)}/s` : '—')}</span>
+          <span>${indet ? '' : p.speedBps !== null ? `${formatBytes(p.speedBps)}/s` : '—'}</span>
         </div>
         <div class="bar ${indet ? 'indet' : ''}"><i style="width:${pct}%"></i></div>
       </div>

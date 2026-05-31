@@ -2,7 +2,15 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { icon } from '../icons';
 
-export type BulkAction = 'start' | 'stop' | 'restart' | 'update' | 'remove' | 'clear' | 'autostart-on' | 'autostart-off';
+export type BulkAction =
+  | 'start'
+  | 'stop'
+  | 'restart'
+  | 'update'
+  | 'remove'
+  | 'clear'
+  | 'autostart-on'
+  | 'autostart-off';
 
 @customElement('md-docker-bulk-bar')
 export class MdDockerBulkBar extends LitElement {
@@ -45,9 +53,13 @@ export class MdDockerBulkBar extends LitElement {
   @property({ type: Number }) selectedCount = 0;
 
   private _emit(action: BulkAction): void {
-    this.dispatchEvent(new CustomEvent<{ action: BulkAction }>('docker-bulk', {
-      detail: { action }, bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ action: BulkAction }>('docker-bulk', {
+        detail: { action },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   render() {

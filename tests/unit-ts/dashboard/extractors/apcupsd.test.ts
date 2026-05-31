@@ -29,11 +29,16 @@ function populate(
 ): void {
   if (values.model !== undefined) tbody.querySelector('#ups_model')!.textContent = values.model;
   if (values.status !== undefined) tbody.querySelector('#ups_status')!.textContent = values.status;
-  if (values.bcharge !== undefined) tbody.querySelector('#ups_bcharge')!.textContent = values.bcharge;
-  if (values.loadpct !== undefined) tbody.querySelector('#ups_loadpct')!.textContent = values.loadpct;
-  if (values.timeleft !== undefined) tbody.querySelector('#ups_timeleft')!.textContent = values.timeleft;
-  if (values.nompower !== undefined) tbody.querySelector('#ups_nompower')!.textContent = values.nompower;
-  if (values.outputv !== undefined) tbody.querySelector('#ups_outputv')!.textContent = values.outputv;
+  if (values.bcharge !== undefined)
+    tbody.querySelector('#ups_bcharge')!.textContent = values.bcharge;
+  if (values.loadpct !== undefined)
+    tbody.querySelector('#ups_loadpct')!.textContent = values.loadpct;
+  if (values.timeleft !== undefined)
+    tbody.querySelector('#ups_timeleft')!.textContent = values.timeleft;
+  if (values.nompower !== undefined)
+    tbody.querySelector('#ups_nompower')!.textContent = values.nompower;
+  if (values.outputv !== undefined)
+    tbody.querySelector('#ups_outputv')!.textContent = values.outputv;
 }
 
 describe('apcupsdExtractor', () => {

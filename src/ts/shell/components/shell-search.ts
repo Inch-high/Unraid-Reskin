@@ -6,7 +6,7 @@ import { icon } from '../icons';
 interface SearchHit {
   label: string;
   url: string;
-  group?: string;          // "Storage" / "Other" — surfaced as a dim suffix in the row
+  group?: string; // "Storage" / "Other" — surfaced as a dim suffix in the row
 }
 
 function flattenNav(tree: NavItem[], parent?: string, acc: SearchHit[] = []): SearchHit[] {
@@ -130,8 +130,9 @@ export class ShellSearch extends LitElement {
   /** Cmd/Ctrl+K and "/" open search globally. Esc closes. */
   private _onGlobalKey = (e: KeyboardEvent): void => {
     const target = e.target as HTMLElement | null;
-    const inField = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
-    if ((e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+    const inField =
+      target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       this._toggleOpen(true);
       return;
@@ -224,18 +225,24 @@ export class ShellSearch extends LitElement {
           />
         </div>
         <div class="list">
-          ${matches.length === 0
-            ? html`<div class="empty">No matching pages</div>`
-            : matches.map((hit, i) => html`
+          ${
+            matches.length === 0
+              ? html`<div class="empty">No matching pages</div>`
+              : matches.map(
+                  (hit, i) => html`
                 <div
                   class="row ${i === this._selectedIdx ? 'selected' : ''}"
                   @click=${() => this._navigate(hit)}
-                  @mouseenter=${() => { this._selectedIdx = i; }}
+                  @mouseenter=${() => {
+                    this._selectedIdx = i;
+                  }}
                 >
                   <span>${hit.label}</span>
                   ${hit.group ? html`<span class="group">${hit.group}</span>` : ''}
                 </div>
-              `)}
+              `,
+                )
+          }
         </div>
         <div class="hint">
           <kbd>↑</kbd> <kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close

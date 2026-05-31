@@ -77,9 +77,11 @@ export class MdMemoryCard extends LitElement {
                   <span class="pct">${p.percentUsed.toFixed(0)}%</span>
                 </div>
                 <div class="label">${p.label}</div>
-                ${showTotals
-                  ? html`<div class="totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
-                  : ''}
+                ${
+                  showTotals
+                    ? html`<div class="totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
+                    : ''
+                }
               </div>
             `;
           })}

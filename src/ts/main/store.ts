@@ -55,7 +55,7 @@ export function createMainStore(): MainStore {
 
     subscribe(fn) {
       listeners.add(fn);
-      return () => listeners.delete(fn) as unknown as void;
+      return () => listeners.delete(fn) as unknown as undefined;
     },
   };
 }

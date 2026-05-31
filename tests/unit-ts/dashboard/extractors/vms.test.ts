@@ -115,8 +115,20 @@ describe('vmsExtractor', () => {
     expect(result.kind).toBe('vms');
     expect(result.totalCount).toBe(5);
     expect(result.totalRunning).toBe(2);
-    expect(result.vms.map((v) => v.name)).toEqual(['Windows 11', 'Ubuntu', 'macOS', 'Arch', 'Debian']);
-    expect(result.vms.map((v) => v.state)).toEqual(['started', 'stopped', 'paused', 'started', 'stopped']);
+    expect(result.vms.map((v) => v.name)).toEqual([
+      'Windows 11',
+      'Ubuntu',
+      'macOS',
+      'Arch',
+      'Debian',
+    ]);
+    expect(result.vms.map((v) => v.state)).toEqual([
+      'started',
+      'stopped',
+      'paused',
+      'started',
+      'stopped',
+    ]);
     expect(result.vms[0].iconUrl).toBe('/icons/win11.png');
     expect(result.vms[2].iconUrl).toBe('/icons/macos.png');
   });

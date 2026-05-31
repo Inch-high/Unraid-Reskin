@@ -80,7 +80,7 @@ function parseThrottling(tbody: HTMLTableSectionElement): boolean {
 
 export const gpuExtractor: Extractor<GpuState> = {
   match: ({ source }) => {
-    if (source.id && source.id.startsWith('tblGPU')) return true;
+    if (source.id?.startsWith('tblGPU')) return true;
     const cls = source.className || '';
     if (/\bgpu\b|gpu-/i.test(cls)) return true;
     return false;
@@ -92,14 +92,17 @@ export const gpuExtractor: Extractor<GpuState> = {
     const pciBus = parsePciBus(source);
 
     // Prefer the live fill width (smoothed fractional %) over the rounded text.
-    const utilizationPct = fillWidthBeside(source, 'gpu-util1')
-      ?? parseNumber(preferLoadText(source, 'gpu-util1'));
-    const memoryUsedPct = fillWidthBeside(source, 'gpu-memutil1')
-      ?? parseNumber(preferLoadText(source, 'gpu-memutil1'));
-    const encoderUtilPct = fillWidthBeside(source, 'gpu-encutil1')
-      ?? parseNumber(preferLoadText(source, 'gpu-encutil1'));
-    const decoderUtilPct = fillWidthBeside(source, 'gpu-decutil1')
-      ?? parseNumber(preferLoadText(source, 'gpu-decutil1'));
+    const utilizationPct =
+      fillWidthBeside(source, 'gpu-util1') ?? parseNumber(preferLoadText(source, 'gpu-util1'));
+    const memoryUsedPct =
+      fillWidthBeside(source, 'gpu-memutil1') ??
+      parseNumber(preferLoadText(source, 'gpu-memutil1'));
+    const encoderUtilPct =
+      fillWidthBeside(source, 'gpu-encutil1') ??
+      parseNumber(preferLoadText(source, 'gpu-encutil1'));
+    const decoderUtilPct =
+      fillWidthBeside(source, 'gpu-decutil1') ??
+      parseNumber(preferLoadText(source, 'gpu-decutil1'));
     const gpuClockMHz = parseNumber(preferLoadText(source, 'gpu-clock1'));
     const memoryMHz = parseNumber(preferLoadText(source, 'gpu-memclock1'));
     const fanRpm = parseNumber(preferLoadText(source, 'gpu-fan1'));

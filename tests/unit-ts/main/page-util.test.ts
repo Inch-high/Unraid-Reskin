@@ -14,7 +14,7 @@ const fixture = JSON.parse(
 
 afterEach(() => {
   delete document.documentElement.dataset.modernuiMainUtil;
-  delete (window as { csrf_token?: string }).csrf_token;
+  (window as { csrf_token?: string }).csrf_token = undefined;
   vi.unstubAllGlobals();
 });
 
@@ -46,21 +46,25 @@ describe('modernui-main-page — disk usage style', () => {
   it('in-page toggle flips every card to ring and persists via save.php', async () => {
     (window as { csrf_token?: string }).csrf_token = 'TESTCSRF';
     const calls: Array<{ url: string; body: string }> = [];
-    vi.stubGlobal('fetch', vi.fn(async (url: string, opts: { body: string }) => {
-      calls.push({ url, body: opts.body });
-      return { ok: true };
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, opts: { body: string }) => {
+        calls.push({ url, body: opts.body });
+        return { ok: true };
+      }),
+    );
 
     const el = await mountPage(); // default bar
-    const ringBtn = [...el.shadowRoot!.querySelectorAll('.seg button')]
-      .find((b) => b.textContent?.trim() === 'Ring') as HTMLButtonElement;
+    const ringBtn = [...el.shadowRoot!.querySelectorAll('.seg button')].find(
+      (b) => b.textContent?.trim() === 'Ring',
+    ) as HTMLButtonElement;
     ringBtn.click();
     await el.updateComplete;
 
     const array = el.shadowRoot!.querySelector('md-main-array-card') as { util?: string };
-    expect(array.util).toBe('ring');                         // tiles flipped in place
+    expect(array.util).toBe('ring'); // tiles flipped in place
     expect(document.documentElement.dataset.modernuiMainUtil).toBe('ring');
-    expect(calls).toHaveLength(1);                           // persisted once
+    expect(calls).toHaveLength(1); // persisted once
     expect(calls[0].url).toContain('/include/save.php');
     expect(calls[0].body).toContain('main_util_style=ring');
     expect(calls[0].body).toContain('csrf_token=TESTCSRF');
@@ -69,10 +73,13 @@ describe('modernui-main-page — disk usage style', () => {
   it('prefers the snapshot csrfToken over the page global when both are present', async () => {
     (window as { csrf_token?: string }).csrf_token = 'GLOBALCSRF';
     const calls: Array<{ body: string }> = [];
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, opts: { body: string }) => {
-      calls.push({ body: opts.body });
-      return { ok: true };
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, opts: { body: string }) => {
+        calls.push({ body: opts.body });
+        return { ok: true };
+      }),
+    );
 
     // Snapshot carries its own (authoritative) token — it must win.
     const store = createMainStore();
@@ -82,8 +89,11 @@ describe('modernui-main-page — disk usage style', () => {
     el.setStore(store);
     await el.updateComplete;
 
-    ([...el.shadowRoot!.querySelectorAll('.seg button')]
-      .find((b) => b.textContent?.trim() === 'Ring') as HTMLButtonElement).click();
+    (
+      [...el.shadowRoot!.querySelectorAll('.seg button')].find(
+        (b) => b.textContent?.trim() === 'Ring',
+      ) as HTMLButtonElement
+    ).click();
     await el.updateComplete;
 
     expect(calls).toHaveLength(1);
