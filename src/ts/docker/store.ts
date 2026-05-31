@@ -228,12 +228,27 @@ export function createDockerStore(): DockerStore {
     let changed = false;
     for (const [name, probe] of [...updateProbes]) {
       const c = next.containers.find((x) => x.name === name);
+      // Container id rotated => update_container pulled a fresh image and
+      // recreated the container. This only happens after a SUCCESSFUL pull
+      // (the script bails before recreating if the pull fails), so the
+      // container is up to date by construction.
+      const idRotated = !!c && probe.prevId !== '' && c.id !== '' && c.id !== probe.prevId;
       const done =
         !c ||
-        (probe.prevId !== '' && c.id !== '' && c.id !== probe.prevId) ||
+        idRotated ||
         (probe.prevUpdateAvailable && !c.updateAvailable) ||
         now - probe.startedAt > UPDATE_TIMEOUT_MS;
       if (done) {
+        // Force-clear the "update available" badge on an id rotation rather than
+        // trusting the snapshot's updateAvailable. Unraid's update-status cache
+        // can stay stale after an update: update_container relies on the pull's
+        // `Digest:` line to refresh the cached local digest, and reloadUpdateStatus
+        // REUSES that cached local instead of re-inspecting the actual image — so
+        // if the cache wasn't refreshed, the badge would otherwise persist forever
+        // (a later "check for updates" can't fix it either). We just pulled the
+        // image, so clearing here is correct; a genuine future update re-surfaces
+        // via the normal updateAvailable signal.
+        if (idRotated && c) c.updateAvailable = false;
         updateProbes.delete(name);
         updating.delete(name);
         changed = true;

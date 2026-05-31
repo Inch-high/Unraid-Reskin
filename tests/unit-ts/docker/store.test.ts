@@ -389,6 +389,25 @@ describe('updating state', () => {
     expect(store.getUpdating().has('plex')).toBe(false);
   });
 
+  it('force-clears the update badge on id rotation even if snapshot still says updateAvailable', () => {
+    // The stuck-badge bug: Unraid's update-status cache can stay stale after an
+    // update (reloadUpdateStatus reuses the cached local digest), so the snapshot
+    // keeps reporting updateAvailable=true for a container we just recreated.
+    // Because the id rotated, we know the pull succeeded — clear the badge.
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'old-id', updateAvailable: true });
+    store.setState(s);
+    store.markUpdating(['plex']);
+
+    const next = sampleState();
+    next.containers[0] = mkContainer({ name: 'plex', id: 'new-id', updateAvailable: true });
+    store.setState(next);
+
+    expect(store.getUpdating().has('plex')).toBe(false);
+    expect(store.getState().containers[0].updateAvailable).toBe(false);
+  });
+
   it('clears entries when updateAvailable flips true→false (id unchanged path)', () => {
     const store = createDockerStore();
     const s = sampleState();

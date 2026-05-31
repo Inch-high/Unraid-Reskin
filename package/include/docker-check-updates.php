@@ -2,9 +2,9 @@
 
 // Async "check for updates" trigger.
 //
-// DockerUpdate::reloadUpdateStatus() walks every local image and fetches its
-// tag manifest from the remote registry over HTTPS. On a host with 30+
-// containers that's 10s+ of serial network I/O — running it synchronously on
+// The update check (getAllInfo($reload=true), which walks every local image and
+// fetches its tag manifest from the remote registry over HTTPS) is 10s+ of
+// serial network I/O on a host with 30+ containers — running it synchronously on
 // the request path made the morph button block until completion.
 //
 // New contract (zero blocking I/O on request path, per the rebuild spec):
@@ -97,29 +97,38 @@ function modernui_check_updates_start(): array
 // CLI entry: runs the actual update check. Writes PID lock on start, status
 // file on finish (regardless of success), clears lock so the next POST can
 // start a new run.
+// NOTE: Unraid's docker classes + their module-level globals ($dockerManPaths,
+// $driver) MUST be required at FILE scope by the caller before this runs — see
+// the bootstrap in the CLI dispatch block at the bottom. DockerClient.php defines
+// $dockerManPaths at its top level; requiring it from inside this function would
+// scope that array locally and getAllInfo()'s `global $dockerManPaths` would see
+// null (manifesting as a "Path must not be empty" throw when it loads/saves the
+// webui-info cache). docker-state.php solves the same way.
 function modernui_check_updates_run_cli(): void
 {
     @file_put_contents(MODERNUI_CHECK_UPDATES_LOCK, (string)getmypid());
 
-    // DockerUpdate lives in dynamix.docker.manager. From a CLI context we
-    // need to pull its dependencies in explicitly — Helpers.php for _var/etc,
-    // DockerClient.php for $dockerManPaths + the DockerUpdate class.
-    $docroot = '/usr/local/emhttp';
-    if (is_file("$docroot/webGui/include/Helpers.php")) {
-        require_once "$docroot/webGui/include/Helpers.php";
-    }
-    $dockerClient = '/usr/local/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php';
-    if (is_file($dockerClient)) {
-        require_once $dockerClient;
-    }
-
     $error = null;
     try {
-        if (!class_exists('DockerUpdate')) {
-            throw new RuntimeException('DockerUpdate class missing — docker manager plugin not installed?');
+        if (!class_exists('DockerTemplates')) {
+            throw new RuntimeException('DockerTemplates class missing — docker manager plugin not installed?');
         }
-        $update = new DockerUpdate();
-        $update->reloadUpdateStatus();
+        // Call getAllInfo($reload=true) rather than DockerUpdate::reloadUpdateStatus()
+        // directly. There are TWO caches in the stock backend:
+        //   • unraid-update-status.json — raw local-vs-remote digest comparison,
+        //     written by reloadUpdateStatus().
+        //   • webui-info — the per-container metadata cache getAllInfo() serves,
+        //     including the `updated` string field docker-state.php reads.
+        // The `updated` field is ONLY recomputed from update-status.json when
+        // $reload=true. Our snapshot path (docker-state.php) calls getAllInfo with
+        // $reload=false for speed, so if the worker only refreshed update-status.json
+        // the snapshot would keep serving the STALE cached `updated` value forever
+        // and update badges would never appear. getAllInfo(true,…) does the per-image
+        // remote digest fetch AND rewrites webui-info in one pass — exactly what the
+        // stock UI's "check for updates" does. Off the request path, in this detached
+        // worker, the extra cost is fine.
+        $templates = new DockerTemplates();
+        $templates->getAllInfo(true, true, false);
     } catch (Throwable $e) {
         $error = $e->getMessage();
         error_log('[modernui] check-updates worker failed: ' . $error);
@@ -137,6 +146,21 @@ if (PHP_SAPI === 'cli') {
     // imports (e.g. from tests) don't trigger a registry walk.
     $argv = $_SERVER['argv'] ?? [];
     if (in_array('--run', $argv, true)) {
+        // Bootstrap Unraid's docker stack at FILE scope (this block runs in the
+        // global namespace, NOT inside a function) so DockerClient.php's top-level
+        // $dockerManPaths / $driver land as globals that getAllInfo() can see via
+        // `global`. Doing this inside run_cli() would scope them locally → empty
+        // paths → "Path must not be empty". DOCUMENT_ROOT is empty under CLI, so
+        // $docroot falls back to /usr/local/emhttp (matching the web request path,
+        // so the webui-info cache file resolves to the same docker.json).
+        $docroot = ($_SERVER['DOCUMENT_ROOT'] ?? '') ?: '/usr/local/emhttp';
+        if (is_file("$docroot/webGui/include/Helpers.php")) {
+            require_once "$docroot/webGui/include/Helpers.php";
+        }
+        $dockerClient = "$docroot/plugins/dynamix.docker.manager/include/DockerClient.php";
+        if (is_file($dockerClient)) {
+            require_once $dockerClient; // defines $dockerManPaths, $driver + classes
+        }
         modernui_check_updates_run_cli();
     }
 } elseif (!defined('MODERNUI_TESTING')) {
