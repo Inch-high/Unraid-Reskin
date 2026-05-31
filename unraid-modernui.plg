@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.7.0">
+<!ENTITY version   "0.8.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,12 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.0 (2026-05-31)
+- Feat (main): click any device tile on `/Main` to open a reskinned **drive-info modal** with five tabs — Health (SMART pass/fail verdict, temperature, power-on hours/cycles, capacity, identity), Attributes (ATA SMART table with failing/key attributes flagged, NVMe health log, SCSI counters), Self-test (run short/extended, live progress, abort, history log), Errors (array read-errors + disabled/unmountable reason + SMART error log), and Settings (spin-down delay + warning/critical temperature + SMART notification thresholds). The drive-name link still opens the stock `/Main/Device` page as an escape hatch.
+- Feat (main): new read-only `main-smart.php` runs `smartctl --json` to source the SMART data. It is deliberately a SEPARATE file from `main-state.php` (whose zero-shell CI invariant is untouched), resolves the `/dev` node from `disks.ini` rather than client input, `escapeshellarg`s every token, and passes `-n standby` so opening the panel never spins up a sleeping disk — it offers an explicit "wake & read" instead. The self-test trigger (short/extended/abort) validates `csrf_token` against `var.ini`; a new CI guard asserts the file may only ever invoke `/usr/sbin/smartctl`. Spin-down delay and SMART threshold writes reuse the stock `/update.htm` + `/update.php` endpoints — no new privileged writes.
+- Feat (main): the Array Operation panel's **Parity / Disks / System** detail now sits behind a default-collapsed "Array details" disclosure to keep the top of the page compact; the array state + Start/Stop control and the capacity hero stay visible.
+- Tests: +`main-smart.test.php` (device-node resolution / controller-type arg escaping / smartctl-JSON normalization incl. NVMe, failing-disk, standby, exit-code bitmask, defensive parsing) + drive-info action-builder coverage. 442 TS + 13 PHP suites green.
+
 ###v0.7.0 (2026-05-31)
 - Feat (main): the `/Main` device list is now a responsive grid of compact disk **tiles** instead of a wide row table. Each tile shows the device type (HDD / SSD / NVMe / USB icon), name + model, online/standby state, used-of-total with a utilization bar or radial ring, and a temp / SMART / errors footer — every critical fact survives, the horizontal scroll does not. An array **capacity hero** (used/free + parity protection + healthy count) tops the page, with a per-device state LED strip on the Array group. `deviceType` is derived server-side in `main-state.php` (nvme by kernel name, usb for the flash device, the rotational flag for SSD vs HDD).
 - Feat (main): one-click **Bar / Ring** toggle in the `/Main` header switches how every disk's usage is drawn and persists per-install — written via the stock save endpoint and restored with no flash on reload. Replaces the old full-width 11-column device rows; backend, nchan live updates, and the Array Operation panel are unchanged.

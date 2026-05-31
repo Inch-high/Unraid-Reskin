@@ -6,11 +6,14 @@ import type { MainDevice } from '../../../src/ts/main/types';
 function device(over: Partial<MainDevice> = {}): MainDevice {
   return {
     name: 'disk1',
+    idx: 1,
     role: 'data',
     deviceType: 'hdd',
     linuxDevice: 'sdk',
+    id: 'ST12000VN0008-2YS101_ZRT0Q2AK',
     model: 'ST12000VN0008-2YS101',
     serial: 'ZRT0Q2AK',
+    spindownDelay: null,
     status: 'ok',
     spin: 'active',
     spunDown: false,

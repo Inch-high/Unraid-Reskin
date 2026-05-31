@@ -101,3 +101,30 @@ jobs:
             exit 1
           fi
           echo "Read-only endpoint guard passed."
+
+      # main-smart.php DOES shell out (SMART has no on-disk source), but the
+      # ONLY binary it may invoke is /usr/sbin/smartctl, and only via a single
+      # escapeshellarg'd exec() boundary. Forbid all other exec/network
+      # primitives (incl. the backtick operator), and assert the smartctl path
+      # + escaping are present. We check CODE only — `//` line comments are
+      # stripped first so markdown backticks/words in prose don't false-trip.
+      - name: Guard main-smart.php (smartctl-only)
+        run: |
+          code="$(sed 's|//.*||' package/include/main-smart.php)"
+          if printf '%s\n' "$code" | grep -nE 'curl_exec|shell_exec|proc_open|popen|\bsystem\(|\bpassthru\(|`|wget |file_get_contents\(["'\'']https?:|fopen\(["'\'']https?:'; then
+            echo "::error::main-smart.php may only invoke smartctl via exec() — no other exec/network primitive."
+            exit 1
+          fi
+          if [ "$(printf '%s\n' "$code" | grep -cE '\bexec\(')" -ne 1 ]; then
+            echo "::error::main-smart.php must contain exactly one exec() boundary."
+            exit 1
+          fi
+          if ! grep -qE "MODERNUI_SMARTCTL\s*=\s*'/usr/sbin/smartctl'" package/include/main-smart.php; then
+            echo "::error::main-smart.php must hardcode the smartctl binary path."
+            exit 1
+          fi
+          if ! grep -q 'escapeshellarg' package/include/main-smart.php; then
+            echo "::error::main-smart.php must escapeshellarg every command token."
+            exit 1
+          fi
+          echo "main-smart.php guard passed."

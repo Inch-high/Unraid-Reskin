@@ -84,6 +84,43 @@ describe('action builders → exact {url, params}', () => {
     });
     expect(A.buildUdUmount('sdz1').params).toEqual({ action: 'umount', device: 'sdz1' });
   });
+  it('spin-down delay → diskSpindownDelay.<idx>', () => {
+    expect(A.buildSpindownDelay(0, '-1')).toEqual({
+      url: '/update.htm',
+      params: { 'diskSpindownDelay.0': '-1' },
+    });
+    expect(A.buildSpindownDelay(3, '30').params).toEqual({ 'diskSpindownDelay.3': '30' });
+  });
+  it('SMART settings → smart-one.cfg via update.php (no undefined leakage)', () => {
+    const r = A.buildSmartSettings({
+      id: 'MODEL_SERIAL',
+      hotTemp: '45',
+      maxTemp: '55',
+      smSelect: '1',
+    });
+    expect(r.url).toBe('/update.php');
+    expect(r.params).toEqual({
+      '#file': '/boot/config/smart-one.cfg',
+      '#include': 'webGui/include/update.smart.php',
+      '#section': 'MODEL_SERIAL',
+      '#cleanup': 'true',
+      '#apply': 'Apply',
+      smEvents: '',
+      hotTemp: '45',
+      maxTemp: '55',
+      smSelect: '1',
+    });
+    // smLevel/smType/smCustom omitted → must not appear as keys
+    expect('smLevel' in r.params).toBe(false);
+    expect('smType' in r.params).toBe(false);
+  });
+  it('self-test → main-smart.php endpoint', () => {
+    expect(A.buildSelfTest('disk1', 'short')).toEqual({
+      url: '/plugins/unraid-modernui/include/main-smart.php',
+      params: { name: 'disk1', action: 'short' },
+    });
+    expect(A.buildSelfTest('cache', 'abort').params).toEqual({ name: 'cache', action: 'abort' });
+  });
   it('keyfile upload / delete / pool precheck', () => {
     expect(A.buildKeyfileUpload('data:abc').params).toEqual({
       '#file': 'unused',

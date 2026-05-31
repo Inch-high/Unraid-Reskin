@@ -16,45 +16,11 @@
 // button label/enabled/gating; PHP only emits the raw var.ini fields and the
 // TS layer derives the verdict. operation.busy likewise comes from /sub/mymonitor.
 
-require_once __DIR__ . '/helpers.php';   // modernui_parse_cfg, modernui_is_disabled
+require_once __DIR__ . '/helpers.php';   // modernui_parse_cfg, modernui_is_disabled,
+// modernui_parse_ini_sections, modernui_split_model_serial
 
 const MODERNUI_DISKS_INI = '/var/local/emhttp/disks.ini';
 const MODERNUI_VAR_INI   = '/var/local/emhttp/var.ini';
-
-// Parse an Unraid sectioned INI (disks.ini): `["name"]` headers + key="value".
-// PHP's parse_ini_file mangles quoted section names and some values, so we
-// roll a small, predictable parser.
-function modernui_parse_ini_sections(string $path): array
-{
-    if (!is_file($path)) {
-        return [];
-    }
-    $out = [];
-    $section = null;
-    foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        $t = trim($line);
-        if ($t === '' || $t[0] === ';' || $t[0] === '#') {
-            continue;
-        }
-        if ($t[0] === '[') {
-            // ["parity"] or [parity]
-            $name = trim($t, '[]');
-            $name = trim($name, "\"'");
-            $section = $name;
-            $out[$section] = [];
-            continue;
-        }
-        $pos = strpos($t, '=');
-        if ($pos === false || $section === null) {
-            continue;
-        }
-        $key = trim(substr($t, 0, $pos));
-        $val = trim(substr($t, $pos + 1));
-        $val = trim($val, "\"'");
-        $out[$section][$key] = $val;
-    }
-    return $out;
-}
 
 // Parse a flat quoted INI (var.ini): key="value" lines, no sections. Unlike
 // modernui_parse_cfg (built for the unquoted settings.cfg), this strips the
@@ -100,16 +66,6 @@ function modernui_kib_to_bytes($v): ?int
 {
     $n = modernui_int_or_null($v);
     return $n === null ? null : $n * 1024;
-}
-
-// Split disks.ini `id` ("MODEL_SERIAL") on the LAST underscore.
-function modernui_split_model_serial(string $id): array
-{
-    $pos = strrpos($id, '_');
-    if ($pos === false) {
-        return [$id, ''];
-    }
-    return [substr($id, 0, $pos), substr($id, $pos + 1)];
 }
 
 function modernui_map_role(string $type): string
@@ -222,13 +178,18 @@ function modernui_normalize_device(string $name, array $d): array
     $role = modernui_map_role((string)($d['type'] ?? ''));
     $linuxDevice = (string)($d['device'] ?? '');
 
+    $spindownDelay = (string)($d['spindownDelay'] ?? '');
+
     return [
         'name'           => $name,
+        'idx'            => modernui_int_or_null($d['idx'] ?? null),
         'role'           => $role,
         'linuxDevice'    => $linuxDevice,
         'deviceType'     => modernui_map_device_type($role, $linuxDevice),
+        'id'             => $id,
         'model'          => $model,
         'serial'         => $serial,
+        'spindownDelay'  => $spindownDelay !== '' ? $spindownDelay : null,
         'status'         => modernui_map_status((string)($d['status'] ?? ''), (string)($d['fsStatus'] ?? '')),
         'spin'           => $spunDown ? 'standby' : 'active',
         'spunDown'       => $spunDown,

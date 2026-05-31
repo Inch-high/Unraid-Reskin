@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 import type { MainPageState, OrbColor } from '../types';
 import { deriveOperation } from '../derive';
+import { icon } from '../../shell/icons';
 import * as A from '../actions';
 import './md-main-encryption-fields';
 import './md-main-parity-panel';
@@ -53,6 +54,21 @@ export class MdMainOperationPanel extends LitElement {
     .danger { color: var(--danger); }
     button.fmt { background: var(--danger); color: #fff; border: none; border-radius: var(--radius-sm); padding: 6px 14px; font: inherit; cursor: pointer; }
     button.fmt:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Default-collapsed disclosure for the Parity / Disks / System detail. */
+    .disclosure {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 11px 16px; background: transparent; border: 0;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-secondary); font: inherit; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; font-size: 11px;
+      cursor: pointer; text-align: left;
+    }
+    .disclosure:hover { color: var(--text-primary); background: var(--bg-elevated); }
+    .disclosure .chev { display: inline-flex; transition: transform 150ms ease; }
+    .disclosure[aria-expanded="true"] .chev { transform: rotate(180deg); }
+    .disclosure .chev svg { fill: currentColor; }
+    .disclosure .sub { margin-left: auto; color: var(--text-muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 12px; }
   `;
 
   @property({ type: Object }) state!: MainPageState;
@@ -63,6 +79,8 @@ export class MdMainOperationPanel extends LitElement {
   @state() private _maintenance = false;
   @state() private _formatConfirm = false;
   @state() private _encValid = false;
+  // Parity / Disks / System detail starts collapsed to keep the top compact.
+  @state() private _detailsOpen = false;
 
   @query('md-main-encryption-fields') private _encFields?: MdMainEncryptionFields;
 
@@ -221,24 +239,39 @@ export class MdMainOperationPanel extends LitElement {
           }
         </section>
 
-        ${
-          started || this.state.parity?.running
-            ? html`<section><h3>Parity</h3>
-              <md-main-parity-panel .parity=${this.state.parity} .operation=${op}
-                .csrf=${this.csrf} .resync=${this.resync}></md-main-parity-panel></section>`
-            : ''
-        }
+        <button class="disclosure" aria-expanded=${this._detailsOpen ? 'true' : 'false'}
+          aria-controls="array-details" @click=${() => {
+            this._detailsOpen = !this._detailsOpen;
+          }}>
+          <span class="chev">${icon('chevron-down', 16)}</span>
+          Array details
+          <span class="sub">${this._detailsOpen ? 'Hide' : 'Parity · disk controls · power'}</span>
+        </button>
 
         ${
-          started
-            ? html`<section><h3>Disks</h3>
-              <md-main-spin-controls .busy=${op.busy ?? 0} .csrf=${this.csrf} .resync=${this.resync}></md-main-spin-controls></section>`
+          this._detailsOpen
+            ? html`<div id="array-details">
+                ${
+                  started || this.state.parity?.running
+                    ? html`<section><h3>Parity</h3>
+                      <md-main-parity-panel .parity=${this.state.parity} .operation=${op}
+                        .csrf=${this.csrf} .resync=${this.resync}></md-main-parity-panel></section>`
+                    : ''
+                }
+
+                ${
+                  started
+                    ? html`<section><h3>Disks</h3>
+                      <md-main-spin-controls .busy=${op.busy ?? 0} .csrf=${this.csrf} .resync=${this.resync}></md-main-spin-controls></section>`
+                    : ''
+                }
+
+                <section><h3>System</h3>
+                  <md-main-power-panel .moverEnabled=${op.moverEnabled && started} .moverRunning=${(op.busy ?? 0) === 2}
+                    .csrf=${this.csrf} .resync=${this.resync}></md-main-power-panel></section>
+              </div>`
             : ''
         }
-
-        <section><h3>System</h3>
-          <md-main-power-panel .moverEnabled=${op.moverEnabled && started} .moverRunning=${(op.busy ?? 0) === 2}
-            .csrf=${this.csrf} .resync=${this.resync}></md-main-power-panel></section>
       </div>
     `;
   }

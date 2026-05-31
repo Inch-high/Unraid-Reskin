@@ -8,7 +8,8 @@ import './md-main-pool-card';
 import './md-main-boot-card';
 import './md-main-operation-panel';
 import './md-main-unassigned-card';
-import type { UnassignedState } from '../types';
+import './md-main-device-detail';
+import type { UnassignedState, MainDevice } from '../types';
 import type { UtilStyle } from './md-main-device-tile';
 
 // Root component for the Modern UI /Main page. Owns nothing but a reference to
@@ -63,6 +64,7 @@ export class ModernuiMainPage extends LitElement {
   @state() private _state: MainPageState | null = null;
   @state() private _loading = true;
   @state() private _unassigned: UnassignedState | null = null;
+  @state() private _detailDevice: MainDevice | null = null;
 
   /** Set by boot.ts after fetching ud-state.php (and on resync). */
   setUnassigned(u: UnassignedState): void {
@@ -76,10 +78,26 @@ export class ModernuiMainPage extends LitElement {
     this._sync();
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('main-open-detail', this._onOpenDetail as EventListener);
+    this.addEventListener('main-detail-close', this._onCloseDetail as EventListener);
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this._unsub?.();
+    this.removeEventListener('main-open-detail', this._onOpenDetail as EventListener);
+    this.removeEventListener('main-detail-close', this._onCloseDetail as EventListener);
   }
+
+  private _onOpenDetail = (e: CustomEvent<{ device: MainDevice }>): void => {
+    this._detailDevice = e.detail.device;
+  };
+
+  private _onCloseDetail = (): void => {
+    this._detailDevice = null;
+  };
 
   private _sync(): void {
     if (!this._store) return;
@@ -143,6 +161,11 @@ export class ModernuiMainPage extends LitElement {
       ${
         this._unassigned?.available
           ? html`<md-main-unassigned-card .state=${this._unassigned} .csrf=${s.csrfToken} .resync=${this.resync}></md-main-unassigned-card>`
+          : ''
+      }
+      ${
+        this._detailDevice
+          ? html`<md-main-device-detail .device=${this._detailDevice} .csrf=${s.csrfToken} .resync=${this.resync}></md-main-device-detail>`
           : ''
       }
     `;
