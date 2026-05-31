@@ -95,6 +95,66 @@ export function buildClearStats(): ActionRequest {
   return { url: TOGGLE, params: { device: 'Clear' } };
 }
 
+// ---- Per-disk SMART settings (reuse stock config writes) ------------------
+
+const SMART_ENDPOINT = '/plugins/unraid-modernui/include/main-smart.php';
+const UPDATE_SMART_INCLUDE = 'webGui/include/update.smart.php';
+const SMART_CFG = '/boot/config/smart-one.cfg';
+
+// Spin-down delay → /update.htm (the stock DeviceInfo form posts the same
+// diskSpindownDelay.<idx> field; emhttp persists it to disk.cfg).
+// value: '-1' default | '0' never | '15'|'30'|'45' minutes | '1'..'9' hours.
+export function buildSpindownDelay(idx: number, value: string): ActionRequest {
+  return { url: UPDATE_HTM, params: { [`diskSpindownDelay.${idx}`]: value } };
+}
+
+export interface SmartSettingsInput {
+  id: string; // disk id (MODEL_SERIAL) → #section
+  hotTemp?: string; // warning temp threshold (°C)
+  maxTemp?: string; // critical temp threshold (°C)
+  smSelect?: string; // notification value: '-1'|'0'|'1'
+  smLevel?: string; // notification tolerance: '-1'|'1.00'|'1.05'…
+  // Pass-through so a narrow edit doesn't clobber the controller-type config.
+  smType?: string;
+  smCustom?: string;
+  smGlue?: string;
+}
+
+// SMART notification/threshold settings → /update.php, written to smart-one.cfg
+// via the stock update.smart.php include (1:1 with the stock SMART Settings form).
+export function buildSmartSettings(s: SmartSettingsInput): ActionRequest {
+  const params: Record<string, string> = {
+    '#file': SMART_CFG,
+    '#include': UPDATE_SMART_INCLUDE,
+    '#section': s.id,
+    '#cleanup': 'true',
+    '#apply': 'Apply',
+    smEvents: '',
+  };
+  for (const k of [
+    'hotTemp',
+    'maxTemp',
+    'smSelect',
+    'smLevel',
+    'smType',
+    'smCustom',
+    'smGlue',
+  ] as const) {
+    const v = s[k];
+    if (v !== undefined) params[k] = v;
+  }
+  return { url: UPDATE_PHP, params };
+}
+
+export type SelfTestAction = 'short' | 'extended' | 'abort';
+
+// Start/abort a SMART self-test via our own guarded endpoint (stock /Main has
+// no clean self-test trigger). submit() appends csrf_token, which the endpoint
+// validates against var.ini.
+export function buildSelfTest(name: string, action: SelfTestAction): ActionRequest {
+  return { url: SMART_ENDPOINT, params: { name, action } };
+}
+
 // ---- Mover / power --------------------------------------------------------
 
 export function buildMover(empty: boolean): ActionRequest {

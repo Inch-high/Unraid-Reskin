@@ -1,0 +1,29 @@
+{
+  "smartctl": { "version": [7, 4], "exit_status": 0 },
+  "device": { "name": "/dev/sdk", "protocol": "ATA" },
+  "model_name": "ST12000VN0008-2YS101",
+  "serial_number": "ZRT0Q2AK",
+  "firmware_version": "SC60",
+  "wwn": { "naa": 5, "oui": 65261, "id": 13417752123 },
+  "user_capacity": { "bytes": 12000138625024 },
+  "rotation_rate": 7200,
+  "smart_status": { "passed": true },
+  "temperature": { "current": 38 },
+  "power_on_time": { "hours": 17453 },
+  "power_cycle_count": 84,
+  "ata_smart_attributes": {
+    "table": [
+      { "id": 5, "name": "Reallocated_Sector_Ct", "value": 100, "worst": 100, "thresh": 10, "raw": { "value": 0, "string": "0" }, "when_failed": "" },
+      { "id": 194, "name": "Temperature_Celsius", "value": 62, "worst": 45, "thresh": 0, "raw": { "value": 38, "string": "38 (Min/Max 22/45)" }, "when_failed": "" }
+    ]
+  },
+  "ata_smart_data": { "self_test": { "status": { "value": 0, "string": "completed without error", "passed": true } } },
+  "ata_smart_self_test_log": {
+    "standard": {
+      "table": [
+        { "type": { "string": "Extended offline" }, "status": { "string": "Completed without error" }, "lifetime_hours": 17400 }
+      ]
+    }
+  },
+  "ata_smart_error_log": { "summary": { "count": 0 } }
+}

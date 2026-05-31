@@ -6,11 +6,14 @@ import type { MainArray, MainDevice } from '../../../src/ts/main/types';
 function device(over: Partial<MainDevice> = {}): MainDevice {
   return {
     name: 'disk1',
+    idx: 1,
     role: 'data',
     deviceType: 'hdd',
     linuxDevice: 'sdk',
+    id: 'M_S',
     model: 'M',
     serial: 'S',
+    spindownDelay: null,
     status: 'ok',
     spin: 'active',
     spunDown: false,

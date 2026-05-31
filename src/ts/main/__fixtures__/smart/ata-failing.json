@@ -1,0 +1,28 @@
+{
+  "smartctl": { "version": [7, 4], "exit_status": 8 },
+  "device": { "name": "/dev/sdm", "protocol": "ATA" },
+  "model_name": "WDC WD40EFRX-68N32N0",
+  "serial_number": "WD-WCC7K1234567",
+  "firmware_version": "82.00A82",
+  "user_capacity": { "bytes": 4000787030016 },
+  "rotation_rate": 5400,
+  "smart_status": { "passed": false },
+  "temperature": { "current": 52 },
+  "power_on_time": { "hours": 40123 },
+  "power_cycle_count": 312,
+  "ata_smart_attributes": {
+    "table": [
+      { "id": 5, "name": "Reallocated_Sector_Ct", "value": 50, "worst": 50, "thresh": 10, "raw": { "value": 128, "string": "128" }, "when_failed": "now" },
+      { "id": 197, "name": "Current_Pending_Sector", "value": 90, "worst": 90, "thresh": 0, "raw": { "value": 8, "string": "8" }, "when_failed": "" }
+    ]
+  },
+  "ata_smart_data": { "self_test": { "status": { "value": 0, "string": "completed: read failure", "passed": false } } },
+  "ata_smart_error_log": {
+    "summary": {
+      "count": 5,
+      "table": [
+        { "lifetime_hours": 39000, "error_description": "Error: UNC at LBA = 0x01b2f3c0" }
+      ]
+    }
+  }
+}

@@ -72,7 +72,9 @@ export class MdMainDeviceTile extends LitElement {
       transition: box-shadow 120ms cubic-bezier(.2,0,0,1), border-color 120ms cubic-bezier(.2,0,0,1);
       color: var(--text-primary); font-size: 13px;
     }
+    :host { cursor: pointer; }
     :host(:hover) { border-color: var(--border-default); box-shadow: 0 1px 2px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.22); }
+    :host(:focus-visible) { outline: 2px solid var(--mui-accent); outline-offset: 2px; }
     :host([data-problem]) { border-color: rgba(239,68,68,.45); }
     :host([data-standby]) { opacity: .82; }
 
@@ -149,6 +151,40 @@ export class MdMainDeviceTile extends LitElement {
     this.dataset.type = d.deviceType;
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    // The whole tile opens the reskinned drive-info modal; the name link
+    // (which stops propagation) stays an escape hatch to the stock page.
+    if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0');
+    this.setAttribute('role', 'button');
+    this.addEventListener('click', this._open);
+    this.addEventListener('keydown', this._onKey);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this._open);
+    this.removeEventListener('keydown', this._onKey);
+  }
+
+  private _open = (): void => {
+    if (!this.device) return;
+    this.dispatchEvent(
+      new CustomEvent('main-open-detail', {
+        detail: { device: this.device },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  private _onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this._open();
+    }
+  };
+
   render() {
     const d = this.device;
     if (!d) return html``;
@@ -164,7 +200,7 @@ export class MdMainDeviceTile extends LitElement {
         <span class="icon">${icon(TYPE_ICON[d.deviceType], 21)}</span>
         <span class="id">
           <span class="name">
-            <a href=${d.detailHref}>${d.name}</a>
+            <a href=${d.detailHref} @click=${(e: Event) => e.stopPropagation()}>${d.name}</a>
             <span class="tag">${TYPE_LABEL[d.deviceType]}</span>
           </span>
           <div class="model" title=${d.model}>${d.model || '—'}</div>
