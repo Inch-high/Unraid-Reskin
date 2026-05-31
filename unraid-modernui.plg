@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.1">
+<!ENTITY version   "0.8.2">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,11 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.2 (2026-05-31)
+- Fix (docker): repair the `/Docker` "check for updates" pipeline end-to-end. The detached worker had been silently failing on every run — it `require`d `DockerClient.php` from *inside* the worker function, scoping that file's top-level `$dockerManPaths` as a function-local, so `getAllInfo()`'s `global $dockerManPaths` saw null and threw "Path must not be empty" before writing anything. The docker stack is now bootstrapped at FILE scope in the CLI dispatch block (matching `docker-state.php`), and the worker calls `getAllInfo($reload=true)` instead of `reloadUpdateStatus()` directly so it rewrites the per-container `webui-info` cache (the `updated` field the snapshot reads) in the same pass — update badges now actually surface.
+- Fix (docker): clear a stuck "Update available" badge after a successful update. Unraid's `unraid-update-status.json` can keep the pre-update local digest and `reloadUpdateStatus()` reuses it, so the badge could persist forever. When an update probe completes via container **id rotation** (the definitive sign the pull succeeded and the container was recreated), the modern store now force-clears `updateAvailable` instead of trusting the stale shared cache; a genuine future update re-surfaces normally.
+- Perf (docker): new stale-while-revalidate snapshot cache (`sessionStorage`, 10-min TTL, per-tab) so `/Docker` paints real rows instantly on navigation instead of a loading state, then revalidates against the server and overwrites. Verified live on an Unraid host. 451 TS + 13 PHP suites green.
+
 ###v0.8.1 (2026-05-31)
 - Fix (dashboard): disk rows in the Array and Cache cards now align their state / temp / SMART / progress / percentage columns across mixed active and standby rows. The disk list owns the grid column tracks and each row is a subgrid spanning them, instead of every row sizing its own `auto` columns independently (which let active rows with a temp + SMART glyph drift out of alignment from standby rows with "—" placeholders).
 - Fix (docker): the update/remove confirmation dialogs now use a styled `md-docker-confirm-modal` (matching the drive-info / folder / tag modal family) in place of the native `window.confirm()`. Destructive (remove) confirms focus Cancel so a stray Enter can't trigger a removal; primary (update) confirms keep action-button autofocus to mirror native behaviour; and an open confirm resolves cleanly if the page is torn down mid-prompt. +`md-docker-confirm-modal` unit coverage (confirm/cancel/backdrop/Escape resolution, listener cleanup, tone-based focus). 450 TS + PHP suites green.
