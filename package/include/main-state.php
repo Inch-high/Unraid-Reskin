@@ -128,6 +128,23 @@ function modernui_map_smart(array $d): string {
     return 'healthy';
 }
 
+// Device class for the tile icon. nvme by kernel name, usb for the flash/boot
+// device, otherwise the rotational flag distinguishes SSD from HDD. A missing
+// or unreadable sysfs read defaults to 'hdd' so a spinning disk is never
+// mislabeled as solid-state.
+function modernui_map_device_type(string $role, string $linuxDevice): string {
+    if ($role === 'flash') return 'usb';
+    if (strncmp($linuxDevice, 'nvme', 4) === 0) return 'nvme';
+    $dev = basename($linuxDevice);
+    if ($dev !== '') {
+        $path = "/sys/block/{$dev}/queue/rotational";
+        if (is_readable($path)) {
+            if (trim((string)@file_get_contents($path)) === '0') return 'ssd';
+        }
+    }
+    return 'hdd';
+}
+
 function modernui_normalize_device(string $name, array $d): array {
     $id = (string)($d['id'] ?? '');
     [$model, $serial] = modernui_split_model_serial($id);
@@ -137,11 +154,14 @@ function modernui_normalize_device(string $name, array $d): array {
     $fsSize = modernui_kib_to_bytes($d['fsSize'] ?? null);
     $fsUsed = modernui_kib_to_bytes($d['fsUsed'] ?? null);
     $spunDown = (string)($d['spundown'] ?? '0') === '1';
+    $role = modernui_map_role((string)($d['type'] ?? ''));
+    $linuxDevice = (string)($d['device'] ?? '');
 
     return [
         'name'           => $name,
-        'role'           => modernui_map_role((string)($d['type'] ?? '')),
-        'linuxDevice'    => (string)($d['device'] ?? ''),
+        'role'           => $role,
+        'linuxDevice'    => $linuxDevice,
+        'deviceType'     => modernui_map_device_type($role, $linuxDevice),
         'model'          => $model,
         'serial'         => $serial,
         'status'         => modernui_map_status((string)($d['status'] ?? ''), (string)($d['fsStatus'] ?? '')),

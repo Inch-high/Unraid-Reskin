@@ -29,6 +29,10 @@ describe('fetchSnapshot', () => {
     const disk1 = s.array.devices.find((d) => d.name === 'disk1');
     expect(disk1?.serial).toBe('ZRT0Q2AK');
     expect(disk1?.model).toBe('ST12000VN0008-2YS101');
+    // device type drives the tile icon (sd* → hdd, nvme* → nvme, flash → usb)
+    expect(disk1?.deviceType).toBe('hdd');
+    expect(s.pools[0].devices[0].deviceType).toBe('nvme');
+    expect(s.boot?.deviceType).toBe('usb');
     // Raw snapshot has no derived primary — deriveOperation (Task 7) adds it.
     expect(s.operation.primary).toBeUndefined();
   });

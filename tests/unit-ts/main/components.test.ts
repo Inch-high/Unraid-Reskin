@@ -1,16 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import '../../../src/ts/main/components/md-main-device-row';
 import '../../../src/ts/main/components/md-main-array-card';
 import '../../../src/ts/main/components/md-main-pool-card';
 import '../../../src/ts/main/components/md-main-boot-card';
-import type { MdMainDeviceRow } from '../../../src/ts/main/components/md-main-device-row';
 import type { MdMainArrayCard } from '../../../src/ts/main/components/md-main-array-card';
 import type { MdMainPoolCard } from '../../../src/ts/main/components/md-main-pool-card';
 import type { MainDevice, MainArray, MainPool } from '../../../src/ts/main/types';
 
 function device(over: Partial<MainDevice> = {}): MainDevice {
   return {
-    name: 'disk1', role: 'data', linuxDevice: 'sdk',
+    name: 'disk1', role: 'data', deviceType: 'hdd', linuxDevice: 'sdk',
     model: 'ST12000VN0008-2YS101', serial: 'ZRT0Q2AK',
     status: 'ok', spin: 'standby', spunDown: true, tempC: null,
     numReads: 1611274, numWrites: 909, numErrors: 0,
@@ -28,41 +26,8 @@ async function mount<T extends HTMLElement>(el: T): Promise<T> {
   return el;
 }
 
-describe('md-main-device-row', () => {
-  it('renders model, serial, reads, and detail link (the 1:1 fields)', async () => {
-    const el = document.createElement('md-main-device-row') as MdMainDeviceRow;
-    el.device = device();
-    await mount(el);
-    const txt = el.shadowRoot!.textContent ?? '';
-    expect(txt).toContain('disk1');
-    expect(txt).toContain('ST12000VN0008-2YS101');
-    expect(txt).toContain('ZRT0Q2AK');           // serial
-    expect(txt).toContain('1,611,274');          // reads grouped
-    expect(txt).toContain('standby');            // spun-down state label
-    expect(txt).toContain('luks:xfs');           // fs
-    const link = el.shadowRoot!.querySelector('a');
-    expect(link?.getAttribute('href')).toBe('/Main/Device?name=disk1');
-  });
-
-  it('shows a dash temp when spun down and 75% utilization', async () => {
-    const el = document.createElement('md-main-device-row') as MdMainDeviceRow;
-    el.device = device();
-    await mount(el);
-    const txt = el.shadowRoot!.textContent ?? '';
-    expect(txt).toContain('—');     // temp '*' → dash
-    expect(txt).toContain('75%');
-  });
-
-  it('flags non-zero errors', async () => {
-    const el = document.createElement('md-main-device-row') as MdMainDeviceRow;
-    el.device = device({ numErrors: 5 });
-    await mount(el);
-    expect(el.shadowRoot!.querySelector('.err-bad')).not.toBeNull();
-  });
-});
-
 describe('md-main-array-card', () => {
-  it('renders title, totals, and one row per device', async () => {
+  it('renders the section title and one tile per device, with a LED per device', async () => {
     const array: MainArray = {
       devices: [device({ name: 'parity', role: 'parity', fsType: null }), device({ name: 'disk1' })],
       sizeBytes: 12_000_138_571_776, usedBytes: 9_000_020_344_832,
@@ -70,11 +35,13 @@ describe('md-main-array-card', () => {
     };
     const el = document.createElement('md-main-array-card') as MdMainArrayCard;
     el.array = array;
+    el.util = 'ring';
     await mount(el);
-    const txt = el.shadowRoot!.textContent ?? '';
-    expect(txt).toContain('Array Devices');
-    expect(txt).toContain('used of');
-    expect(el.shadowRoot!.querySelectorAll('md-main-device-row').length).toBe(2);
+    expect(el.shadowRoot!.textContent ?? '').toContain('Array');
+    const tiles = el.shadowRoot!.querySelectorAll('md-main-device-tile');
+    expect(tiles.length).toBe(2);
+    expect((tiles[0] as { util?: string }).util).toBe('ring');   // util threaded down
+    expect(el.shadowRoot!.querySelectorAll('.led').length).toBe(2);
   });
 });
 

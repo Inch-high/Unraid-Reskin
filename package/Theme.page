@@ -86,6 +86,7 @@ $csrf_token = $var['csrf_token'] ?? '';
       </p>
     </fieldset>
 
+
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Density</legend>
       <?= modernui_radio('density', 'comfortable', 'Comfortable', $density) ?>
@@ -117,7 +118,7 @@ $csrf_token = $var['csrf_token'] ?? '';
 
   <hr style="margin:32px 0 16px 0;">
   <h3 style="margin:0 0 8px 0;">About</h3>
-  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.6.1 (Phase 6). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
+  <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Modern UI v0.7.0 (Phase 7). <a href="https://github.com/Inch-high/Unraid-Reskin" target="_blank">GitHub</a></p>
   <p style="margin:0;font-size:13px;color:#666;">Unraid® webGui © Lime Technology, Inc. <a href="/webGui/include/Help.php" target="_blank">Manual</a></p>
 </div>
 

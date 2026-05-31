@@ -141,6 +141,8 @@ function modernui_generate_loader_js(bool $disabled): void {
     $sidebar   = $settings['sidebar']   ?? 'expanded';
     $docker    = $settings['docker']    ?? 'on';
     $main      = $settings['main']      ?? 'on';
+    $mainUtil  = in_array($settings['main_util_style'] ?? 'bar', ['bar', 'ring'], true)
+                 ? ($settings['main_util_style'] ?? 'bar') : 'bar';
     $dockerFolderDefault = $settings['docker_folder_default'] ?? 'expanded';
     $dockerShowStats = $settings['docker_show_stats'] ?? 'off';
     // When enabled, lazy-load the dashboard + docker bundles too. Each one
@@ -168,6 +170,7 @@ function modernui_generate_loader_js(bool $disabled): void {
         . "r.dataset.modernuiSidebar=" . json_encode($sidebar) . ";\n"
         . "r.dataset.modernuiDocker=" . json_encode($docker) . ";\n"
         . "r.dataset.modernuiMain=" . json_encode($main) . ";\n"
+        . "r.dataset.modernuiMainUtil=" . json_encode($mainUtil) . ";\n"
         . "r.dataset.modernuiDockerFolderDefault=" . json_encode($dockerFolderDefault) . ";\n"
         . "r.dataset.modernuiDockerStats=" . json_encode($dockerShowStats) . ";\n"
         . "var s=document.createElement('script');\n"

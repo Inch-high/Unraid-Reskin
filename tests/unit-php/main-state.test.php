@@ -26,6 +26,11 @@ assert($byName['parity']['role'] === 'parity', 'parity role');
 assert($byName['parity']['fsType'] === null, 'parity has no filesystem');
 assert($byName['disk1']['role'] === 'data', 'disk1 role');
 
+// device type for the tile icon (nvme by name, usb by role, else rotational
+// flag — sysfs unreadable in the test env so sd* devices fall back to hdd)
+assert($byName['parity']['deviceType'] === 'hdd', 'sdh + unreadable sysfs → hdd; got ' . $byName['parity']['deviceType']);
+assert($byName['disk1']['deviceType'] === 'hdd', 'sdk + unreadable sysfs → hdd; got ' . $byName['disk1']['deviceType']);
+
 // model + serial split (the user-requested 1:1 field)
 assert($byName['disk1']['model'] === 'ST12000VN0008-2YS101', 'model split: ' . $byName['disk1']['model']);
 assert($byName['disk1']['serial'] === 'ZRT0Q2AK', 'serial split: ' . $byName['disk1']['serial']);
@@ -58,10 +63,12 @@ assert($cacheLeader['name'] === 'cache', 'first pool device is the leader');
 assert($cacheLeader['tempC'] === 42, 'nvme temp parsed as int');
 assert($cacheLeader['spunDown'] === false, 'nvme spundown=0 → active');
 assert($cacheLeader['role'] === 'pool', 'cache role mapped to pool');
+assert($cacheLeader['deviceType'] === 'nvme', 'nvme0n1 → nvme device type; got ' . $cacheLeader['deviceType']);
 
 // --- boot -------------------------------------------------------------------
 assert($state['boot'] !== null, 'boot device present');
 assert($state['boot']['role'] === 'flash', 'flash role');
+assert($state['boot']['deviceType'] === 'usb', 'flash role → usb device type; got ' . $state['boot']['deviceType']);
 assert($state['boot']['fsType'] === 'vfat', 'flash fsType');
 
 // --- operation (raw fields; primary/busy added client-side by deriveOperation) ---

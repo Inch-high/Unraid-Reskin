@@ -58,6 +58,23 @@ $noShell = modernui_validate_settings([]);
 assert($noShell['ok'] === true);
 assert($noShell['values']['shell'] === 'on', "default shell should be on");
 
+// Disk usage style (Main tiles): 'bar' and 'ring' are valid, default is 'bar'.
+$barOk = modernui_validate_settings(['main_util_style' => 'bar']);
+assert($barOk['ok'] === true, "main_util_style=bar should pass: " . var_export($barOk, true));
+assert($barOk['values']['main_util_style'] === 'bar');
+
+$ringOk = modernui_validate_settings(['main_util_style' => 'ring']);
+assert($ringOk['ok'] === true, "main_util_style=ring should pass");
+assert($ringOk['values']['main_util_style'] === 'ring');
+
+$badUtil = modernui_validate_settings(['main_util_style' => 'donut']);
+assert($badUtil['ok'] === false, "main_util_style=donut should fail");
+assert(strpos($badUtil['error'], 'main_util_style') !== false);
+
+$noUtil = modernui_validate_settings([]);
+assert($noUtil['ok'] === true);
+assert($noUtil['values']['main_util_style'] === 'bar', "default main_util_style should be bar");
+
 // Partial POST merge: when only one key is in the input, the others come
 // from the existing cfg (not from hardcoded defaults). This guards the
 // shell-sidebar toggle path which POSTs only sidebar=collapsed.
