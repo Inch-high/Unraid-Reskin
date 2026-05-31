@@ -1,6 +1,13 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import type { DisklocationState, DisklocationGroup, DiskSlot, ArrayState, CacheState, ParityState } from '../types';
+import type {
+  DisklocationState,
+  DisklocationGroup,
+  DiskSlot,
+  ArrayState,
+  CacheState,
+  ParityState,
+} from '../types';
 import './md-card';
 import './md-array-card';
 import './md-cache-card';
@@ -135,13 +142,11 @@ export class MdDisklocationCard extends LitElement {
   // "Storage details" footer that holds the Array / Cache / Parity cards so
   // the user has one consolidated storage view instead of four side-by-side cards.
   @property({ type: Object }) arrayState: ArrayState | null = null;
-  @property({ type: Array })  cacheStates: CacheState[] = [];
+  @property({ type: Array }) cacheStates: CacheState[] = [];
   @property({ type: Object }) parityState: ParityState | null = null;
 
   private _renderSlot(s: DiskSlot) {
-    const statusText = s.state === 'active' ? 'active'
-                     : s.state === 'standby' ? 'spun down'
-                     : '';
+    const statusText = s.state === 'active' ? 'active' : s.state === 'standby' ? 'spun down' : '';
     const title = s.diskName
       ? `${s.diskName} · slot ${s.label} · ${s.state}`
       : `Slot ${s.label} · ${s.state}`;
@@ -165,12 +170,10 @@ export class MdDisklocationCard extends LitElement {
     }
     for (const c of this.cacheStates) {
       if (c.usedGB !== null && c.totalGB !== null) {
-        const total = c.totalGB >= 1024
-          ? `${(c.totalGB / 1024).toFixed(1)} TB`
-          : `${c.totalGB.toFixed(0)} GB`;
-        const used = c.usedGB >= 1024
-          ? `${(c.usedGB / 1024).toFixed(1)} TB`
-          : `${c.usedGB.toFixed(0)} GB`;
+        const total =
+          c.totalGB >= 1024 ? `${(c.totalGB / 1024).toFixed(1)} TB` : `${c.totalGB.toFixed(0)} GB`;
+        const used =
+          c.usedGB >= 1024 ? `${(c.usedGB / 1024).toFixed(1)} TB` : `${c.usedGB.toFixed(0)} GB`;
         parts.push(`${c.poolName || 'Cache'} ${used} / ${total}`);
       }
     }
@@ -222,10 +225,16 @@ export class MdDisklocationCard extends LitElement {
             </div>
           `;
         })}
-        ${assignedCount < totalCount ? html`
+        ${
+          assignedCount < totalCount
+            ? html`
           <div class="summary">${totalCount - assignedCount} bay${totalCount - assignedCount === 1 ? '' : 's'} empty</div>
-        ` : ''}
-        ${hasDetails ? html`
+        `
+            : ''
+        }
+        ${
+          hasDetails
+            ? html`
           <details class="storage-details" data-hero-expander="storage-details">
             <summary>
               <span class="chevron"></span>
@@ -238,7 +247,9 @@ export class MdDisklocationCard extends LitElement {
               ${this.parityState ? html`<md-parity-card .state=${this.parityState}></md-parity-card>` : ''}
             </div>
           </details>
-        ` : ''}
+        `
+            : ''
+        }
       </md-card>
     `;
   }

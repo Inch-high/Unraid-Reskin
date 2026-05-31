@@ -176,9 +176,9 @@ export class MdProcessorCard extends LitElement {
     // RAM in the meta line: prefer "used / total" when we have both readings,
     // fall back to percent (during initial cold-state render before live values land).
     const ramMeta = ramPie
-      ? (ramPie.used && ramPie.total
-          ? `RAM ${ramPie.used} / ${ramPie.total}`
-          : `RAM ${Math.round(ramPie.percentUsed)}%`)
+      ? ramPie.used && ramPie.total
+        ? `RAM ${ramPie.used} / ${ramPie.total}`
+        : `RAM ${Math.round(ramPie.percentUsed)}%`
       : null;
     const meta = [
       s.cores > 0 ? `${s.cores} cores` : null,
@@ -211,7 +211,9 @@ export class MdProcessorCard extends LitElement {
         <div class="sparkline-wrap">
           <md-sparkline .values=${this._history} max="100"></md-sparkline>
         </div>
-        ${m && m.pies.length > 0 ? html`
+        ${
+          m && m.pies.length > 0
+            ? html`
           <div class="memory-section">
             <div class="memory-label">Memory</div>
             <div class="pies">
@@ -225,15 +227,19 @@ export class MdProcessorCard extends LitElement {
                       <span class="pct">${p.percentUsed.toFixed(0)}%</span>
                     </div>
                     <div class="pie-label">${p.label}</div>
-                    ${showTotals
-                      ? html`<div class="pie-totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
-                      : ''}
+                    ${
+                      showTotals
+                        ? html`<div class="pie-totals"><span class="used">${p.used || '—'}</span>${p.total ? html` / ${p.total}` : ''}</div>`
+                        : ''
+                    }
                   </div>
                 `;
               })}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </md-card>
     `;
   }

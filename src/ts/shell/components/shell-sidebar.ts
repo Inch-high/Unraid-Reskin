@@ -165,17 +165,22 @@ export class ShellSidebar extends LitElement {
     this._collapsed = document.documentElement.dataset.modernuiSidebar === 'collapsed';
     this._savedDefault = this._collapsed ? 'collapsed' : 'expanded';
     if (this._collapsed) document.body.classList.add('modernui-shell-collapsed');
-    queueMicrotask(() => this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
-      detail: { collapsed: this._collapsed },
-      bubbles: true,
-      composed: true,
-    })));
+    queueMicrotask(() =>
+      this.dispatchEvent(
+        new CustomEvent('shell-collapsed-changed', {
+          detail: { collapsed: this._collapsed },
+          bubbles: true,
+          composed: true,
+        }),
+      ),
+    );
     window.addEventListener('popstate', this._onNav);
     // Unraid 7.3 emits <footer>.footer-left / .footer-right; pre-7.3 uses div.statusbar.
     // Pick the half's parent so the observer catches both halves' mutations.
-    const bottomBar = document.querySelector('footer .footer-left, footer .footer-right')?.parentElement
-      || document.querySelector('footer')
-      || document.querySelector('div.statusbar');
+    const bottomBar =
+      document.querySelector('footer .footer-left, footer .footer-right')?.parentElement ||
+      document.querySelector('footer') ||
+      document.querySelector('div.statusbar');
     this._disposeMirror = startMirror({
       source: bottomBar,
       registry: REGISTRY.bottom,
@@ -260,11 +265,13 @@ export class ShellSidebar extends LitElement {
     document.documentElement.dataset.modernuiSidebar = next ? 'collapsed' : 'expanded';
     this._savedDefault = next ? 'collapsed' : 'expanded';
     await this._persistCollapsed(next);
-    this.dispatchEvent(new CustomEvent('shell-collapsed-changed', {
-      detail: { collapsed: next },
-      bubbles: true,
-      composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('shell-collapsed-changed', {
+        detail: { collapsed: next },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   };
 
   // Pill click: saves the preference for future page loads WITHOUT collapsing
@@ -295,7 +302,11 @@ export class ShellSidebar extends LitElement {
     if (!el) return '';
     const text = el.textContent?.trim() || '';
     if (!text) return '';
-    const dotColor = /started/i.test(text) ? '#22c55e' : /stopped/i.test(text) ? '#ef4444' : '#f59e0b';
+    const dotColor = /started/i.test(text)
+      ? '#22c55e'
+      : /stopped/i.test(text)
+        ? '#ef4444'
+        : '#f59e0b';
     return html`
       <shell-status-row icon-name="harddisk" label="Array" value=${text} dot-color=${dotColor}></shell-status-row>
     `;
@@ -339,12 +350,14 @@ export class ShellSidebar extends LitElement {
     const ups = upsMatch?.[0];
 
     // Status-aware coloring so collapsed-mode icons aren't all grey.
-    const tempVals = temps ? temps.match(/\d+/g)?.map((s) => parseInt(s, 10)) ?? [] : [];
+    const tempVals = temps ? (temps.match(/\d+/g)?.map((s) => Number.parseInt(s, 10)) ?? []) : [];
     const maxTemp = tempVals.length ? Math.max(...tempVals) : 0;
-    const tempColor = maxTemp >= 75 ? '#ef4444' : maxTemp >= 60 ? '#f59e0b' : maxTemp > 0 ? '#22c55e' : '';
+    const tempColor =
+      maxTemp >= 75 ? '#ef4444' : maxTemp >= 60 ? '#f59e0b' : maxTemp > 0 ? '#22c55e' : '';
 
-    const upsPct = upsMatch ? parseInt(upsMatch[1], 10) : -1;
-    const upsColor = upsPct >= 80 ? '#22c55e' : upsPct >= 20 ? '#f59e0b' : upsPct >= 0 ? '#ef4444' : '';
+    const upsPct = upsMatch ? Number.parseInt(upsMatch[1], 10) : -1;
+    const upsColor =
+      upsPct >= 80 ? '#22c55e' : upsPct >= 20 ? '#f59e0b' : upsPct >= 0 ? '#ef4444' : '';
 
     return html`
       ${temps ? html`<shell-status-row icon-name="thermometer" label="Temps" value=${temps} dot-color=${tempColor}></shell-status-row>` : ''}
@@ -361,19 +374,28 @@ export class ShellSidebar extends LitElement {
         <span class="name">${this._serverName}</span>
       </a>
       <div class="body">
-        ${this._nav.map((item) => html`
+        ${this._nav.map(
+          (item) => html`
           <shell-nav-item .item=${item} current-path=${this._currentPath}></shell-nav-item>
-        `)}
+        `,
+        )}
       </div>
       <div class="footer">
         ${this._renderArrayState()}
         ${this._renderFooterRight()}
         ${this._statusItems.map((it) => this._renderStatus(it))}
-        ${this._statusInitialLoading ? html`
+        ${
+          this._statusInitialLoading
+            ? html`
           <shell-status-row loading></shell-status-row>
           <shell-status-row loading></shell-status-row>
-        ` : ''}
-        ${this._collapsed ? '' : html`
+        `
+            : ''
+        }
+        ${
+          this._collapsed
+            ? ''
+            : html`
           <div class="default-toggle" title="Sidebar state used on next page load. Use the chevron below to collapse now.">
             <span class="label">Default</span>
             <div class="segmented" role="group" aria-label="Sidebar default state on next page load">
@@ -381,7 +403,8 @@ export class ShellSidebar extends LitElement {
               <button ?data-active=${this._savedDefault === 'collapsed'} @click=${() => this._setDefault('collapsed')}>Collapsed</button>
             </div>
           </div>
-        `}
+        `
+        }
         <button class="collapse-toggle" type="button" @click=${this._toggleCollapsed} aria-label=${this._collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           <span class="chev">${icon('chevron-left', 18)}</span>
         </button>

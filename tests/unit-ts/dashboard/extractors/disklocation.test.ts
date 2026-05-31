@@ -88,7 +88,7 @@ describe('disklocationExtractor', () => {
     expect(names).toEqual(['NVMEs', 'HDDs']);
   });
 
-  it('parses each group\'s column count from grid-template-columns', () => {
+  it("parses each group's column count from grid-template-columns", () => {
     // Fixture: NVMEs row has 4 columns, HDDs row has 15. The extractor counts
     // tokens in the inline style. A user-defined 8x2 layout would surface as
     // 8 columns here; the card uses this to grid-template the row correctly.

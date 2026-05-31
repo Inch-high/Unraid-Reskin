@@ -101,12 +101,14 @@ export class ShellTopbar extends LitElement {
     // outside the header chrome entirely (the chrome-hide CSS hides the originals
     // either way, so we mirror by cloning).
     const tilebar = document.querySelector(
-      '#header [class*="tile-header-right"], unraid-header-action-icons, header.tilebar .tilebar-icons, header.tilebar .icons, header.tilebar'
+      '#header [class*="tile-header-right"], unraid-header-action-icons, header.tilebar .tilebar-icons, header.tilebar .icons, header.tilebar',
     );
     this._disposeMirror = startMirror({
       source: tilebar,
       registry: REGISTRY.topbar,
-      onUpdate: (items) => { this._pluginItems = this._mergeWithDirectScan(items); },
+      onUpdate: (items) => {
+        this._pluginItems = this._mergeWithDirectScan(items);
+      },
     });
     // Doc-wide rescan for plugins whose icons mount outside any known header
     // chrome (e.g. Vue slots in shadow roots we can't observe directly). Pause
@@ -160,7 +162,10 @@ export class ShellTopbar extends LitElement {
 
   private _renderPluginItem(it: { entry: PluginEntry | null; node: Element }) {
     let r = this._pluginRefs.get(it.node);
-    if (!r) { r = createRef(); this._pluginRefs.set(it.node, r); }
+    if (!r) {
+      r = createRef();
+      this._pluginRefs.set(it.node, r);
+    }
     return html`
       <span
         class="plugin-mirror"
@@ -187,10 +192,12 @@ export class ShellTopbar extends LitElement {
     return html`
       <button class="icon-btn hamburger" type="button" @click=${this._onHamburger} aria-label="Menu" title="Menu">${icon('menu', 20)}</button>
       <nav class="breadcrumb">
-        ${this._crumbs.map((c, i) => html`
+        ${this._crumbs.map(
+          (c, i) => html`
           ${i > 0 ? html`<span class="sep">/</span>` : ''}
           ${c.url ? html`<a href=${c.url}>${c.label}</a>` : html`<span>${c.label}</span>`}
-        `)}
+        `,
+        )}
       </nav>
       <div class="right">
         <div id="modernui-topbar-actions" class="slot-host"></div>

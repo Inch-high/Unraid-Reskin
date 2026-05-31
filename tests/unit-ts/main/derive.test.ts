@@ -7,14 +7,26 @@ import type { OperationState, EncryptionState, EncryptionMode } from '../../../s
 // here we exhaustively test the pure derivation that turns that state into the
 // Start/Stop verdict.
 function enc(mode: EncryptionMode = 'none'): EncryptionState {
-  return { required: mode !== 'none', mode, keyfilePresent: false, allowReformat: false, poolNames: [] };
+  return {
+    required: mode !== 'none',
+    mode,
+    keyfilePresent: false,
+    allowReformat: false,
+    poolNames: [],
+  };
 }
 function op(over: Partial<OperationState> = {}): OperationState {
   return {
-    fsState: 'Stopped', mdState: 'STOPPED', mdColor: 'green-blink', protected: false,
-    configValid: 'yes', startMode: 'Normal',
+    fsState: 'Stopped',
+    mdState: 'STOPPED',
+    mdColor: 'green-blink',
+    protected: false,
+    configValid: 'yes',
+    startMode: 'Normal',
     counts: { disks: 14, disabled: 0, invalid: 0, missing: 0, new: 0 },
-    unmountableMask: '', encryption: enc(), moverEnabled: true,
+    unmountableMask: '',
+    encryption: enc(),
+    moverEnabled: true,
     ...over,
   };
 }
@@ -36,20 +48,38 @@ describe('deriveOperation — Started / transitional', () => {
     expect(deriveOperation(op({ fsState: 'Started', busy: 3 })).enabled).toBe(false);
   });
   it('Starting / Stopping / Formatting → disabled spinner labels', () => {
-    expect(deriveOperation(op({ fsState: 'Starting' }))).toMatchObject({ label: 'Starting…', enabled: false });
-    expect(deriveOperation(op({ fsState: 'Stopping' }))).toMatchObject({ label: 'Stopping…', enabled: false });
-    expect(deriveOperation(op({ fsState: 'Formatting' }))).toMatchObject({ label: 'Formatting…', enabled: false });
+    expect(deriveOperation(op({ fsState: 'Starting' }))).toMatchObject({
+      label: 'Starting…',
+      enabled: false,
+    });
+    expect(deriveOperation(op({ fsState: 'Stopping' }))).toMatchObject({
+      label: 'Stopping…',
+      enabled: false,
+    });
+    expect(deriveOperation(op({ fsState: 'Formatting' }))).toMatchObject({
+      label: 'Formatting…',
+      enabled: false,
+    });
   });
   it('Copying / Clearing → Cancel enabled', () => {
-    expect(deriveOperation(op({ fsState: 'Copying' }))).toMatchObject({ label: 'Cancel', enabled: true });
-    expect(deriveOperation(op({ fsState: 'Clearing' }))).toMatchObject({ label: 'Cancel', enabled: true });
+    expect(deriveOperation(op({ fsState: 'Copying' }))).toMatchObject({
+      label: 'Cancel',
+      enabled: true,
+    });
+    expect(deriveOperation(op({ fsState: 'Clearing' }))).toMatchObject({
+      label: 'Cancel',
+      enabled: true,
+    });
   });
 });
 
 describe('deriveOperation — Stopped + configValid gates', () => {
   for (const [cv, rx] of [
-    ['error', /registration/i], ['invalid', /devices/i], ['ineligible', /Unraid OS/i],
-    ['nokeyserver', /key-server/i], ['withdrawn', /withdrawn/i],
+    ['error', /registration/i],
+    ['invalid', /devices/i],
+    ['ineligible', /Unraid OS/i],
+    ['nokeyserver', /key-server/i],
+    ['withdrawn', /withdrawn/i],
   ] as const) {
     it(`configValid=${cv} → Start disabled with reason`, () => {
       const r = deriveOperation(op({ configValid: cv }));
@@ -62,8 +92,16 @@ describe('deriveOperation — Stopped + configValid gates', () => {
 
 describe('deriveOperation — Stopped mdState machine', () => {
   it('STARTED/STOPPED → Start enabled, maintenance field offered', () => {
-    expect(deriveOperation(op({ mdState: 'STARTED' }))).toMatchObject({ label: 'Start', enabled: true, requiresMaintenanceField: true });
-    expect(deriveOperation(op({ mdState: 'STOPPED' }))).toMatchObject({ label: 'Start', enabled: true, requiresConfirm: false });
+    expect(deriveOperation(op({ mdState: 'STARTED' }))).toMatchObject({
+      label: 'Start',
+      enabled: true,
+      requiresMaintenanceField: true,
+    });
+    expect(deriveOperation(op({ mdState: 'STOPPED' }))).toMatchObject({
+      label: 'Start',
+      enabled: true,
+      requiresConfirm: false,
+    });
   });
   it('STOPPED + missing pool disk → confirm-gated, disabled until confirm', () => {
     const r = deriveOperation(op({ mdState: 'STOPPED' }), { missingPoolDisk: true });
@@ -83,11 +121,19 @@ describe('deriveOperation — Stopped mdState machine', () => {
     expect(r.reason).toMatch(/disable the missing disk/i);
   });
   it('RECON_DISK → Start enabled (rebuild)', () => {
-    expect(deriveOperation(op({ mdState: 'RECON_DISK' }))).toMatchObject({ label: 'Start', enabled: true });
+    expect(deriveOperation(op({ mdState: 'RECON_DISK' }))).toMatchObject({
+      label: 'Start',
+      enabled: true,
+    });
   });
   it('SWAP_DSBL mid-copy → confirm-gated; complete → Start enabled', () => {
-    expect(deriveOperation(op({ mdState: 'SWAP_DSBL' }))).toMatchObject({ enabled: false, requiresConfirm: true });
-    expect(deriveOperation(op({ mdState: 'SWAP_DSBL' }), { swapCopyComplete: true })).toMatchObject({ enabled: true });
+    expect(deriveOperation(op({ mdState: 'SWAP_DSBL' }))).toMatchObject({
+      enabled: false,
+      requiresConfirm: true,
+    });
+    expect(deriveOperation(op({ mdState: 'SWAP_DSBL' }), { swapCopyComplete: true })).toMatchObject(
+      { enabled: true },
+    );
   });
   for (const [md, rx] of [
     ['ERROR:INVALID_EXPANSION', /expansion/i],
@@ -115,9 +161,13 @@ describe('deriveOperation — encryption gate', () => {
     });
   }
   it('unlocked → no extra gate (Start enabled)', () => {
-    expect(deriveOperation(op({ mdState: 'STOPPED', encryption: enc('unlocked') })).enabled).toBe(true);
+    expect(deriveOperation(op({ mdState: 'STOPPED', encryption: enc('unlocked') })).enabled).toBe(
+      true,
+    );
   });
   it('encryption gate overrides even an otherwise-enabled RECON_DISK', () => {
-    expect(deriveOperation(op({ mdState: 'RECON_DISK', encryption: enc('missing-key') })).enabled).toBe(false);
+    expect(
+      deriveOperation(op({ mdState: 'RECON_DISK', encryption: enc('missing-key') })).enabled,
+    ).toBe(false);
   });
 });

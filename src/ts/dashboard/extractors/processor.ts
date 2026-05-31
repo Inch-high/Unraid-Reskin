@@ -98,7 +98,10 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
     for (const sp of row.querySelectorAll('span[class*="cpu"].load')) {
       for (const cls of (sp.className || '').split(/\s+/)) {
         const im = cls.match(/^cpu(\d+)$/);
-        if (im) { spanIndices.push(Number(im[1])); break; }
+        if (im) {
+          spanIndices.push(Number(im[1]));
+          break;
+        }
       }
     }
     if (spanIndices.length >= 2) {
@@ -118,7 +121,10 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
       let index = -1;
       for (const cls of (sp.className || '').split(/\s+/)) {
         const im = cls.match(/^cpu(\d+)$/);
-        if (im) { index = Number(im[1]); break; }
+        if (im) {
+          index = Number(im[1]);
+          break;
+        }
       }
       if (index < 0) continue;
       // Prefer the live fill width (#cpuN style) over the text — same reason as overall.
@@ -130,9 +136,7 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
         const m = sp.textContent?.match(/(\d+)\s*%/);
         loadPct = m ? Number(m[1]) : 0;
       }
-      const threadLabel = hasSmt && index >= smtSiblingMin
-        ? `HT ${index}`
-        : `CPU ${index}`;
+      const threadLabel = hasSmt && index >= smtSiblingMin ? `HT ${index}` : `CPU ${index}`;
       out.push({ index, threadLabel, loadPct });
     }
   }
@@ -141,10 +145,11 @@ function parseCoreLoads(tbody: HTMLTableSectionElement): CoreLoad[] {
 
 export const processorExtractor: Extractor<ProcessorState> = {
   match: ({ source }) => {
-    if (source.id && source.id.startsWith('tblCpu')) return true;
+    if (source.id?.startsWith('tblCpu')) return true;
     const titleAttr = source.getAttribute('title')?.toLowerCase() ?? '';
     if (titleAttr.includes('processor') || titleAttr.includes('cpu')) return true;
-    const headerText = source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
+    const headerText =
+      source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
     return headerText.includes('PROCESSOR') || headerText.includes('CPU');
   },
   extract: ({ source }) => {

@@ -11,7 +11,20 @@ import { formatBytes, formatPercent, formatMac } from '../format';
 
 export interface DockerRowActionDetail {
   container: string;
-  action: 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update' | 'webui' | 'logs' | 'console' | 'edit' | 'autostart-on' | 'autostart-off';
+  action:
+    | 'start'
+    | 'stop'
+    | 'restart'
+    | 'pause'
+    | 'resume'
+    | 'remove'
+    | 'update'
+    | 'webui'
+    | 'logs'
+    | 'console'
+    | 'edit'
+    | 'autostart-on'
+    | 'autostart-off';
 }
 
 @customElement('md-docker-row')
@@ -305,8 +318,8 @@ export class MdDockerRow extends LitElement {
   `;
 
   @property({ type: Object }) container!: DockerContainerFull;
-  @property({ type: Array })  tags: DockerTag[] = [];
-  @property({ type: Array })  assignedTagIds: string[] = [];
+  @property({ type: Array }) tags: DockerTag[] = [];
+  @property({ type: Array }) assignedTagIds: string[] = [];
   @property({ type: Boolean }) selected = false;
   @property({ type: Boolean }) menuOpen = false;
   @property({ type: Boolean }) showStats = false;
@@ -328,24 +341,28 @@ export class MdDockerRow extends LitElement {
     const first = this.container.ports[0];
     const host = first.host && first.host !== '0.0.0.0' ? first.host : '';
     const text = host ? `${host}:${first.hostPort}` : first.hostPort || '—';
-    return this.container.ports.length > 1
-      ? `${text} +${this.container.ports.length - 1}`
-      : text;
+    return this.container.ports.length > 1 ? `${text} +${this.container.ports.length - 1}` : text;
   }
 
   private _emit(action: DockerRowActionDetail['action']): void {
-    this.dispatchEvent(new CustomEvent<DockerRowActionDetail>('docker-action', {
-      detail: { container: this.container.name, action },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<DockerRowActionDetail>('docker-action', {
+        detail: { container: this.container.name, action },
+        bubbles: true,
+        composed: true,
+      }),
+    );
     this.menuOpen = false;
   }
 
   private _toggleSelect(): void {
-    this.dispatchEvent(new CustomEvent('docker-toggle-select', {
-      detail: { container: this.container.name },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-toggle-select', {
+        detail: { container: this.container.name },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _toggleMenu(e: Event): void {
@@ -363,9 +380,10 @@ export class MdDockerRow extends LitElement {
     const MENU_HEIGHT_ESTIMATE = 240;
     const spaceBelow = window.innerHeight - rect.bottom;
     const right = Math.max(8, window.innerWidth - rect.right);
-    const top = spaceBelow >= MENU_HEIGHT_ESTIMATE
-      ? rect.bottom + 4
-      : Math.max(8, rect.top - MENU_HEIGHT_ESTIMATE - 4);
+    const top =
+      spaceBelow >= MENU_HEIGHT_ESTIMATE
+        ? rect.bottom + 4
+        : Math.max(8, rect.top - MENU_HEIGHT_ESTIMATE - 4);
     this._menuStyle = { top: `${top}px`, right: `${right}px` };
     this.menuOpen = true;
     // Only attach window scroll/resize listeners while the menu is actually
@@ -382,7 +400,9 @@ export class MdDockerRow extends LitElement {
     if (!this.menuOpen) return;
     this.menuOpen = false;
     this._menuStyle = null;
-    window.removeEventListener('scroll', this._closeMenu, { capture: true } as EventListenerOptions);
+    window.removeEventListener('scroll', this._closeMenu, {
+      capture: true,
+    } as EventListenerOptions);
     window.removeEventListener('resize', this._closeMenu);
   };
 
@@ -425,10 +445,14 @@ export class MdDockerRow extends LitElement {
       : this.starting
         ? 'state-badge state-starting'
         : `state-badge state-${c.state}`;
-    const dotClass = c.state === 'started' ? 'dot dot-success'
-                   : c.state === 'paused' ? 'dot dot-warning'
-                   : c.state === 'stopped' ? 'dot dot-danger'
-                   : 'dot dot-muted';
+    const dotClass =
+      c.state === 'started'
+        ? 'dot dot-success'
+        : c.state === 'paused'
+          ? 'dot dot-warning'
+          : c.state === 'stopped'
+            ? 'dot dot-danger'
+            : 'dot dot-muted';
     // Hide the "update available" affordance while the update is mid-flight —
     // it just answered the user's question, so showing it again is noise.
     const showUpdateBadge = c.updateAvailable && !this.updating;
@@ -445,30 +469,42 @@ export class MdDockerRow extends LitElement {
         <input type="checkbox" .checked=${this.selected} @change=${() => this._toggleSelect()}>
 
         <span class="icon">
-          ${c.iconUrl
-            ? html`<img src=${c.iconUrl} alt="" @error=${this._iconError}>`
-            : html`<span class="icon-fallback">${(c.name[0] ?? '?').toUpperCase()}</span>`}
+          ${
+            c.iconUrl
+              ? html`<img src=${c.iconUrl} alt="" @error=${this._iconError}>`
+              : html`<span class="icon-fallback">${(c.name[0] ?? '?').toUpperCase()}</span>`
+          }
         </span>
 
         <div class="main">
           <div class="name">${c.name}</div>
           <div class="image">${c.image}
-            ${this.updating
-              ? html`<span class="badge-updating" title="Image pull + container recreate in progress"><span class="sp"></span>Updating…</span>`
-              : showUpdateBadge
-                ? html`<span class="badge-update" title="A newer image is available — click ⋮ → Update to apply">${icon('update', 11)}Update available</span>`
-                : nothing}
+            ${
+              this.updating
+                ? html`<span class="badge-updating" title="Image pull + container recreate in progress"><span class="sp"></span>Updating…</span>`
+                : showUpdateBadge
+                  ? html`<span class="badge-update" title="A newer image is available — click ⋮ → Update to apply">${icon('update', 11)}Update available</span>`
+                  : nothing
+            }
           </div>
-          ${this.showStats ? html`
+          ${
+            this.showStats
+              ? html`
             <div class="stats">
-              ${c.state === 'started' || c.state === 'paused' ? html`
+              ${
+                c.state === 'started' || c.state === 'paused'
+                  ? html`
                 <span class="stat"><strong>CPU</strong>${formatPercent(c.cpuPct)}</span>
                 <span class="stat"><strong>RAM</strong>${formatBytes(c.memBytes)}</span>
-              ` : nothing}
+              `
+                  : nothing
+              }
               <span class="stat"><strong>VDisk</strong>${formatBytes(c.vdiskBytes)}</span>
               ${c.macAddress ? html`<span class="stat mac"><strong>MAC</strong>${formatMac(c.macAddress)}</span>` : nothing}
             </div>
-          ` : nothing}
+          `
+              : nothing
+          }
         </div>
 
         <div class="tags">${this._renderTagChips()}</div>
@@ -477,11 +513,13 @@ export class MdDockerRow extends LitElement {
 
         <div class="uptime">${c.uptime ?? '—'}</div>
 
-        ${this.updating
-          ? html`<span class=${stateClass}><span class="sp"></span> Updating</span>`
-          : this.starting
-            ? html`<span class=${stateClass}><span class="sp"></span> Starting</span>`
-            : html`<span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>`}
+        ${
+          this.updating
+            ? html`<span class=${stateClass}><span class="sp"></span> Updating</span>`
+            : this.starting
+              ? html`<span class=${stateClass}><span class="sp"></span> Starting</span>`
+              : html`<span class=${stateClass}><span class=${dotClass}></span> ${c.state}</span>`
+        }
 
         <div class="actions">
           <button class="icon-btn pin-btn"
@@ -489,29 +527,45 @@ export class MdDockerRow extends LitElement {
                   ?data-on=${c.autostart}
                   ?disabled=${this.updating}
                   @click=${() => this._emit(c.autostart ? 'autostart-off' : 'autostart-on')}>${icon('power')}</button>
-          ${c.webuiUrl ? html`
+          ${
+            c.webuiUrl
+              ? html`
             <button class="icon-btn" title="Open WebUI" ?disabled=${this.updating} @click=${() => this._emit('webui')}>${icon('external')}</button>
-          ` : nothing}
-          ${c.state === 'started' ? html`
+          `
+              : nothing
+          }
+          ${
+            c.state === 'started'
+              ? html`
             <button class="icon-btn icon-btn-warn" title=${this.updating ? 'Update in progress' : 'Restart'} ?disabled=${this.updating || this.starting} @click=${() => this._emit('restart')}>${icon('restart')}</button>
-          ` : html`
+          `
+              : html`
             <button class="icon-btn icon-btn-success" title=${this.updating ? 'Update in progress' : this.starting ? 'Starting…' : 'Start'} ?disabled=${this.updating || this.starting} @click=${() => this._emit('start')}>${icon('play')}</button>
-          `}
+          `
+          }
           <button class="icon-btn" title="More" @click=${this._toggleMenu}>${icon('kebab')}</button>
 
-          ${this.menuOpen ? html`
+          ${
+            this.menuOpen
+              ? html`
             <div class="menu"
                  style=${styleMap(this._menuStyle ?? {})}
                  @click=${(e: Event) => e.stopPropagation()}>
-              ${c.state === 'started' ? html`
+              ${
+                c.state === 'started'
+                  ? html`
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('pause')}>${icon('pause')} Pause</button>
-              ` : c.state === 'paused' ? html`
+              `
+                  : c.state === 'paused'
+                    ? html`
                 <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('resume')}>${icon('play')} Resume</button>
                 <button ?disabled=${this.updating} @click=${() => this._emit('stop')}>${icon('stop')} Stop</button>
-              ` : html`
+              `
+                    : html`
                 <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('start')}>${icon('play')} Start</button>
-              `}
+              `
+              }
               <button ?disabled=${this.updating || this.starting} @click=${() => this._emit('restart')}>${icon('restart')} Restart</button>
               <div class="divider"></div>
               <button @click=${() => this._emit('logs')}>${icon('logs')} Logs</button>
@@ -523,7 +577,9 @@ export class MdDockerRow extends LitElement {
               <div class="divider"></div>
               <button class="danger" ?disabled=${this.updating} @click=${() => this._emit('remove')}>${icon('trash')} Remove</button>
             </div>
-          ` : nothing}
+          `
+              : nothing
+          }
         </div>
       </div>
     `;
@@ -539,6 +595,6 @@ export class MdDockerRow extends LitElement {
 function hexToRgba(hex: string, alpha: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return `rgba(255,140,47,${alpha})`;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   return `rgba(${(n >> 16) & 0xff},${(n >> 8) & 0xff},${n & 0xff},${alpha})`;
 }

@@ -4,8 +4,14 @@ import type { DockerContainerFull, DockerTag } from '../types';
 import { icon } from '../icons';
 
 const COLOR_SWATCHES = [
-  '#22c55e', '#3b82f6', '#f59e0b', '#ef4444',
-  '#a78bfa', '#14b8a6', '#ec4899', '#6b7280',
+  '#22c55e',
+  '#3b82f6',
+  '#f59e0b',
+  '#ef4444',
+  '#a78bfa',
+  '#14b8a6',
+  '#ec4899',
+  '#6b7280',
 ];
 
 @customElement('md-docker-tag-modal')
@@ -215,7 +221,9 @@ export class MdDockerTagModal extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this._draftTags = this.tags.map((t) => ({ ...t }));
-    this._draftAssign = Object.fromEntries(Object.entries(this.assignments).map(([k, v]) => [k, [...v]]));
+    this._draftAssign = Object.fromEntries(
+      Object.entries(this.assignments).map(([k, v]) => [k, [...v]]),
+    );
     this._activeId = this._draftTags[0]?.id ?? null;
   }
 
@@ -225,7 +233,9 @@ export class MdDockerTagModal extends LitElement {
 
   private _updateActive(patch: Partial<DockerTag>): void {
     if (!this._activeId) return;
-    this._draftTags = this._draftTags.map((t) => t.id === this._activeId ? { ...t, ...patch } : t);
+    this._draftTags = this._draftTags.map((t) =>
+      t.id === this._activeId ? { ...t, ...patch } : t,
+    );
   }
 
   private _addTag(): void {
@@ -237,10 +247,13 @@ export class MdDockerTagModal extends LitElement {
 
   private _deleteActive(): void {
     if (!this._activeId) return;
-    const assignedCount = Object.values(this._draftAssign).filter((ids) => ids.includes(this._activeId!)).length;
-    const msg = assignedCount > 0
-      ? `Delete this tag? It will be removed from ${assignedCount} container${assignedCount === 1 ? '' : 's'}.`
-      : 'Delete this tag?';
+    const assignedCount = Object.values(this._draftAssign).filter((ids) =>
+      ids.includes(this._activeId!),
+    ).length;
+    const msg =
+      assignedCount > 0
+        ? `Delete this tag? It will be removed from ${assignedCount} container${assignedCount === 1 ? '' : 's'}.`
+        : 'Delete this tag?';
     if (!confirm(msg)) return;
     const id = this._activeId;
     this._draftTags = this._draftTags.filter((t) => t.id !== id);
@@ -264,10 +277,16 @@ export class MdDockerTagModal extends LitElement {
     for (const [k, v] of Object.entries(this._draftAssign)) {
       if (v.length > 0) cleanedAssign[k] = v;
     }
-    this.dispatchEvent(new CustomEvent<{ tags: DockerTag[]; assignments: Record<string, string[]> }>('docker-save-tags', {
-      detail: { tags: this._draftTags, assignments: cleanedAssign },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ tags: DockerTag[]; assignments: Record<string, string[]> }>(
+        'docker-save-tags',
+        {
+          detail: { tags: this._draftTags, assignments: cleanedAssign },
+          bubbles: true,
+          composed: true,
+        },
+      ),
+    );
   }
 
   private _close(): void {
@@ -283,12 +302,17 @@ export class MdDockerTagModal extends LitElement {
     const active = this._active();
     const q = this._filter.trim().toLowerCase();
     const visibleContainers = q
-      ? this.containers.filter((c) => c.name.toLowerCase().includes(q) || c.image.toLowerCase().includes(q))
+      ? this.containers.filter(
+          (c) => c.name.toLowerCase().includes(q) || c.image.toLowerCase().includes(q),
+        )
       : this.containers;
-    const tagCount = (id: string): number => Object.values(this._draftAssign).filter((ids) => ids.includes(id)).length;
+    const tagCount = (id: string): number =>
+      Object.values(this._draftAssign).filter((ids) => ids.includes(id)).length;
 
     return html`
-      <div class="backdrop" @click=${(e: Event) => { if (e.target === e.currentTarget) this._close(); }}>
+      <div class="backdrop" @click=${(e: Event) => {
+        if (e.target === e.currentTarget) this._close();
+      }}>
         <div class="modal" role="dialog" aria-modal="true">
 
           <header class="head">
@@ -302,18 +326,24 @@ export class MdDockerTagModal extends LitElement {
           <div class="body">
             <aside class="aside">
               <h3>Tags · ${this._draftTags.length}</h3>
-              ${this._draftTags.map((t) => html`
-                <div class="aside-row" ?data-active=${t.id === this._activeId} @click=${() => { this._activeId = t.id; }}>
+              ${this._draftTags.map(
+                (t) => html`
+                <div class="aside-row" ?data-active=${t.id === this._activeId} @click=${() => {
+                  this._activeId = t.id;
+                }}>
                   <span class="swatch" style="background:${hexToRgba(t.color, 0.18)};color:${t.color}">${icon('tag', 14)}</span>
                   <span class="tag-chip" style="background:${hexToRgba(t.color, 0.15)};color:${t.color}">${t.name}</span>
                   <span class="count">${tagCount(t.id)}</span>
                 </div>
-              `)}
+              `,
+              )}
               <button class="aside-add" @click=${this._addTag}>${icon('plus', 12)} New tag</button>
             </aside>
 
             <div class="main">
-              ${active ? html`
+              ${
+                active
+                  ? html`
                 <div class="row2">
                   <div class="field">
                     <label>Tag name</label>
@@ -323,11 +353,13 @@ export class MdDockerTagModal extends LitElement {
                   <div class="field">
                     <label>Color</label>
                     <div class="swatch-row">
-                      ${COLOR_SWATCHES.map((c) => html`
+                      ${COLOR_SWATCHES.map(
+                        (c) => html`
                         <span class="swatch-pick" style="background:${c}"
                               ?data-selected=${active.color === c}
                               @click=${() => this._updateActive({ color: c })}></span>
-                      `)}
+                      `,
+                      )}
                     </div>
                   </div>
                 </div>
@@ -338,7 +370,9 @@ export class MdDockerTagModal extends LitElement {
                     ${icon('search', 14)}
                     <input type="text" placeholder="Filter containers..."
                            .value=${this._filter}
-                           @input=${(e: Event) => { this._filter = (e.target as HTMLInputElement).value; }}>
+                           @input=${(e: Event) => {
+                             this._filter = (e.target as HTMLInputElement).value;
+                           }}>
                   </label>
                   <div class="table">
                     ${visibleContainers.map((c) => {
@@ -352,19 +386,23 @@ export class MdDockerTagModal extends LitElement {
                             <span class="ct-name">${c.name}</span>
                           </div>
                           <div class="tags-cell">
-                            ${ids.length === 0
-                              ? html`<span class="hint">— no tags —</span>`
-                              : ids.map((tid) => {
-                                  const t = this._draftTags.find((x) => x.id === tid);
-                                  return t ? this._renderChip(t) : nothing;
-                                })}
+                            ${
+                              ids.length === 0
+                                ? html`<span class="hint">— no tags —</span>`
+                                : ids.map((tid) => {
+                                    const t = this._draftTags.find((x) => x.id === tid);
+                                    return t ? this._renderChip(t) : nothing;
+                                  })
+                            }
                           </div>
                         </div>
                       `;
                     })}
                   </div>
                 </div>
-              ` : html`<p class="hint">No tag selected. Click "New tag" to create one.</p>`}
+              `
+                  : html`<p class="hint">No tag selected. Click "New tag" to create one.</p>`
+              }
             </div>
           </div>
 
@@ -386,6 +424,6 @@ export class MdDockerTagModal extends LitElement {
 function hexToRgba(hex: string, alpha: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return `rgba(255,140,47,${alpha})`;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   return `rgba(${(n >> 16) & 0xff},${(n >> 8) & 0xff},${n & 0xff},${alpha})`;
 }

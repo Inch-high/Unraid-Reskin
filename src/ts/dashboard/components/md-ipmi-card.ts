@@ -5,11 +5,16 @@ import './md-card';
 
 function orbColor(s: IpmiSensor['status']): string {
   switch (s) {
-    case 'green':  return 'var(--success)';
-    case 'yellow': return 'var(--warning)';
-    case 'red':    return 'var(--danger)';
-    case 'blue':   return 'var(--info)';
-    default:       return 'var(--text-muted)';
+    case 'green':
+      return 'var(--success)';
+    case 'yellow':
+      return 'var(--warning)';
+    case 'red':
+      return 'var(--danger)';
+    case 'blue':
+      return 'var(--info)';
+    default:
+      return 'var(--text-muted)';
   }
 }
 
@@ -81,13 +86,15 @@ export class MdIpmiCard extends LitElement {
           if (items.length === 0) return '';
           return html`
             <div class="group-label">${label}</div>
-            ${items.map((s) => html`
+            ${items.map(
+              (s) => html`
               <div class="sensor">
                 <span class="dot" style="background: ${orbColor(s.status)}"></span>
                 <span class="name">${s.name}</span>
                 <span class="reading">${s.reading}</span>
               </div>
-            `)}
+            `,
+            )}
           `;
         })}
       </md-card>

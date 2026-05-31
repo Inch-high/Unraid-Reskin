@@ -10,7 +10,10 @@ import './md-main-power-panel';
 import type { MdMainEncryptionFields } from './md-main-encryption-fields';
 
 const ORB_VAR: Record<OrbColor, string> = {
-  green: 'var(--success)', yellow: 'var(--warning)', red: 'var(--danger)', grey: 'var(--text-muted)',
+  green: 'var(--success)',
+  yellow: 'var(--warning)',
+  red: 'var(--danger)',
+  grey: 'var(--text-muted)',
 };
 
 function orbForMdColor(mdColor: string): OrbColor {
@@ -82,33 +85,40 @@ export class MdMainOperationPanel extends LitElement {
     if (this._encryptionNeeded) {
       const entry = this._encFields?.getKeyEntry();
       if (!entry || !entry.valid) return;
-      const res = await A.submitEncryptedStart({
-        start: {
-          mdState: op.mdState,
-          startMode: this._maintenance ? 'Maintenance' : 'Normal',
-          confirmStart: primary.requiresConfirm ? this._confirm : false,
+      const res = await A.submitEncryptedStart(
+        {
+          start: {
+            mdState: op.mdState,
+            startMode: this._maintenance ? 'Maintenance' : 'Normal',
+            confirmStart: primary.requiresConfirm ? this._confirm : false,
+          },
+          poolNames: op.encryption.poolNames,
+          passphrase: entry.passphrase,
+          keyfileDataUrl: entry.keyfileDataUrl,
+          reformat: entry.reformat,
         },
-        poolNames: op.encryption.poolNames,
-        passphrase: entry.passphrase,
-        keyfileDataUrl: entry.keyfileDataUrl,
-        reformat: entry.reformat,
-      }, this.csrf);
+        this.csrf,
+      );
       if (!res.ok) {
-        alert(res.error === 'wrong-pool-state'
-          ? `Cannot start — pool state problem:\n${res.detail ?? ''}`
-          : res.error === 'bad-passphrase'
-            ? 'Passphrase must use printable ASCII characters only. Use the keyfile method for other characters.'
-            : 'No encryption key supplied.');
+        alert(
+          res.error === 'wrong-pool-state'
+            ? `Cannot start — pool state problem:\n${res.detail ?? ''}`
+            : res.error === 'bad-passphrase'
+              ? 'Passphrase must use printable ASCII characters only. Use the keyfile method for other characters.'
+              : 'No encryption key supplied.',
+        );
         return;
       }
       this.resync();
       return;
     }
-    await this._run(A.buildStart({
-      mdState: op.mdState,
-      startMode: this._maintenance ? 'Maintenance' : 'Normal',
-      confirmStart: primary.requiresConfirm ? this._confirm : false,
-    }));
+    await this._run(
+      A.buildStart({
+        mdState: op.mdState,
+        startMode: this._maintenance ? 'Maintenance' : 'Normal',
+        confirmStart: primary.requiresConfirm ? this._confirm : false,
+      }),
+    );
   }
 
   private _onStop(): void {
@@ -119,7 +129,11 @@ export class MdMainOperationPanel extends LitElement {
 
   private _onFormat(): void {
     if (!this._formatConfirm) return;
-    if (confirm('Format will create a new filesystem on all Unmountable disks. ALL DATA on them will be lost. Continue?')) {
+    if (
+      confirm(
+        'Format will create a new filesystem on all Unmountable disks. ALL DATA on them will be lost. Continue?',
+      )
+    ) {
       void this._run(A.buildFormat(this.state.operation.unmountableMask));
     }
   }
@@ -139,7 +153,8 @@ export class MdMainOperationPanel extends LitElement {
     const hardDisabled = !primary.enabled && !primary.requiresConfirm && !this._encryptionNeeded;
     let enabled = primary.enabled;
     if (isStart && !hardDisabled) {
-      enabled = (!primary.requiresConfirm || this._confirm) && (!this._encryptionNeeded || this._encValid);
+      enabled =
+        (!primary.requiresConfirm || this._confirm) && (!this._encryptionNeeded || this._encValid);
     }
 
     const started = op.fsState === 'Started';
@@ -152,54 +167,74 @@ export class MdMainOperationPanel extends LitElement {
           <div class="primary-row">
             <span class="orb" style=${`--orb:${ORB_VAR[orb]}`}></span>
             <span class="state">${op.fsState}${op.startMode === 'Maintenance' && started ? ' — Maintenance' : ''}</span>
-            ${isStop
-              ? html`<button class="action stop" ?disabled=${!enabled} @click=${this._onStop}>Stop</button>`
-              : isCancel
-                ? html`<button class="action" @click=${() => this._run(op.fsState === 'Clearing' ? { url: '/update.htm', params: { cmdNoClear: '' } } : { url: '/update.htm', params: { cmdNoCopy: '' } })}>Cancel</button>`
-                : html`<button class="action" ?disabled=${!enabled} @click=${this._onStart}>${primary.label}</button>`}
+            ${
+              isStop
+                ? html`<button class="action stop" ?disabled=${!enabled} @click=${this._onStop}>Stop</button>`
+                : isCancel
+                  ? html`<button class="action" @click=${() => this._run(op.fsState === 'Clearing' ? { url: '/update.htm', params: { cmdNoClear: '' } } : { url: '/update.htm', params: { cmdNoCopy: '' } })}>Cancel</button>`
+                  : html`<button class="action" ?disabled=${!enabled} @click=${this._onStart}>${primary.label}</button>`
+            }
             ${primary.reason ? html`<span class="reason">${primary.reason}</span>` : ''}
           </div>
 
-          ${isStart && !this._encryptionNeeded && primary.requiresConfirm
-            ? html`<div class="gate"><label class="check danger">
+          ${
+            isStart && !this._encryptionNeeded && primary.requiresConfirm
+              ? html`<div class="gate"><label class="check danger">
                 <input type="checkbox" .checked=${this._confirm}
-                  @change=${(e: Event) => { this._confirm = (e.target as HTMLInputElement).checked; }}>
+                  @change=${(e: Event) => {
+                    this._confirm = (e.target as HTMLInputElement).checked;
+                  }}>
                 Yes, I want to do this.</label></div>`
-            : ''}
+              : ''
+          }
 
-          ${isStart && primary.requiresMaintenanceField
-            ? html`<div class="gate"><label class="check">
+          ${
+            isStart && primary.requiresMaintenanceField
+              ? html`<div class="gate"><label class="check">
                 <input type="checkbox" .checked=${this._maintenance}
-                  @change=${(e: Event) => { this._maintenance = (e.target as HTMLInputElement).checked; }}>
+                  @change=${(e: Event) => {
+                    this._maintenance = (e.target as HTMLInputElement).checked;
+                  }}>
                 Maintenance mode (start array but do not mount disks)</label></div>`
-            : ''}
+              : ''
+          }
 
-          ${isStart && this._encryptionNeeded
-            ? html`<md-main-encryption-fields .encryption=${op.encryption}
+          ${
+            isStart && this._encryptionNeeded
+              ? html`<md-main-encryption-fields .encryption=${op.encryption}
                 @enc-change=${this._onEncChange}
                 @enc-delete-keyfile=${() => this._run(A.buildDeleteKeyfile())}></md-main-encryption-fields>`
-            : ''}
+              : ''
+          }
 
-          ${showFormat
-            ? html`<div class="gate">
+          ${
+            showFormat
+              ? html`<div class="gate">
                 <button class="fmt" ?disabled=${!this._formatConfirm} @click=${this._onFormat}>Format</button>
                 <label class="check danger"><input type="checkbox" .checked=${this._formatConfirm}
-                  @change=${(e: Event) => { this._formatConfirm = (e.target as HTMLInputElement).checked; }}>
+                  @change=${(e: Event) => {
+                    this._formatConfirm = (e.target as HTMLInputElement).checked;
+                  }}>
                   Format unmountable disk(s) — creates a new filesystem, erasing data.</label>
               </div>`
-            : ''}
+              : ''
+          }
         </section>
 
-        ${started || this.state.parity?.running
-          ? html`<section><h3>Parity</h3>
+        ${
+          started || this.state.parity?.running
+            ? html`<section><h3>Parity</h3>
               <md-main-parity-panel .parity=${this.state.parity} .operation=${op}
                 .csrf=${this.csrf} .resync=${this.resync}></md-main-parity-panel></section>`
-          : ''}
+            : ''
+        }
 
-        ${started
-          ? html`<section><h3>Disks</h3>
+        ${
+          started
+            ? html`<section><h3>Disks</h3>
               <md-main-spin-controls .busy=${op.busy ?? 0} .csrf=${this.csrf} .resync=${this.resync}></md-main-spin-controls></section>`
-          : ''}
+            : ''
+        }
 
         <section><h3>System</h3>
           <md-main-power-panel .moverEnabled=${op.moverEnabled && started} .moverRunning=${(op.busy ?? 0) === 2}

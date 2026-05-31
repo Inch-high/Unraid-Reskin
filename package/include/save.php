@@ -1,10 +1,12 @@
 <?php
+
 require_once __DIR__ . '/helpers.php';
 
 const MODERNUI_SETTINGS_PATH = '/boot/config/plugins/unraid-modernui/settings.cfg';
 const MODERNUI_SETTINGS_DIR  = '/boot/config/plugins/unraid-modernui';
 
-function modernui_validate_settings(array $input): array {
+function modernui_validate_settings(array $input): array
+{
     $defaults = [
         'mode'                  => 'system',
         'density'               => 'comfortable',
@@ -36,7 +38,9 @@ function modernui_validate_settings(array $input): array {
 
     $out = $defaults;
     foreach ($defaults as $key => $default) {
-        if (!isset($input[$key])) continue;
+        if (!isset($input[$key])) {
+            continue;
+        }
         $value = (string)$input[$key];
         if (!in_array($value, $allowed[$key], true)) {
             return ['ok' => false, 'error' => "Invalid value for {$key}: {$value}"];
@@ -49,7 +53,8 @@ function modernui_validate_settings(array $input): array {
 // Replace / restore the four /Main .page overlays as a unit. Both rely on
 // modernui_main_overlay_table() + modernui_replace_file / restore from
 // install.php + uninstall.php (required by the caller before these run).
-function modernui_replace_main_pages(): void {
+function modernui_replace_main_pages(): void
+{
     foreach (modernui_main_overlay_table() as $target => $overlaySrc) {
         modernui_replace_file($target, $overlaySrc);
     }
@@ -58,16 +63,18 @@ function modernui_replace_main_pages(): void {
         modernui_replace_file(MODERNUI_UD_PAGE_TARGET, modernui_ud_overlay_src());
     }
 }
-function modernui_restore_main_pages(): void {
+function modernui_restore_main_pages(): void
+{
     foreach (modernui_main_overlay_table() as $target => $_overlaySrc) {
-        modernui_restore_from_backup($target, fn($s) => $s);
+        modernui_restore_from_backup($target, fn ($s) => $s);
     }
     if (is_file(MODERNUI_UD_PAGE_TARGET)) {
-        modernui_restore_from_backup(MODERNUI_UD_PAGE_TARGET, fn($s) => $s);
+        modernui_restore_from_backup(MODERNUI_UD_PAGE_TARGET, fn ($s) => $s);
     }
 }
 
-function modernui_handle_post(array $post): array {
+function modernui_handle_post(array $post): array
+{
     require_once __DIR__ . '/install.php';   // pulls in modernui_install + modernui_generate_loader_js + modernui_replace_file + modernui_main_overlay_table
     require_once __DIR__ . '/uninstall.php'; // pulls in modernui_restore_from_backup
 
@@ -76,7 +83,7 @@ function modernui_handle_post(array $post): array {
         modernui_generate_loader_js(true);
         // Restore stock pages so users have a true fallback, not a "disabled"
         // placeholder. Re-applied on enable below.
-        modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn($s) => $s);
+        modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn ($s) => $s);
         modernui_restore_main_pages();
         return ['ok' => true, 'reload' => true];
     }
@@ -101,7 +108,9 @@ function modernui_handle_post(array $post): array {
     $merged = array_merge($existing, $post);
 
     $v = modernui_validate_settings($merged);
-    if (!$v['ok']) return $v;
+    if (!$v['ok']) {
+        return $v;
+    }
 
     // Docker layout toggle requires swapping the .page file on disk because
     // our overlay replaced Unraid's. If the user just turned docker off, we
@@ -110,7 +119,7 @@ function modernui_handle_post(array $post): array {
     $docker_now = $v['values']['docker'];
     if ($docker_was !== $docker_now) {
         if ($docker_now === 'off') {
-            modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn($s) => $s);
+            modernui_restore_from_backup(MODERNUI_DOCKER_PAGE, fn ($s) => $s);
         } else {
             modernui_replace_file(
                 MODERNUI_DOCKER_PAGE,

@@ -35,9 +35,7 @@ describe('interfaceExtractor', () => {
   });
 
   it('matches a tbody whose h3 contains "Interface"', () => {
-    const other = parseTbody(
-      '<tbody><tr><td><h3>Network Interface</h3></td></tr></tbody>',
-    );
+    const other = parseTbody('<tbody><tr><td><h3>Network Interface</h3></td></tr></tbody>');
     expect(interfaceExtractor.match({ source: other })).toBe(true);
   });
 

@@ -51,14 +51,19 @@ export class MdArrayCard extends LitElement {
   `;
 
   @property({ type: Object }) state: ArrayState = {
-    kind: 'array', status: 'unknown', usedTB: null, totalTB: null, disks: [],
+    kind: 'array',
+    status: 'unknown',
+    usedTB: null,
+    totalTB: null,
+    disks: [],
   };
 
   render() {
     const { usedTB, totalTB, disks } = this.state;
-    const meta = usedTB !== null && totalTB !== null
-      ? `${usedTB.toFixed(1)} TB / ${totalTB.toFixed(0)} TB`
-      : `${disks.length} disks`;
+    const meta =
+      usedTB !== null && totalTB !== null
+        ? `${usedTB.toFixed(1)} TB / ${totalTB.toFixed(0)} TB`
+        : `${disks.length} disks`;
 
     return html`
       <md-card cardTitle="Array" meta=${meta}>
@@ -66,7 +71,8 @@ export class MdArrayCard extends LitElement {
           ${disks.map((d) => html`<div class="led" style="background: ${stateColor(d.state)}"></div>`)}
         </div>
         <div class="disk-list">
-          ${disks.map((d) => html`
+          ${disks.map(
+            (d) => html`
             <div class="disk">
               <span class="name">${d.name}</span>
               <span class="state">
@@ -79,7 +85,8 @@ export class MdArrayCard extends LitElement {
               </div>
               <span class="pct ${d.utilizationPct === null ? 'empty' : ''}">${d.utilizationPct !== null ? `${Math.round(d.utilizationPct)}%` : '—'}</span>
             </div>
-          `)}
+          `,
+          )}
         </div>
       </md-card>
     `;

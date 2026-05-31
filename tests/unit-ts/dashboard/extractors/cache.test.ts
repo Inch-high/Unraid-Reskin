@@ -24,13 +24,13 @@ describe('cacheExtractor', () => {
   it('extracts at least one cache disk', () => {
     const result = cacheExtractor.extract({ source: tbody });
     expect(result?.kind).toBe('cache');
-    expect((result?.disks.length ?? 0)).toBeGreaterThan(0);
+    expect(result?.disks.length ?? 0).toBeGreaterThan(0);
   });
 
   it('parses utilization on at least one disk', () => {
     const result = cacheExtractor.extract({ source: tbody });
     const withUtil = result?.disks.filter((d) => d.utilizationPct !== null);
-    expect((withUtil?.length ?? 0)).toBeGreaterThan(0);
+    expect(withUtil?.length ?? 0).toBeGreaterThan(0);
   });
 
   it('parses a recognised status', () => {

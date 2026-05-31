@@ -18,12 +18,12 @@ function containerStateFromOuter(outer: Element): CtState {
   const stateText = (outer.querySelector('span.state')?.textContent ?? '').trim().toLowerCase();
   if (stateText === 'started') return 'started';
   if (stateText === 'stopped') return 'stopped';
-  if (stateText === 'paused')  return 'paused';
+  if (stateText === 'paused') return 'paused';
   // Fall back to the class list — outer carries the state as a token.
   const cls = outer.className || '';
   if (/\bstarted\b/.test(cls)) return 'started';
   if (/\bstopped\b/.test(cls)) return 'stopped';
-  if (/\bpaused\b/.test(cls))  return 'paused';
+  if (/\bpaused\b/.test(cls)) return 'paused';
   return 'unknown';
 }
 
@@ -108,11 +108,8 @@ function readFolder(showcaseOuter: Element): DockerFolder | null {
   } else {
     const allStarted = containers.every((c) => c.state === 'started');
     const allStopped = containers.every((c) => c.state === 'stopped');
-    const allPaused  = containers.every((c) => c.state === 'paused');
-    state = allStarted ? 'started'
-          : allStopped ? 'stopped'
-          : allPaused  ? 'paused'
-          : 'mixed';
+    const allPaused = containers.every((c) => c.state === 'paused');
+    state = allStarted ? 'started' : allStopped ? 'stopped' : allPaused ? 'paused' : 'mixed';
   }
 
   return { name, state, containers, totalCount, runningCount };
@@ -158,8 +155,9 @@ export const dockerExtractor: Extractor<DockerState> = {
     // matches before dynamix.docker.manager has injected `.outer.solid.apps`
     // tiles, so an empty result during that window should not be treated as
     // a populated zero-container dashboard.
-    const hasAnyTile = source.querySelector('span.outer.solid.apps') !== null
-      || source.querySelector('div.folder-showcase-outer') !== null;
+    const hasAnyTile =
+      source.querySelector('span.outer.solid.apps') !== null ||
+      source.querySelector('div.folder-showcase-outer') !== null;
     const loading = totalCount === 0 && !hasAnyTile;
 
     return {

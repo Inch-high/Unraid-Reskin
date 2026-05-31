@@ -45,7 +45,9 @@ export class MdMainCapacityHero extends LitElement {
     const parity = a.devices.filter((d) => d.role === 'parity').length;
     const data = a.devices.filter((d) => d.role === 'data').length;
     const total = a.devices.length;
-    const healthy = a.devices.filter((d) => !PROBLEM.includes(d.status) && d.smart !== 'failed').length;
+    const healthy = a.devices.filter(
+      (d) => !PROBLEM.includes(d.status) && d.smart !== 'failed',
+    ).length;
     const pct = a.utilizationPct;
 
     return html`

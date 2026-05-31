@@ -1,4 +1,5 @@
 <?php
+
 // Read-only snapshot of the Unassigned Devices plugin state, normalized into a
 // clean, CREDENTIAL-STRIPPED JSON shape for the modern /Main UD card.
 //
@@ -16,18 +17,23 @@ require_once __DIR__ . '/helpers.php';
 const MODERNUI_UD_LIB  = '/usr/local/emhttp/plugins/unassigned.devices/include/lib.php';
 const MODERNUI_UD_PAGE = '/usr/local/emhttp/plugins/unassigned.devices/UnassignedDevices.page';
 
-function modernui_ud_to_int($v): ?int {
-    if ($v === null || $v === '' || !is_numeric($v)) return null;
+function modernui_ud_to_int($v): ?int
+{
+    if ($v === null || $v === '' || !is_numeric($v)) {
+        return null;
+    }
     return (int)$v;
 }
 
-function modernui_ud_to_bool($v): bool {
+function modernui_ud_to_bool($v): bool
+{
     return $v === true || $v === 1 || $v === '1' || $v === 'yes' || $v === 'true';
 }
 
 // Whitelist a remote SMB/NFS/ISO mount — display-safe fields ONLY. Never copy
 // pass / user / domain / command / user_command / logfile / prog_name.
-function modernui_ud_remote(array $m): array {
+function modernui_ud_remote(array $m): array
+{
     return [
         'protocol'   => (string)($m['protocol'] ?? ''),       // smb | nfs | root (iso)
         'name'       => (string)($m['name'] ?? ''),
@@ -46,14 +52,15 @@ function modernui_ud_remote(array $m): array {
 }
 
 // Whitelist one partition of an unassigned disk.
-function modernui_ud_partition(array $p): array {
+function modernui_ud_partition(array $p): array
+{
     return [
         'device'     => (string)($p['device'] ?? ''),         // e.g. sdX1 — identifier for mount/umount
         'mountpoint' => (string)($p['mountpoint'] ?? ''),
         'fsType'     => (string)($p['fstype'] ?? ''),
         'label'      => (string)($p['label'] ?? ($p['target'] ?? '')),
         'mounted'    => modernui_ud_to_bool($p['mounted'] ?? false),
-        'passThrough'=> modernui_ud_to_bool($p['pass_through'] ?? false),
+        'passThrough' => modernui_ud_to_bool($p['pass_through'] ?? false),
         'sizeBytes'  => modernui_ud_to_int($p['size'] ?? null),
         'usedBytes'  => modernui_ud_to_int($p['used'] ?? null),
         'freeBytes'  => modernui_ud_to_int($p['avail'] ?? null),
@@ -61,10 +68,13 @@ function modernui_ud_partition(array $p): array {
 }
 
 // Whitelist one unassigned disk + its partitions.
-function modernui_ud_disk(array $d): array {
+function modernui_ud_disk(array $d): array
+{
     $parts = [];
     foreach ((array)($d['partitions'] ?? []) as $p) {
-        if (is_array($p)) $parts[] = modernui_ud_partition($p);
+        if (is_array($p)) {
+            $parts[] = modernui_ud_partition($p);
+        }
     }
     return [
         'device'     => (string)($d['device'] ?? ''),         // sdX
@@ -82,19 +92,27 @@ function modernui_ud_disk(array $d): array {
 // matches a currently-present disk; expose the remembered device name + last
 // mount point. `standby` mirrors stock (a by-id symlink exists → spun down vs
 // fully offline).
-function modernui_ud_historical(array $config, array $currentSerials): array {
+function modernui_ud_historical(array $config, array $currentSerials): array
+{
     $out = [];
     foreach ($config as $serial => $value) {
-        if ($serial === 'Config' || !is_array($value)) continue;
+        if ($serial === 'Config' || !is_array($value)) {
+            continue;
+        }
         $present = false;
         foreach ($currentSerials as $s) {
             // Exact serial match — both sides come from the plugin's own data
             // keyed by the same serial. A loose substring match could hide a
             // genuinely-historical device whose serial happens to be a substring
             // of an unrelated attached disk's serial (or vice-versa).
-            if ($s !== '' && $s === $serial) { $present = true; break; }
+            if ($s !== '' && $s === $serial) {
+                $present = true;
+                break;
+            }
         }
-        if ($present) continue;
+        if ($present) {
+            continue;
+        }
         $dev = (string)($value['unassigned_dev'] ?? '');
         $mp  = isset($value['mountpoint.1']) ? basename((string)$value['mountpoint.1']) : '';
         $byId = @glob('/dev/disk/by-id/*-' . $serial . '*');
@@ -110,17 +128,30 @@ function modernui_ud_historical(array $config, array $currentSerials): array {
 
 // Build the normalized state from the plugin's data functions. Pass the raw
 // arrays in for testability (the HTTP path reads them live).
-function modernui_ud_state(array $rawDisks, array $smb, array $iso, array $config = []): array {
+function modernui_ud_state(array $rawDisks, array $smb, array $iso, array $config = []): array
+{
     $disks = [];
     $currentSerials = [];
     foreach ($rawDisks as $d) {
-        if (!is_array($d)) continue;
+        if (!is_array($d)) {
+            continue;
+        }
         $disks[] = modernui_ud_disk($d);
-        if (!empty($d['serial'])) $currentSerials[] = (string)$d['serial'];
+        if (!empty($d['serial'])) {
+            $currentSerials[] = (string)$d['serial'];
+        }
     }
     $remotes = [];
-    foreach ($smb as $m) if (is_array($m)) $remotes[] = modernui_ud_remote($m);
-    foreach ($iso as $m) if (is_array($m)) $remotes[] = modernui_ud_remote($m);
+    foreach ($smb as $m) {
+        if (is_array($m)) {
+            $remotes[] = modernui_ud_remote($m);
+        }
+    }
+    foreach ($iso as $m) {
+        if (is_array($m)) {
+            $remotes[] = modernui_ud_remote($m);
+        }
+    }
     return [
         'available'  => true,
         'disks'      => $disks,
@@ -133,9 +164,14 @@ function modernui_ud_state(array $rawDisks, array $smb, array $iso, array $confi
 // active UnassignedDevices.page (so the stock section is hidden and rendering
 // our card won't duplicate it). If UD reclaimed its page (plugin update), the
 // marker is gone → available:false → the card hides and stock section shows.
-function modernui_ud_available(): bool {
-    if (!is_file(MODERNUI_UD_LIB)) return false;
-    if (!is_file(MODERNUI_UD_PAGE)) return false;
+function modernui_ud_available(): bool
+{
+    if (!is_file(MODERNUI_UD_LIB)) {
+        return false;
+    }
+    if (!is_file(MODERNUI_UD_PAGE)) {
+        return false;
+    }
     $page = @file_get_contents(MODERNUI_UD_PAGE);
     return is_string($page) && strpos($page, 'modernui') !== false;
 }
@@ -150,8 +186,8 @@ if (PHP_SAPI !== 'cli') {
     }
     require_once MODERNUI_UD_LIB;
     $disks = function_exists('get_all_disks_info') ? (array)get_all_disks_info() : [];
-    $smb   = function_exists('get_samba_mounts')   ? (array)get_samba_mounts()   : [];
-    $iso   = function_exists('get_iso_mounts')     ? (array)get_iso_mounts()     : [];
+    $smb   = function_exists('get_samba_mounts') ? (array)get_samba_mounts() : [];
+    $iso   = function_exists('get_iso_mounts') ? (array)get_iso_mounts() : [];
     // lib.php populates $ud_config (serial-keyed plugin config) at global scope.
     $config = isset($GLOBALS['ud_config']) && is_array($GLOBALS['ud_config']) ? $GLOBALS['ud_config'] : [];
     echo json_encode(modernui_ud_state($disks, $smb, $iso, $config));

@@ -8,18 +8,32 @@ class FakeNchan {
   url: string;
   handler: ((raw: unknown) => void) | null = null;
   started = false;
-  constructor(url: string) { this.url = url; FakeNchan.instances.push(this); }
-  on(_e: string, fn: (...a: unknown[]) => void) { this.handler = fn as (raw: unknown) => void; }
-  start() { this.started = true; }
-  stop() { this.started = false; }
-  emit(raw: unknown) { this.handler?.(raw); }
+  constructor(url: string) {
+    this.url = url;
+    FakeNchan.instances.push(this);
+  }
+  on(_e: string, fn: (...a: unknown[]) => void) {
+    this.handler = fn as (raw: unknown) => void;
+  }
+  start() {
+    this.started = true;
+  }
+  stop() {
+    this.started = false;
+  }
+  emit(raw: unknown) {
+    this.handler?.(raw);
+  }
 }
 
 function setHidden(doc: Document, hidden: boolean) {
   Object.defineProperty(doc, 'hidden', { value: hidden, configurable: true });
 }
 
-afterEach(() => { vi.unstubAllGlobals(); FakeNchan.instances = []; });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  FakeNchan.instances = [];
+});
 
 describe('parseBusy', () => {
   it('parses 0..3, rejects others', () => {
@@ -57,7 +71,10 @@ describe('createMainLive', () => {
     vi.stubGlobal('NchanSubscriber', FakeNchan as unknown);
     setHidden(document, true);
     const seen: string[] = [];
-    const sub = createMainLive({ resync: () => {}, channels: [{ url: '/sub/devices', handle: () => seen.push('x') }] });
+    const sub = createMainLive({
+      resync: () => {},
+      channels: [{ url: '/sub/devices', handle: () => seen.push('x') }],
+    });
     FakeNchan.instances[0].emit('msg');
     expect(seen).toEqual([]);
     expect(sub.processedSinceVisible).toBe(0);
@@ -77,7 +94,10 @@ describe('createMainLive', () => {
 
   it('no-ops safely when NchanSubscriber is absent', () => {
     vi.stubGlobal('NchanSubscriber', undefined);
-    const sub = createMainLive({ resync: () => {}, channels: [{ url: '/sub/devices', handle: () => {} }] });
+    const sub = createMainLive({
+      resync: () => {},
+      channels: [{ url: '/sub/devices', handle: () => {} }],
+    });
     expect(sub.processedSinceVisible).toBe(0);
     sub.stop();
   });

@@ -149,7 +149,7 @@ export class ShellNavItem extends LitElement {
     const { item } = this;
     // Nested child items (under Storage / Other) don't repeat the parent's icon —
     // the indent already communicates the relationship.
-    const iconName = this.hasAttribute('child') ? '' : (item.icon || '');
+    const iconName = this.hasAttribute('child') ? '' : item.icon || '';
     const iconEl = iconName ? html`<span class="icon">${icon(iconName)}</span>` : '';
     if (item.children && item.children.length > 0) {
       return html`
@@ -158,21 +158,29 @@ export class ShellNavItem extends LitElement {
           <span class="label">${item.label}</span>
           <span class="chevron">${icon('chevron-right', 14)}</span>
         </button>
-        ${this.expanded ? html`
+        ${
+          this.expanded
+            ? html`
           <div class="children">
-            ${item.children.map((c) => html`
+            ${item.children.map(
+              (c) => html`
               <shell-nav-item child .item=${c} current-path=${this.currentPath}></shell-nav-item>
-            `)}
+            `,
+            )}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
         <!-- Collapsed-mode flyout: hidden by default, revealed via the
              :host(:hover) / :host(:focus-within) rules above. Always rendered
              so keyboard tab into one of the links activates the flyout. -->
         <div class="flyout">
           <div class="flyout-title">${item.label}</div>
-          ${item.children.map((c) => html`
+          ${item.children.map(
+            (c) => html`
             <a href=${c.url || '#'}>${c.label}</a>
-          `)}
+          `,
+          )}
         </div>
       `;
     }

@@ -22,7 +22,7 @@ describe('dashboard store', () => {
     store.subscribe(cb);
     const v = { kind: 'unknown' as const, id: 'tbody1', hint: '', innerHTML: '<p>x</p>' };
     store.set('tbody1', v);
-    store.set('tbody1', { ...v });  // same shape, different reference
+    store.set('tbody1', { ...v }); // same shape, different reference
     expect(cb).toHaveBeenCalledTimes(1);
   });
 

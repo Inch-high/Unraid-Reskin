@@ -5,10 +5,10 @@ import './md-card';
 
 function securityPill(s: ShareSecurity) {
   const map: Record<ShareSecurity, { text: string; color: string }> = {
-    public:  { text: 'Public',  color: 'var(--success)' },
+    public: { text: 'Public', color: 'var(--success)' },
     private: { text: 'Private', color: 'var(--danger)' },
-    secure:  { text: 'Secure',  color: 'var(--warning)' },
-    hidden:  { text: 'Hidden',  color: 'var(--text-muted)' },
+    secure: { text: 'Secure', color: 'var(--warning)' },
+    hidden: { text: 'Hidden', color: 'var(--text-muted)' },
   };
   const { text, color } = map[s];
   return html`<span style="
@@ -61,9 +61,8 @@ export class MdSharesCard extends LitElement {
 
   render() {
     const { shares, totalCount, publicSmbCount, publicNfsCount } = this.state;
-    const meta = totalCount === 0
-      ? ''
-      : `${totalCount} · ${publicSmbCount + publicNfsCount} public`;
+    const meta =
+      totalCount === 0 ? '' : `${totalCount} · ${publicSmbCount + publicNfsCount} public`;
 
     return html`
       <md-card cardTitle="Shares" meta=${meta}>
@@ -73,14 +72,16 @@ export class MdSharesCard extends LitElement {
           <span>Security</span>
           <span class="streams">Streams</span>
         </div>
-        ${shares.map((s) => html`
+        ${shares.map(
+          (s) => html`
           <div class="row">
             <span class="name">${s.name}</span>
             <span class="desc">${s.description === '' ? '—' : s.description}</span>
             <span>${securityPill(s.security)}</span>
             <span class="streams">${s.streams ?? '—'}</span>
           </div>
-        `)}
+        `,
+        )}
       </md-card>
     `;
   }

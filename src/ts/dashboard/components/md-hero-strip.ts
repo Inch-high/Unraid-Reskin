@@ -81,7 +81,7 @@ export class MdHeroStrip extends LitElement {
   `;
 
   @property({ type: Object }) arrayState: ArrayState | null = null;
-  @property({ type: Array })  cacheStates: CacheState[] = [];
+  @property({ type: Array }) cacheStates: CacheState[] = [];
   @property({ type: Object }) dockerState: DockerState | null = null;
   @property({ type: Object }) vmsState: VmsState | null = null;
   @property({ type: Object }) upsState: UpsState | null = null;
@@ -116,9 +116,10 @@ export class MdHeroStrip extends LitElement {
     const pools = this.cacheStates.filter((c) => c.usedGB !== null && c.totalGB !== null);
     if (pools.length === 0) return '';
     const totalUsed = pools.reduce((s, c) => s + (c.usedGB ?? 0), 0);
-    const totalCap  = pools.reduce((s, c) => s + (c.totalGB ?? 0), 0);
+    const totalCap = pools.reduce((s, c) => s + (c.totalGB ?? 0), 0);
     const pct = totalCap > 0 ? Math.round((totalUsed / totalCap) * 100) : 0;
-    const used = totalUsed >= 1024 ? `${(totalUsed / 1024).toFixed(1)} TB` : `${totalUsed.toFixed(0)} GB`;
+    const used =
+      totalUsed >= 1024 ? `${(totalUsed / 1024).toFixed(1)} TB` : `${totalUsed.toFixed(0)} GB`;
     const status = pools[0].status.toUpperCase();
     return html`
       <md-hero-card
@@ -135,9 +136,9 @@ export class MdHeroStrip extends LitElement {
     const d = this.dockerState;
     const v = this.vmsState;
     const dockerHas = !!d && d.totalCount > 0;
-    const vmsHas    = !!v && v.totalCount > 0;
+    const vmsHas = !!v && v.totalCount > 0;
     const dockerLoading = !!d?.loading;
-    const vmsLoading    = !!v?.loading;
+    const vmsLoading = !!v?.loading;
     // Reserve the slot with a skeleton when the underlying tbody exists but
     // Unraid's JS hasn't injected tiles yet. Without this the card pops in
     // ~1-3s after first paint.
@@ -212,7 +213,7 @@ export class MdHeroStrip extends LitElement {
     const watts = u.loadW !== null ? `${Math.round(u.loadW)} W` : '—';
     const battParts: string[] = [];
     if (u.batteryChargePct !== null) battParts.push(`UPS ${Math.round(u.batteryChargePct)}%`);
-    if (u.runtimeMinutes !== null)   battParts.push(`${u.runtimeMinutes} min`);
+    if (u.runtimeMinutes !== null) battParts.push(`${u.runtimeMinutes} min`);
     return html`
       <md-hero-card
         label="Power"
@@ -249,8 +250,10 @@ export class MdHeroStrip extends LitElement {
   }
 
   private _dotsStack(
-    dockerStarted: number | null, dockerTotal: number | null,
-    vmStarted: number | null, vmTotal: number | null,
+    dockerStarted: number | null,
+    dockerTotal: number | null,
+    vmStarted: number | null,
+    vmTotal: number | null,
   ) {
     return html`
       <div class="dots-stack">
@@ -305,8 +308,12 @@ export class MdHeroStrip extends LitElement {
   }
 
   render() {
-    const cards = [this._arrayCard(), this._cacheCard(), this._workloadsCard(), this._powerCard()]
-      .filter((c) => c !== '');
+    const cards = [
+      this._arrayCard(),
+      this._cacheCard(),
+      this._workloadsCard(),
+      this._powerCard(),
+    ].filter((c) => c !== '');
     if (cards.length === 0) return html``;
     return html`<div class="grid">${cards}</div>`;
   }

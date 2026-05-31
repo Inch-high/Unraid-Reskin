@@ -66,7 +66,7 @@ describe('processorExtractor', () => {
 
   it('extracts at least one coreLoad entry', () => {
     const result = processorExtractor.extract({ source: tbody });
-    expect((result?.coreLoads.length ?? 0)).toBeGreaterThan(0);
+    expect(result?.coreLoads.length ?? 0).toBeGreaterThan(0);
   });
 
   it('emits separate CoreLoad entries for HT pairs', () => {

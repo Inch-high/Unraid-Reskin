@@ -34,8 +34,8 @@ type Listener = () => void;
 // without `total` (chunked downloads) and vice-versa for layers that emit
 // "Pulling fs layer" before any progress.
 interface Layer {
-  percent?: number;   // 0–100
-  total?: number;     // bytes; parsed from " X% of <size>" suffix
+  percent?: number; // 0–100
+  total?: number; // bytes; parsed from " X% of <size>" suffix
   // True for chunked downloads that emit only a running byte count with no
   // declared total. We can't know their completion ratio, so they're excluded
   // from the percentage aggregate (otherwise they'd read as a permanent 100%
@@ -46,7 +46,10 @@ interface Layer {
 // One byte-rate sample. We keep a short window of these to estimate speed —
 // instantaneous "delta since last message" jitters wildly because docker
 // emits dozens of progress messages per second across multiple layers.
-interface Sample { at: number; bytes: number }
+interface Sample {
+  at: number;
+  bytes: number;
+}
 
 const SPEED_WINDOW_MS = 2500;
 
@@ -95,7 +98,9 @@ function loadFromStorage(): { active: Internal; activeName: string | null } | nu
       phase: data.phase === 'recreating' ? 'recreating' : 'pulling',
     };
     return { active, activeName: typeof data.activeName === 'string' ? data.activeName : null };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function saveToStorage(active: Internal | null, activeName: string | null): void {
@@ -112,7 +117,9 @@ function saveToStorage(active: Internal | null, activeName: string | null): void
       savedAt: Date.now(),
     };
     sessionStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(data));
-  } catch { /* quota / private mode — silent best-effort */ }
+  } catch {
+    /* quota / private mode — silent best-effort */
+  }
 }
 
 export type UpdatePhase = 'pulling' | 'recreating';
@@ -168,9 +175,8 @@ export function selectPanelView(updating: Set<string>, active: UpdateProgress | 
   // Prefer the progress store's active container, but only if it's still in the
   // live updating set — on a nav-in, the restored session may point at a
   // container that already finished (reconcileUpdating dropped it).
-  const knownActive = active && active.name && updating.has(active.name)
-    ? { name: active.name, data: active }
-    : null;
+  const knownActive =
+    active?.name && updating.has(active.name) ? { name: active.name, data: active } : null;
   // Fallback: exactly one container updating and no name match yet (fresh
   // nav-in before any progress message). Promote it to active-with-no-data so
   // it renders an indeterminate card instead of a misleading "Queued".
@@ -189,16 +195,20 @@ export function selectPanelView(updating: Set<string>, active: UpdateProgress | 
 const BYTES_RX = /(\d+(?:\.\d+)?)\s*(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)/i;
 const MULTIPLIERS: Record<string, number> = {
   B: 1,
-  KB: 1000, KIB: 1024,
-  MB: 1_000_000, MIB: 1024 ** 2,
-  GB: 1_000_000_000, GIB: 1024 ** 3,
-  TB: 1e12, TIB: 1024 ** 4,
+  KB: 1000,
+  KIB: 1024,
+  MB: 1_000_000,
+  MIB: 1024 ** 2,
+  GB: 1_000_000_000,
+  GIB: 1024 ** 3,
+  TB: 1e12,
+  TIB: 1024 ** 4,
 };
 
 export function parseBytesField(s: string): number {
   const m = BYTES_RX.exec(s);
   if (!m) return 0;
-  const n = parseFloat(m[1]);
+  const n = Number.parseFloat(m[1]);
   const u = m[2].toUpperCase();
   return n * (MULTIPLIERS[u] ?? 1);
 }
@@ -253,14 +263,20 @@ export function createUpdateProgressStore(
   let persistTimer: ReturnType<typeof setTimeout> | null = null;
   let lastPersistAt = 0;
   const persistNow = (): void => {
-    if (persistTimer !== null) { clearTimeout(persistTimer); persistTimer = null; }
+    if (persistTimer !== null) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+    }
     lastPersistAt = Date.now();
     saveToStorage(active, activeName);
   };
   const schedulePersist = (): void => {
-    if (persistTimer !== null) return;   // trailing write already queued
+    if (persistTimer !== null) return; // trailing write already queued
     const elapsed = Date.now() - lastPersistAt;
-    if (elapsed >= PERSIST_THROTTLE_MS) { persistNow(); return; }
+    if (elapsed >= PERSIST_THROTTLE_MS) {
+      persistNow();
+      return;
+    }
     persistTimer = setTimeout(persistNow, PERSIST_THROTTLE_MS - elapsed);
   };
   const notify = (persist: 'now' | 'throttle' = 'now'): void => {
@@ -273,9 +289,9 @@ export function createUpdateProgressStore(
     if (!active) return null;
     let percentSum = 0;
     let layerCount = 0;
-    let totalSum = 0;        // all layers with a total (incl. chunked) — for display/speed
-    let downloadedSum = 0;   // all downloaded bytes (incl. chunked)
-    let knownTotal = 0;      // layers with a real declared total (excl. chunked) — for %
+    let totalSum = 0; // all layers with a total (incl. chunked) — for display/speed
+    let downloadedSum = 0; // all downloaded bytes (incl. chunked)
+    let knownTotal = 0; // layers with a real declared total (excl. chunked) — for %
     let knownDownloaded = 0;
     for (const layer of active.layers.values()) {
       if (layer.percent !== undefined) {
@@ -297,11 +313,14 @@ export function createUpdateProgressStore(
     // fresh layer joins at 0%), and ignoring chunked layers whose ratio we
     // can't know. Falls back to the per-layer mean only when no layer has
     // declared a real total yet (e.g. an all-chunked pull).
-    const percent = active.phase === 'recreating'
-      ? 100
-      : (knownTotal > 0
+    const percent =
+      active.phase === 'recreating'
+        ? 100
+        : knownTotal > 0
           ? Math.min(100, (knownDownloaded / knownTotal) * 100)
-          : (layerCount > 0 ? percentSum / layerCount : 0));
+          : layerCount > 0
+            ? percentSum / layerCount
+            : 0;
 
     let speedBps: number | null = null;
     if (active.phase === 'pulling' && active.samples.length >= 2) {
@@ -397,7 +416,7 @@ export function createUpdateProgressStore(
 
         const layer = active.layers.get(id) ?? {};
         const pctM = /(\d+(?:\.\d+)?)\s*%/.exec(text);
-        if (pctM) layer.percent = Math.min(100, parseFloat(pctM[1]));
+        if (pctM) layer.percent = Math.min(100, Number.parseFloat(pctM[1]));
         const ofM = /of\s+(.+)$/i.exec(text);
         if (ofM) {
           const bytes = parseBytesField(ofM[1]);
@@ -435,7 +454,7 @@ export function createUpdateProgressStore(
 
     subscribe(fn) {
       listeners.add(fn);
-      return () => listeners.delete(fn) as unknown as void;
+      return () => listeners.delete(fn) as unknown as undefined;
     },
   };
 }

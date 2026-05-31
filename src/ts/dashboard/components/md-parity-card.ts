@@ -5,11 +5,11 @@ import './md-card';
 
 function statusPill(s: ParityStatus) {
   const map: Record<ParityStatus, { text: string; color: string }> = {
-    valid:    { text: 'Valid',    color: 'var(--success)' },
-    running:  { text: 'Running',  color: 'var(--info)' },
-    invalid:  { text: 'Invalid',  color: 'var(--danger)' },
+    valid: { text: 'Valid', color: 'var(--success)' },
+    running: { text: 'Running', color: 'var(--info)' },
+    invalid: { text: 'Invalid', color: 'var(--danger)' },
     disabled: { text: 'Disabled', color: 'var(--text-muted)' },
-    unknown:  { text: 'Unknown',  color: 'var(--text-muted)' },
+    unknown: { text: 'Unknown', color: 'var(--text-muted)' },
   };
   const { text, color } = map[s];
   return html`<span style="

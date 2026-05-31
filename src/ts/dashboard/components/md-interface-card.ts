@@ -105,12 +105,14 @@ export class MdInterfaceCard extends LitElement {
           </div>
         </div>
         <div class="iface-list">
-          ${s.interfaces.map((iface) => html`
+          ${s.interfaces.map(
+            (iface) => html`
             <div class="iface-row">
               <span class="iface-name">${iface.name}</span>
               <span class="iface-main ${iface.mainText ? '' : 'empty'}">${iface.mainText || '—'}</span>
             </div>
-          `)}
+          `,
+          )}
         </div>
       </md-card>
     `;

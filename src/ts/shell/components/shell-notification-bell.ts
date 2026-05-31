@@ -178,7 +178,7 @@ export class ShellNotificationBell extends LitElement {
     // Unraid emits "dd-mm-yyyy HH:MM" — convert to YYYYMMDDHHMM for sortable ordering.
     const m = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
     if (!m) return 0;
-    return parseInt(`${m[3]}${m[2]}${m[1]}${m[4]}${m[5]}`, 10);
+    return Number.parseInt(`${m[3]}${m[2]}${m[1]}${m[4]}${m[5]}`, 10);
   }
 
   private async _archive(entry: NotifyEntry, e: Event): Promise<void> {
@@ -232,15 +232,17 @@ export class ShellNotificationBell extends LitElement {
       <button class="trigger" type="button" @click=${this._toggle} aria-label="Notifications" title="Notifications">${icon('bell', 18)}</button>
       ${count > 0 ? html`<span class="badge">${count > 99 ? '99+' : count}</span>` : ''}
       <div class="popover" role="menu">
-        ${count === 0
-          ? html`<div class="empty">No notifications</div>`
-          : html`
+        ${
+          count === 0
+            ? html`<div class="empty">No notifications</div>`
+            : html`
               <div class="header">
                 <span>${count} unread</span>
                 <button class="archive-all" type="button" @click=${(e: Event) => this._archiveAll(e)}>Archive all</button>
               </div>
               ${this._items.map((it) => this._renderItem(it))}
-            `}
+            `
+        }
       </div>
     `;
   }

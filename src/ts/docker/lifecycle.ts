@@ -62,7 +62,7 @@ export function createLiveSubscription(opts: LiveSubscriptionOptions): LiveSubsc
   let processed = 0;
 
   const handleMessage = (raw: unknown): void => {
-    if (doc.hidden) return;             // drop silently while hidden
+    if (doc.hidden) return; // drop silently while hidden
     if (typeof raw !== 'string') return;
     const deltas = opts.parse(raw);
     if (!deltas || deltas.length === 0) return;
@@ -75,7 +75,7 @@ export function createLiveSubscription(opts: LiveSubscriptionOptions): LiveSubsc
 
   const onVisibility = (): void => {
     if (doc.hidden) {
-      processed = 0;                    // reset for next visible window
+      processed = 0; // reset for next visible window
       return;
     }
     // Tab just became visible — resync to recover any state we dropped.
@@ -90,6 +90,8 @@ export function createLiveSubscription(opts: LiveSubscriptionOptions): LiveSubsc
       sub.stop();
       doc.removeEventListener('visibilitychange', onVisibility);
     },
-    get processedSinceVisible() { return processed; },
+    get processedSinceVisible() {
+      return processed;
+    },
   };
 }

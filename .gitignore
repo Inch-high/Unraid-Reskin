@@ -17,3 +17,7 @@ coverage/
 disklocation.html
 dash-live.html
 live-*.html
+
+# Formatter caches / downloaded php-cs-fixer phar (pinned + fetched on demand)
+tools/.cache/
+.php-cs-fixer.cache

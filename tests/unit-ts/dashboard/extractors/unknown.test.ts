@@ -24,6 +24,6 @@ describe('unknown extractor', () => {
   it('derives hint from class when no id', () => {
     const tbody = parseTbody('<tbody class="mywidget custom"><tr><td>x</td></tr></tbody>');
     const result = unknownExtractor.extract({ source: tbody });
-    expect(result?.hint).toBe('mywidget');  // first class
+    expect(result?.hint).toBe('mywidget'); // first class
   });
 });

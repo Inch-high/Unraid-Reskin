@@ -5,7 +5,8 @@ describe('source observer', () => {
   let table: HTMLTableElement;
 
   beforeEach(() => {
-    document.body.innerHTML = '<table class="dashboard"><tbody id="t1"><tr><td>a</td></tr></tbody></table>';
+    document.body.innerHTML =
+      '<table class="dashboard"><tbody id="t1"><tr><td>a</td></tr></tbody></table>';
     table = document.querySelector('table.dashboard')!;
   });
 

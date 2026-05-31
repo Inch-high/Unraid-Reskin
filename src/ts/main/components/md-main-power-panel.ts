@@ -34,16 +34,24 @@ export class MdMainPowerPanel extends LitElement {
   render() {
     return html`
       <div class="row">
-        ${this.moverEnabled
-          ? html`<button ?disabled=${this.moverRunning}
+        ${
+          this.moverEnabled
+            ? html`<button ?disabled=${this.moverRunning}
               @click=${() => this._run(A.buildMover(false))}>${this.moverRunning ? 'Mover running…' : 'Move'}</button>`
-          : ''}
+            : ''
+        }
         <button class="danger"
-          @click=${() => { if (confirm('Reboot the server now?')) void this._run(A.buildReboot(this._safemode)); }}>Reboot</button>
+          @click=${() => {
+            if (confirm('Reboot the server now?')) void this._run(A.buildReboot(this._safemode));
+          }}>Reboot</button>
         <button class="danger"
-          @click=${() => { if (confirm('Shut down the server now?')) void this._run(A.buildShutdown()); }}>Shutdown</button>
+          @click=${() => {
+            if (confirm('Shut down the server now?')) void this._run(A.buildShutdown());
+          }}>Shutdown</button>
         <label class="check"><input type="checkbox" .checked=${this._safemode}
-          @change=${(e: Event) => { this._safemode = (e.target as HTMLInputElement).checked; }}>
+          @change=${(e: Event) => {
+            this._safemode = (e.target as HTMLInputElement).checked;
+          }}>
           safe mode (next boot)</label>
       </div>
     `;

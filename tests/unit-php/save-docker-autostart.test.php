@@ -1,4 +1,5 @@
 <?php
+
 // Tests for save-docker-autostart.php — the autostart toggle endpoint.
 // We exercise the pure functions (parse/write/handle) without HTTP, redirecting
 // the target file to a tempdir so the real /var/lib/docker is untouched.

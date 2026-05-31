@@ -148,35 +148,59 @@ export class MdDockerFolderSection extends LitElement {
   }
 
   private _toggle(): void {
-    this.dispatchEvent(new CustomEvent<{ folderId: string }>('docker-toggle-folder', {
-      detail: { folderId: this.folder?.id ?? 'ungrouped' },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent<{ folderId: string }>('docker-toggle-folder', {
+        detail: { folderId: this.folder?.id ?? 'ungrouped' },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _editFolder(): void {
     if (!this.folder) return;
-    this.dispatchEvent(new CustomEvent('docker-edit-folder', {
-      detail: { folderId: this.folder.id },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-edit-folder', {
+        detail: { folderId: this.folder.id },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _selectAll(): void {
-    this.dispatchEvent(new CustomEvent('docker-select-folder', {
-      detail: { folderId: this.folder?.id ?? null, containerNames: this.containers.map((c) => c.name) },
-      bubbles: true, composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('docker-select-folder', {
+        detail: {
+          folderId: this.folder?.id ?? null,
+          containerNames: this.containers.map((c) => c.name),
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _sumStats(): { cpu: number | null; ram: number | null; vdisk: number | null } {
-    let cpu = 0, cpuCount = 0;
-    let ram = 0, ramCount = 0;
-    let vdisk = 0, vdiskCount = 0;
+    let cpu = 0,
+      cpuCount = 0;
+    let ram = 0,
+      ramCount = 0;
+    let vdisk = 0,
+      vdiskCount = 0;
     for (const c of this.containers) {
-      if (typeof c.cpuPct === 'number' && Number.isFinite(c.cpuPct)) { cpu += c.cpuPct; cpuCount++; }
-      if (typeof c.memBytes === 'number' && Number.isFinite(c.memBytes)) { ram += c.memBytes; ramCount++; }
-      if (typeof c.vdiskBytes === 'number' && Number.isFinite(c.vdiskBytes)) { vdisk += c.vdiskBytes; vdiskCount++; }
+      if (typeof c.cpuPct === 'number' && Number.isFinite(c.cpuPct)) {
+        cpu += c.cpuPct;
+        cpuCount++;
+      }
+      if (typeof c.memBytes === 'number' && Number.isFinite(c.memBytes)) {
+        ram += c.memBytes;
+        ramCount++;
+      }
+      if (typeof c.vdiskBytes === 'number' && Number.isFinite(c.vdiskBytes)) {
+        vdisk += c.vdiskBytes;
+        vdiskCount++;
+      }
     }
     return {
       cpu: cpuCount > 0 ? cpu : null,
@@ -188,7 +212,9 @@ export class MdDockerFolderSection extends LitElement {
   render() {
     const running = this.containers.filter((c) => c.state === 'started').length;
     const total = this.containers.length;
-    const updates = this.containers.filter((c) => c.updateAvailable && !this.updating.has(c.name)).length;
+    const updates = this.containers.filter(
+      (c) => c.updateAvailable && !this.updating.has(c.name),
+    ).length;
     const inFlight = this.containers.filter((c) => this.updating.has(c.name)).length;
     const name = this.folder?.name ?? 'Ungrouped';
     const color = this._color();
@@ -207,39 +233,62 @@ export class MdDockerFolderSection extends LitElement {
           <span class="folder-icon" style="background:${bg};color:${color}">${icon(this._iconName(), 16)}</span>
           <span class="name">${name}</span>
           <span class="meta">${total} container${total === 1 ? '' : 's'} · ${running} running</span>
-          ${inFlight > 0 ? html`
+          ${
+            inFlight > 0
+              ? html`
             <span class="updating-pill" title="${inFlight} container${inFlight === 1 ? '' : 's'} in this folder ${inFlight === 1 ? 'is' : 'are'} currently being updated">
               <span class="sp"></span> ${inFlight} updating
             </span>
-          ` : nothing}
-          ${updates > 0 ? html`
+          `
+              : nothing
+          }
+          ${
+            updates > 0
+              ? html`
             <span class="updates-pill" title="${updates} container${updates === 1 ? '' : 's'} in this folder ${updates === 1 ? 'has' : 'have'} an update available">
               ${icon('update', 12)} ${updates} update${updates === 1 ? '' : 's'}
             </span>
-          ` : nothing}
-          ${sums ? html`
+          `
+              : nothing
+          }
+          ${
+            sums
+              ? html`
             <span class="sums">
               <span class="sum"><strong>CPU</strong>${formatPercent(sums.cpu)}</span>
               <span class="sum"><strong>RAM</strong>${formatBytes(sums.ram)}</span>
               <span class="sum"><strong>VDisk</strong>${formatBytes(sums.vdisk)}</span>
             </span>
-          ` : ''}
+          `
+              : ''
+          }
         </button>
         <div class="actions">
-          ${total > 0 ? html`
+          ${
+            total > 0
+              ? html`
             <button class="icon-btn" title=${allSelected ? 'Clear selection in folder' : 'Select all in folder'} @click=${this._selectAll}>
               ${icon('layers')}
             </button>
-          ` : nothing}
-          ${this.folder ? html`
+          `
+              : nothing
+          }
+          ${
+            this.folder
+              ? html`
             <button class="icon-btn" title="Edit folder" @click=${this._editFolder}>${icon('edit')}</button>
-          ` : nothing}
+          `
+              : nothing
+          }
         </div>
       </header>
 
-      ${!this.collapsed && total > 0 ? html`
+      ${
+        !this.collapsed && total > 0
+          ? html`
         <ul class="rows">
-          ${this.containers.map((c) => html`
+          ${this.containers.map(
+            (c) => html`
             <li><md-docker-row
               .container=${c}
               .tags=${this.allTags}
@@ -249,9 +298,12 @@ export class MdDockerFolderSection extends LitElement {
               ?starting=${this.starting.has(c.name)}
               ?showStats=${this.showStats}
             ></md-docker-row></li>
-          `)}
+          `,
+          )}
         </ul>
-      ` : nothing}
+      `
+          : nothing
+      }
     `;
   }
 }

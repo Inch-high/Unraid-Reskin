@@ -7,7 +7,7 @@ function reEnable(): void {
     body: 'action=enable',
   })
     .then(() => window.location.reload())
-    .catch(err => {
+    .catch((err) => {
       console.error('[modernui] failed to re-enable:', err);
       alert('Could not re-enable Modern UI. Check the browser console.');
     });

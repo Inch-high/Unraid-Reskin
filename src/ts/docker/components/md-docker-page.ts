@@ -177,7 +177,7 @@ export class ModernuiDockerPage extends LitElement {
   // render once both stores are available.
   @query('md-docker-update-panel') private _updatePanel?: MdDockerUpdatePanel;
 
-  @state() private _tick = 0;   // re-render trigger
+  @state() private _tick = 0; // re-render trigger
   @state() private _showFolderModal = false;
   @state() private _showTagModal = false;
   @state() private _checkingUpdates = false;
@@ -252,19 +252,33 @@ export class ModernuiDockerPage extends LitElement {
     if (!c) return;
 
     switch (action) {
-      case 'webui':   openWebUi(c); return;
-      case 'logs':    openLogs(c);  return;
-      case 'console': openConsole(c); return;
-      case 'edit':    openEdit(c);  return;
+      case 'webui':
+        openWebUi(c);
+        return;
+      case 'logs':
+        openLogs(c);
+        return;
+      case 'console':
+        openConsole(c);
+        return;
+      case 'edit':
+        openEdit(c);
+        return;
       case 'remove':
-        if (!confirm(`Remove container "${c.name}"? Templates are kept; you can re-add from Add Container.`)) return;
+        if (
+          !confirm(
+            `Remove container "${c.name}"? Templates are kept; you can re-add from Add Container.`,
+          )
+        )
+          return;
         await executeContainer(c.name, 'remove');
         return;
       case 'update':
         this._store.markUpdating([c.name]);
         this._startUpdatePoll();
-        try { await executeContainer(c.name, 'update'); }
-        catch (err) {
+        try {
+          await executeContainer(c.name, 'update');
+        } catch (err) {
           // Surface to the user — the row would otherwise stay in "Updating…"
           // until the 5-min watchdog kicks in. Clear immediately on failure.
           this._store.clearUpdating(c.name);
@@ -303,7 +317,9 @@ export class ModernuiDockerPage extends LitElement {
               tags: snap.tags,
               tagAssignments: snap.tagAssignments,
             });
-          } catch { /* best-effort revert */ }
+          } catch {
+            /* best-effort revert */
+          }
         }
         return;
       }
@@ -313,8 +329,11 @@ export class ModernuiDockerPage extends LitElement {
       case 'pause':
       case 'resume': {
         const map: Record<string, DockerAction> = {
-          start: 'start', stop: 'stop', restart: 'restart',
-          pause: 'pause', resume: 'start',
+          start: 'start',
+          stop: 'stop',
+          restart: 'restart',
+          pause: 'pause',
+          resume: 'start',
         };
         // Optimistic "Starting…" badge for actions that move toward a running
         // state. Cleared on the next snapshot that shows started/paused (or
@@ -324,8 +343,9 @@ export class ModernuiDockerPage extends LitElement {
           this._store.markStarting([c.name]);
           this._startStartingPoll();
         }
-        try { await executeContainer(c.name, map[action]); }
-        catch (err) {
+        try {
+          await executeContainer(c.name, map[action]);
+        } catch (err) {
           if (action === 'start' || action === 'restart' || action === 'resume') {
             this._store.clearStarting(c.name);
           }
@@ -342,10 +362,18 @@ export class ModernuiDockerPage extends LitElement {
     if (selected.length === 0) return;
     const a = e.detail.action;
 
-    if (a === 'clear') { this._store.clearSelection(); return; }
+    if (a === 'clear') {
+      this._store.clearSelection();
+      return;
+    }
 
     if (a === 'remove') {
-      if (!confirm(`Remove ${selected.length} container${selected.length === 1 ? '' : 's'}? Templates are kept.`)) return;
+      if (
+        !confirm(
+          `Remove ${selected.length} container${selected.length === 1 ? '' : 's'}? Templates are kept.`,
+        )
+      )
+        return;
       await executeBulk(selected, 'remove');
       this._store.clearSelection();
       return;
@@ -356,8 +384,9 @@ export class ModernuiDockerPage extends LitElement {
       // form instead of executeBulk, which would race against pgrep-by-path.
       this._store.markUpdating(selected);
       this._startUpdatePoll();
-      try { await updateContainers(selected); }
-      catch (err) {
+      try {
+        await updateContainers(selected);
+      } catch (err) {
         for (const n of selected) this._store.clearUpdating(n);
         console.warn('[modernui-docker] bulk update failed:', err);
       }
@@ -385,12 +414,19 @@ export class ModernuiDockerPage extends LitElement {
             tags: snap.tags,
             tagAssignments: snap.tagAssignments,
           });
-        } catch { /* best-effort revert */ }
+        } catch {
+          /* best-effort revert */
+        }
       }
       return;
     }
-    const map: Record<Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>, DockerAction> = {
-      start: 'start', stop: 'stop', restart: 'restart',
+    const map: Record<
+      Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>,
+      DockerAction
+    > = {
+      start: 'start',
+      stop: 'stop',
+      restart: 'restart',
     };
     let markedStarting: string[] = [];
     if (a === 'start' || a === 'restart') {
@@ -406,7 +442,12 @@ export class ModernuiDockerPage extends LitElement {
       }
     }
     try {
-      const { failed } = await executeBulk(selected, map[a as Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>]);
+      const { failed } = await executeBulk(
+        selected,
+        map[
+          a as Exclude<BulkAction, 'clear' | 'remove' | 'update' | 'autostart-on' | 'autostart-off'>
+        ],
+      );
       // Roll back the Starting badge for containers whose Events.php call
       // threw, so failed rows don't sit on a 10-min watchdog before clearing.
       if (failed.length > 0 && markedStarting.length > 0) {
@@ -444,7 +485,9 @@ export class ModernuiDockerPage extends LitElement {
 
   private _handleFilters = (e: Event): void => {
     if (!this._store) return;
-    const ce = e as CustomEvent<typeof this._store extends DockerStore ? ReturnType<DockerStore['getFilters']> : never>;
+    const ce = e as CustomEvent<
+      typeof this._store extends DockerStore ? ReturnType<DockerStore['getFilters']> : never
+    >;
     this._store.setFilters(ce.detail);
     // Sync URL so views are bookmarkable.
     const url = window.location.pathname + filtersToQuery(this._store.getFilters());
@@ -467,8 +510,11 @@ export class ModernuiDockerPage extends LitElement {
     // OPPOSITE of the user's stated intent.
     this._store.setCollapseAll(ce.detail.value);
     document.documentElement.dataset.modernuiDockerFolderDefault = ce.detail.value;
-    try { await saveSetting('docker_folder_default', ce.detail.value); }
-    catch (err) { console.warn('[modernui-docker] failed to persist folder default:', err); }
+    try {
+      await saveSetting('docker_folder_default', ce.detail.value);
+    } catch (err) {
+      console.warn('[modernui-docker] failed to persist folder default:', err);
+    }
   };
 
   // Kick off the async worker, then poll the status endpoint until it reports
@@ -518,7 +564,9 @@ export class ModernuiDockerPage extends LitElement {
             tags: snap.tags,
             tagAssignments: snap.tagAssignments,
           });
-        } catch { /* snapshot is best-effort here */ }
+        } catch {
+          /* snapshot is best-effort here */
+        }
         this._checkingUpdates = false;
         return;
       }
@@ -572,7 +620,10 @@ export class ModernuiDockerPage extends LitElement {
       if (!this._store) return;
       if (this._store.getStarting().size === 0) return;
       if (document.hidden) {
-        this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+        this._startingPollHandle = window.setTimeout(
+          tick,
+          ModernuiDockerPage.STARTING_POLL_INTERVAL_MS,
+        );
         return;
       }
       try {
@@ -589,10 +640,16 @@ export class ModernuiDockerPage extends LitElement {
         console.warn('[modernui-docker] starting poll snapshot failed:', err);
       }
       if (this._store.getStarting().size > 0) {
-        this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+        this._startingPollHandle = window.setTimeout(
+          tick,
+          ModernuiDockerPage.STARTING_POLL_INTERVAL_MS,
+        );
       }
     };
-    this._startingPollHandle = window.setTimeout(tick, ModernuiDockerPage.STARTING_POLL_INTERVAL_MS);
+    this._startingPollHandle = window.setTimeout(
+      tick,
+      ModernuiDockerPage.STARTING_POLL_INTERVAL_MS,
+    );
   }
 
   private _startUpdatePoll(): void {
@@ -602,7 +659,10 @@ export class ModernuiDockerPage extends LitElement {
       if (!this._store) return;
       if (this._store.getUpdating().size === 0) return; // all done
       if (document.hidden) {
-        this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
+        this._updatePollHandle = window.setTimeout(
+          tick,
+          ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS,
+        );
         return;
       }
       try {
@@ -619,7 +679,10 @@ export class ModernuiDockerPage extends LitElement {
         console.warn('[modernui-docker] update poll snapshot failed:', err);
       }
       if (this._store.getUpdating().size > 0) {
-        this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
+        this._updatePollHandle = window.setTimeout(
+          tick,
+          ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS,
+        );
       }
     };
     this._updatePollHandle = window.setTimeout(tick, ModernuiDockerPage.UPDATE_POLL_INTERVAL_MS);
@@ -630,7 +693,12 @@ export class ModernuiDockerPage extends LitElement {
     const selected = Array.from(this._store.getSelection());
     if (selected.length === 0) return;
     // Confirm — updating pulls a new image and recreates the container, can be slow.
-    if (!confirm(`Update ${selected.length} container${selected.length === 1 ? '' : 's'}? Each will be pulled + recreated.`)) return;
+    if (
+      !confirm(
+        `Update ${selected.length} container${selected.length === 1 ? '' : 's'}? Each will be pulled + recreated.`,
+      )
+    )
+      return;
     this._store.markUpdating(selected);
     this._store.clearSelection();
     this._startUpdatePoll();
@@ -648,13 +716,17 @@ export class ModernuiDockerPage extends LitElement {
   // an explicit one-click action saves a fair bit of mousework.
   private _runUpdateAll = async (): Promise<void> => {
     if (!this._store) return;
-    const updatable = this._store.getState().containers
-      .filter((c) => c.updateAvailable)
+    const updatable = this._store
+      .getState()
+      .containers.filter((c) => c.updateAvailable)
       .map((c) => c.name);
     if (updatable.length === 0) return;
-    if (!confirm(
-      `Update ${updatable.length} container${updatable.length === 1 ? '' : 's'} with available updates? Each will be pulled + recreated.`,
-    )) return;
+    if (
+      !confirm(
+        `Update ${updatable.length} container${updatable.length === 1 ? '' : 's'} with available updates? Each will be pulled + recreated.`,
+      )
+    )
+      return;
     this._store.markUpdating(updatable);
     this._startUpdatePoll();
     try {
@@ -686,8 +758,11 @@ export class ModernuiDockerPage extends LitElement {
         console.warn('[modernui-docker] stats refetch failed:', err);
       }
     }
-    try { await saveSetting('docker_show_stats', ce.detail.on ? 'on' : 'off'); }
-    catch (err) { console.warn('[modernui-docker] failed to persist show_stats:', err); }
+    try {
+      await saveSetting('docker_show_stats', ce.detail.on ? 'on' : 'off');
+    } catch (err) {
+      console.warn('[modernui-docker] failed to persist show_stats:', err);
+    }
   };
 
   private async _saveFolders(e: Event): Promise<void> {
@@ -738,10 +813,15 @@ export class ModernuiDockerPage extends LitElement {
            @docker-toggle-folder=${this._handleToggleFolder}
            @docker-folder-default=${this._handleFolderDefault}
            @docker-show-stats=${this._handleShowStats}
-           @docker-edit-folder=${() => { this._showFolderModal = true; }}
+           @docker-edit-folder=${() => {
+             this._showFolderModal = true;
+           }}
            @docker-save-folders=${(e: Event) => this._saveFolders(e)}
            @docker-save-tags=${(e: Event) => this._saveTags(e)}
-           @docker-modal-close=${() => { this._showFolderModal = false; this._showTagModal = false; }}>
+           @docker-modal-close=${() => {
+             this._showFolderModal = false;
+             this._showTagModal = false;
+           }}>
 
         <header class="head">
           <div>
@@ -755,25 +835,37 @@ export class ModernuiDockerPage extends LitElement {
             </p>
           </div>
           <div class="actions">
-            ${withUpdates > 0 && selection.size === 0 ? html`
+            ${
+              withUpdates > 0 && selection.size === 0
+                ? html`
               <button class="btn btn-accent"
                       ?disabled=${this._checkingUpdates || (this._store?.getUpdating().size ?? 0) > 0}
                       @click=${this._runUpdateAll}
                       title="Update every container with an available update — saves expanding folders to tick them.">
                 ${icon('update')} Update all (${withUpdates})
               </button>
-            ` : nothing}
-            ${selection.size > 0 ? html`
+            `
+                : nothing
+            }
+            ${
+              selection.size > 0
+                ? html`
               <button class="btn" ?disabled=${this._checkingUpdates} @click=${this._runUpdateSelected}>
                 ${icon('update')} ${this._checkingUpdates ? 'Updating…' : `Update selected (${selection.size})`}
               </button>
-            ` : html`
+            `
+                : html`
               <button class="btn" ?disabled=${this._checkingUpdates} @click=${this._runCheckForUpdates}>
                 ${icon('update')} ${this._checkingUpdates ? 'Checking…' : 'Check for updates'}
               </button>
-            `}
-            <button class="btn" @click=${() => { this._showTagModal = true; }}>${icon('tag')} Manage Tags</button>
-            <button class="btn" @click=${() => { this._showFolderModal = true; }}>${icon('folder')} Manage Folders</button>
+            `
+            }
+            <button class="btn" @click=${() => {
+              this._showTagModal = true;
+            }}>${icon('tag')} Manage Tags</button>
+            <button class="btn" @click=${() => {
+              this._showFolderModal = true;
+            }}>${icon('folder')} Manage Folders</button>
             <a class="btn btn-primary" href="/Docker/AddContainer">${icon('plus')} Add Container</a>
           </div>
         </header>
@@ -787,9 +879,12 @@ export class ModernuiDockerPage extends LitElement {
           .showStats=${this._store?.getShowStats() ?? false}
         ></md-docker-toolbar>
 
-        ${this._store?.isLoading() ? html`
+        ${
+          this._store?.isLoading()
+            ? html`
           <div class="skeleton" aria-live="polite" aria-busy="true">
-            ${[0, 1, 2, 3].map(() => html`
+            ${[0, 1, 2, 3].map(
+              () => html`
               <div class="sk-row">
                 <div></div>
                 <div class="sk-icon"></div>
@@ -797,21 +892,27 @@ export class ModernuiDockerPage extends LitElement {
                 <div class="sk-bar" style="width: 70%"></div>
                 <div class="sk-bar" style="width: 50%"></div>
               </div>
-            `)}
+            `,
+            )}
           </div>
-        ` : total === 0 ? html`
+        `
+            : total === 0
+              ? html`
           <div class="empty">
             <strong>No containers</strong>
             Add one from Community Apps, or use the Add Container button above.
           </div>
-        ` : groups.length === 0 ? html`
+        `
+              : groups.length === 0
+                ? html`
           <div class="empty">
             <strong>No containers match your filters</strong>
             Clear filters or change the search query.
           </div>
-        ` : groups.map((g) => {
-          const key = g.folderId ?? 'ungrouped';
-          return html`
+        `
+                : groups.map((g) => {
+                    const key = g.folderId ?? 'ungrouped';
+                    return html`
             <md-docker-folder-section
               .folder=${g.folder}
               .containers=${g.containers}
@@ -824,26 +925,39 @@ export class ModernuiDockerPage extends LitElement {
               ?showStats=${this._store?.getShowStats() ?? false}
             ></md-docker-folder-section>
           `;
-        })}
+                  })
+        }
 
-        ${selection.size > 0 ? html`
+        ${
+          selection.size > 0
+            ? html`
           <md-docker-bulk-bar .selectedCount=${selection.size}></md-docker-bulk-bar>
-        ` : nothing}
+        `
+            : nothing
+        }
 
-        ${this._showFolderModal ? html`
+        ${
+          this._showFolderModal
+            ? html`
           <md-docker-folder-modal
             .folders=${state.folders}
             .containers=${state.containers}
           ></md-docker-folder-modal>
-        ` : nothing}
+        `
+            : nothing
+        }
 
-        ${this._showTagModal ? html`
+        ${
+          this._showTagModal
+            ? html`
           <md-docker-tag-modal
             .tags=${state.tags}
             .assignments=${state.tagAssignments}
             .containers=${state.containers}
           ></md-docker-tag-modal>
-        ` : nothing}
+        `
+            : nothing
+        }
 
         <!-- Floating right-side update-progress panel. Rendered unconditionally
              but self-hides when nothing's updating, so the ref stays stable for

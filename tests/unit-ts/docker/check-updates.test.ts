@@ -18,14 +18,13 @@ describe('checkForUpdates / getCheckUpdatesStatus', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete (globalThis as { csrf_token?: string }).csrf_token;
+    (globalThis as { csrf_token?: string }).csrf_token = undefined;
   });
 
   it('POSTs to start, returns queued + running', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(
-      JSON.stringify({ ok: true, queued: true, running: true }),
-      { status: 200 },
-    ));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true, queued: true, running: true }), { status: 200 }),
+    );
     const result = await checkForUpdates();
     expect(result).toEqual({ queued: true, running: true });
 
@@ -42,18 +41,18 @@ describe('checkForUpdates / getCheckUpdatesStatus', () => {
   });
 
   it('throws when server reports ok:false', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(
-      JSON.stringify({ ok: false, error: 'docker manager missing' }),
-      { status: 200 },
-    ));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: false, error: 'docker manager missing' }), { status: 200 }),
+    );
     await expect(checkForUpdates()).rejects.toThrow(/docker manager missing/);
   });
 
   it('GET status returns running/finishedAt/error shape', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(
-      JSON.stringify({ running: false, finishedAt: 1700000000, error: null }),
-      { status: 200 },
-    ));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ running: false, finishedAt: 1700000000, error: null }), {
+        status: 200,
+      }),
+    );
     const status = await getCheckUpdatesStatus();
     expect(status).toEqual({ running: false, finishedAt: 1700000000, error: null });
 
@@ -63,10 +62,7 @@ describe('checkForUpdates / getCheckUpdatesStatus', () => {
   });
 
   it('GET status fills missing fields with defaults', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(
-      JSON.stringify({}),
-      { status: 200 },
-    ));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
     const status = await getCheckUpdatesStatus();
     expect(status).toEqual({ running: false, finishedAt: null, error: null });
   });

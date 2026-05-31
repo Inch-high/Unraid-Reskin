@@ -119,9 +119,11 @@ export class ShellStatusRow extends LitElement {
     }
     return html`
       <button class="row" type="button" @click=${this._toggle} style=${`--dot-color: ${this.dotColor || 'currentColor'}`}>
-        ${this.iconName
-          ? html`<span class="status-icon">${icon(this.iconName, 16)}</span>`
-          : html`<span class="dot"></span>`}
+        ${
+          this.iconName
+            ? html`<span class="status-icon">${icon(this.iconName, 16)}</span>`
+            : html`<span class="dot"></span>`
+        }
         <span class="label">${this.label}</span>
         <span class="value">${this.value}</span>
       </button>

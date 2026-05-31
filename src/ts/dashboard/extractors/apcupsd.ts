@@ -50,7 +50,10 @@ function parseRuntimeMinutes(tbody: HTMLTableSectionElement): number | null {
   return parseFirstNumber(text);
 }
 
-function parseLoad(tbody: HTMLTableSectionElement): { loadPct: number | null; loadW: number | null } {
+function parseLoad(tbody: HTMLTableSectionElement): {
+  loadPct: number | null;
+  loadW: number | null;
+} {
   const el = tbody.querySelector('#ups_loadpct');
   if (!el) return { loadPct: null, loadW: null };
   const text = (el.textContent ?? '').trim();

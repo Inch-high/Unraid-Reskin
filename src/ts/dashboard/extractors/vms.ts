@@ -17,11 +17,11 @@ function vmStateFromOuter(outer: Element): VmState {
   const stateText = (outer.querySelector('span.state')?.textContent ?? '').trim().toLowerCase();
   if (stateText === 'started') return 'started';
   if (stateText === 'stopped') return 'stopped';
-  if (stateText === 'paused')  return 'paused';
+  if (stateText === 'paused') return 'paused';
   const cls = outer.className || '';
   if (/\bstarted\b/.test(cls)) return 'started';
   if (/\bstopped\b/.test(cls)) return 'stopped';
-  if (/\bpaused\b/.test(cls))  return 'paused';
+  if (/\bpaused\b/.test(cls)) return 'paused';
   return 'unknown';
 }
 
@@ -53,7 +53,9 @@ export const vmsExtractor: Extractor<VmsState> = {
     if (/vms?/i.test(source.className || '')) return true;
     // Header text fallback — claim the tbody even when empty so the dispatcher
     // picks it up before libvirt.json/nchan injects live tiles.
-    const headerText = (source.querySelector('.tile-header h3')?.textContent ?? '').trim().toUpperCase();
+    const headerText = (source.querySelector('.tile-header h3')?.textContent ?? '')
+      .trim()
+      .toUpperCase();
     if (headerText === 'VIRTUAL MACHINES') return true;
     return false;
   },

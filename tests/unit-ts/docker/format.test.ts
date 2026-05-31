@@ -5,7 +5,7 @@ describe('formatBytes', () => {
   it('handles null/undefined/NaN with em dash', () => {
     expect(formatBytes(null)).toBe('—');
     expect(formatBytes(undefined)).toBe('—');
-    expect(formatBytes(NaN)).toBe('—');
+    expect(formatBytes(Number.NaN)).toBe('—');
   });
 
   it('renders zero without decimals', () => {
@@ -16,7 +16,7 @@ describe('formatBytes', () => {
     expect(formatBytes(512)).toBe('512 B');
     expect(formatBytes(1024)).toBe('1.0 KiB');
     expect(formatBytes(1.5 * 1024)).toBe('1.5 KiB');
-    expect(formatBytes(222464305)).toBe('212.2 MiB');   // the real binhex-plexpass SizeRw
+    expect(formatBytes(222464305)).toBe('212.2 MiB'); // the real binhex-plexpass SizeRw
     expect(formatBytes(8 * 1024 ** 3)).toBe('8.0 GiB');
   });
 

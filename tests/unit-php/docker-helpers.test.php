@@ -1,4 +1,5 @@
 <?php
+
 define('MODERNUI_TESTING', true);
 require_once __DIR__ . '/../../package/include/docker-helpers.php';
 
@@ -17,7 +18,8 @@ $res = modernui_validate_folders($valid_folders);
 assert($res['ok'] === true, 'valid folders should pass: ' . var_export($res, true));
 
 // version mismatch
-$bad = $valid_folders; $bad['version'] = 2;
+$bad = $valid_folders;
+$bad['version'] = 2;
 assert(modernui_validate_folders($bad)['ok'] === false, 'bad version should fail');
 
 // missing folders array

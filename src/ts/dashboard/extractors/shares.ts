@@ -24,13 +24,15 @@ function parseStreams(row: Element): number | null {
   const span = row.querySelector('span[id^="share"]');
   const raw = span?.textContent?.trim() ?? '';
   if (raw === '') return null;
-  const n = parseInt(raw, 10);
+  const n = Number.parseInt(raw, 10);
   return Number.isNaN(n) ? null : n;
 }
 
-function parseHeaderCounts(
-  source: HTMLTableSectionElement,
-): { totalCount: number; publicSmbCount: number; publicNfsCount: number } {
+function parseHeaderCounts(source: HTMLTableSectionElement): {
+  totalCount: number;
+  publicSmbCount: number;
+  publicNfsCount: number;
+} {
   const text = source.textContent ?? '';
   const m = text.match(
     /Share count:\s*(\d+)\s*with\s*(\d+)\s*public\s*SMB\s*and\s*(\d+)\s*public\s*NFS/i,
@@ -47,7 +49,8 @@ export const sharesExtractor: Extractor<SharesState> = {
   match: ({ source }) => {
     const title = source.getAttribute('title') ?? '';
     if (title.toUpperCase().includes('SHARES')) return true;
-    const headerText = source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
+    const headerText =
+      source.querySelector('h3, .tile-header-main')?.textContent?.toUpperCase() ?? '';
     if (headerText.includes('SHARES')) return true;
     return source.querySelector('select[name="enter_share"]') !== null;
   },

@@ -30,13 +30,24 @@ const mkContainer = (overrides: Partial<DockerContainerFull> = {}): DockerContai
 
 const sampleState = (): DockerPageState => ({
   containers: [
-    mkContainer({ name: 'plex', image: 'lib/plex:latest', state: 'started', ports: [{ host: '192.0.2.1', hostPort: '32400', containerPort: '32400', proto: 'tcp' }] }),
+    mkContainer({
+      name: 'plex',
+      image: 'lib/plex:latest',
+      state: 'started',
+      ports: [{ host: '192.0.2.1', hostPort: '32400', containerPort: '32400', proto: 'tcp' }],
+    }),
     mkContainer({ name: 'sonarr', image: 'lib/sonarr:latest', state: 'started' }),
     mkContainer({ name: 'radarr', image: 'lib/radarr:latest', state: 'stopped' }),
     mkContainer({ name: 'homepage', image: 'lib/homepage:latest', state: 'started' }),
   ],
   folders: [
-    { id: 'f-media', name: 'Media', icon: 'film', color: '#ff8c2f', containerNames: ['plex', 'sonarr', 'radarr'] },
+    {
+      id: 'f-media',
+      name: 'Media',
+      icon: 'film',
+      color: '#ff8c2f',
+      containerNames: ['plex', 'sonarr', 'radarr'],
+    },
   ],
   tags: [
     { id: 't-gpu', name: 'gpu', color: '#22c55e' },
@@ -52,7 +63,9 @@ describe('DockerStore — basics', () => {
   it('starts empty and emits on setState', () => {
     const store = createDockerStore();
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     expect(store.getState().containers).toEqual([]);
     store.setState(sampleState());
     expect(calls).toBe(1);
@@ -81,7 +94,9 @@ describe('DockerStore — basics', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.clearSelection();
     expect(calls).toBe(0);
     store.toggleSelection('plex');
@@ -107,7 +122,9 @@ describe('DockerStore — basics', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.applyDelta({ name: 'plex', cpuPct: 12.5 });
     expect(store.getState().containers.find((c) => c.name === 'plex')!.cpuPct).toBe(12.5);
     expect(calls).toBe(1);
@@ -123,7 +140,9 @@ describe('DockerStore — basics', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.applyDelta({ name: 'plex', state: 'stopped' });
     expect(calls).toBe(1);
     expect(store.getState().containers.find((c) => c.name === 'plex')!.state).toBe('stopped');
@@ -133,40 +152,76 @@ describe('DockerStore — basics', () => {
 describe('filterContainers', () => {
   it('all = no filter', () => {
     const state = sampleState();
-    expect(filterContainers(state, { query: '', state: 'all', folderId: null, tagIds: [] })).toHaveLength(4);
+    expect(
+      filterContainers(state, { query: '', state: 'all', folderId: null, tagIds: [] }),
+    ).toHaveLength(4);
   });
 
   it('state=running keeps only started', () => {
     const state = sampleState();
-    const out = filterContainers(state, { query: '', state: 'running', folderId: null, tagIds: [] });
+    const out = filterContainers(state, {
+      query: '',
+      state: 'running',
+      folderId: null,
+      tagIds: [],
+    });
     expect(out.map((c) => c.name)).toEqual(['plex', 'sonarr', 'homepage']);
   });
 
   it('state=stopped keeps non-running (paused or stopped)', () => {
     const state = sampleState();
     state.containers.push(mkContainer({ name: 'paused-one', state: 'paused' }));
-    const out = filterContainers(state, { query: '', state: 'stopped', folderId: null, tagIds: [] });
+    const out = filterContainers(state, {
+      query: '',
+      state: 'stopped',
+      folderId: null,
+      tagIds: [],
+    });
     expect(out.map((c) => c.name).sort()).toEqual(['paused-one', 'radarr']);
   });
 
   it('tag filter ANDs', () => {
     const state = sampleState();
-    const out = filterContainers(state, { query: '', state: 'all', folderId: null, tagIds: ['t-gpu', 't-vpn'] });
+    const out = filterContainers(state, {
+      query: '',
+      state: 'all',
+      folderId: null,
+      tagIds: ['t-gpu', 't-vpn'],
+    });
     expect(out.map((c) => c.name)).toEqual(['sonarr']);
   });
 
   it('folder filter scopes to membership', () => {
     const state = sampleState();
-    const out = filterContainers(state, { query: '', state: 'all', folderId: 'f-media', tagIds: [] });
+    const out = filterContainers(state, {
+      query: '',
+      state: 'all',
+      folderId: 'f-media',
+      tagIds: [],
+    });
     expect(out.map((c) => c.name).sort()).toEqual(['plex', 'radarr', 'sonarr']);
   });
 
   it('search matches name, image, tag name, folder name, port', () => {
     const state = sampleState();
-    expect(filterContainers(state, { query: 'plex',   state: 'all', folderId: null, tagIds: [] })).toHaveLength(1);
-    expect(filterContainers(state, { query: 'gpu',    state: 'all', folderId: null, tagIds: [] }).map((c) => c.name).sort()).toEqual(['plex', 'sonarr']);
-    expect(filterContainers(state, { query: 'media',  state: 'all', folderId: null, tagIds: [] }).map((c) => c.name).sort()).toEqual(['plex', 'radarr', 'sonarr']);
-    expect(filterContainers(state, { query: '32400',  state: 'all', folderId: null, tagIds: [] }).map((c) => c.name)).toEqual(['plex']);
+    expect(
+      filterContainers(state, { query: 'plex', state: 'all', folderId: null, tagIds: [] }),
+    ).toHaveLength(1);
+    expect(
+      filterContainers(state, { query: 'gpu', state: 'all', folderId: null, tagIds: [] })
+        .map((c) => c.name)
+        .sort(),
+    ).toEqual(['plex', 'sonarr']);
+    expect(
+      filterContainers(state, { query: 'media', state: 'all', folderId: null, tagIds: [] })
+        .map((c) => c.name)
+        .sort(),
+    ).toEqual(['plex', 'radarr', 'sonarr']);
+    expect(
+      filterContainers(state, { query: '32400', state: 'all', folderId: null, tagIds: [] }).map(
+        (c) => c.name,
+      ),
+    ).toEqual(['plex']);
   });
 });
 
@@ -199,7 +254,11 @@ describe('groupContainers', () => {
 
 describe('collapse state — default + explicit toggle', () => {
   // Persisted toggles bleed between tests via localStorage — clear each time.
-  beforeEach(() => { try { localStorage.removeItem('modernui-docker-collapsed'); } catch {} });
+  beforeEach(() => {
+    try {
+      localStorage.removeItem('modernui-docker-collapsed');
+    } catch {}
+  });
 
   it('all folders match default when no explicit toggles', () => {
     const store = createDockerStore();
@@ -217,7 +276,7 @@ describe('collapse state — default + explicit toggle', () => {
     const store = createDockerStore();
     store.setCollapseDefault('expanded');
     store.toggleCollapsed('f-media');
-    expect(store.isCollapsed('f-media')).toBe(true);  // flipped
+    expect(store.isCollapsed('f-media')).toBe(true); // flipped
     expect(store.isCollapsed('f-other')).toBe(false); // unchanged
     store.toggleCollapsed('f-media');
     expect(store.isCollapsed('f-media')).toBe(false); // flipped back
@@ -226,13 +285,13 @@ describe('collapse state — default + explicit toggle', () => {
   it('changing the default re-applies to non-toggled folders only', () => {
     const store = createDockerStore();
     store.setCollapseDefault('expanded');
-    store.toggleCollapsed('f-media');                  // media now collapsed
+    store.toggleCollapsed('f-media'); // media now collapsed
     expect(store.isCollapsed('f-media')).toBe(true);
     expect(store.isCollapsed('f-other')).toBe(false);
 
-    store.setCollapseDefault('collapsed');             // flip the default
-    expect(store.isCollapsed('f-other')).toBe(true);   // follows new default
-    expect(store.isCollapsed('f-media')).toBe(false);  // toggle still flips → now expanded
+    store.setCollapseDefault('collapsed'); // flip the default
+    expect(store.isCollapsed('f-other')).toBe(true); // follows new default
+    expect(store.isCollapsed('f-media')).toBe(false); // toggle still flips → now expanded
   });
 
   it('survives setState (the filter-flip bug)', () => {
@@ -252,19 +311,19 @@ describe('collapse state — default + explicit toggle', () => {
     const store = createDockerStore();
     store.setCollapseDefault('expanded');
     store.toggleCollapsed('f-media');
-    expect(store.isCollapsed('f-media')).toBe(true);   // manually collapsed
+    expect(store.isCollapsed('f-media')).toBe(true); // manually collapsed
     expect(store.isCollapsed('f-other')).toBe(false);
 
     store.setCollapseAll('collapsed');
-    expect(store.isCollapsed('f-media')).toBe(true);   // stays collapsed (was the user's intent)
-    expect(store.isCollapsed('f-other')).toBe(true);   // also collapsed now
+    expect(store.isCollapsed('f-media')).toBe(true); // stays collapsed (was the user's intent)
+    expect(store.isCollapsed('f-other')).toBe(true); // also collapsed now
 
     // And it works the other way — "Expand all" wins over a manual expand-then-collapse.
-    store.toggleCollapsed('f-media');                  // explicitly expand f-media (now in toggles vs collapsed default)
+    store.toggleCollapsed('f-media'); // explicitly expand f-media (now in toggles vs collapsed default)
     expect(store.isCollapsed('f-media')).toBe(false);
     store.setCollapseAll('expanded');
-    expect(store.isCollapsed('f-media')).toBe(false);  // stays expanded
-    expect(store.isCollapsed('f-other')).toBe(false);  // also expanded
+    expect(store.isCollapsed('f-media')).toBe(false); // stays expanded
+    expect(store.isCollapsed('f-other')).toBe(false); // also expanded
   });
 
   it('setCollapseAll persists the cleared toggle set to localStorage', () => {
@@ -285,13 +344,19 @@ describe('collapse state — default + explicit toggle', () => {
 describe('updating state', () => {
   // localStorage bleed between tests would have one test's marked container
   // hydrated into another's fresh store. Wipe it before each run.
-  beforeEach(() => { try { localStorage.removeItem('modernui-docker-updating'); } catch {} });
+  beforeEach(() => {
+    try {
+      localStorage.removeItem('modernui-docker-updating');
+    } catch {}
+  });
 
   it('markUpdating flags containers and notifies once per batch', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.markUpdating(['plex', 'sonarr']);
     expect(store.getUpdating().has('plex')).toBe(true);
     expect(store.getUpdating().has('sonarr')).toBe(true);
@@ -303,7 +368,9 @@ describe('updating state', () => {
     store.setState(sampleState());
     store.markUpdating(['plex']);
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.markUpdating(['plex']);
     expect(calls).toBe(0);
   });
@@ -360,7 +427,9 @@ describe('updating state', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.clearUpdating('plex');
     expect(calls).toBe(0);
   });
@@ -414,7 +483,9 @@ describe('updating state', () => {
     // Manually write a stale entry (6 minutes ago) to localStorage. Without
     // the load-time filter, this zombie would sit there for the full poll
     // cycle before reconcileUpdating's timeout cleaned it up.
-    const stale = { plex: { startedAt: Date.now() - 6 * 60_000, prevId: 'abc', prevUpdateAvailable: true } };
+    const stale = {
+      plex: { startedAt: Date.now() - 6 * 60_000, prevId: 'abc', prevUpdateAvailable: true },
+    };
     localStorage.setItem('modernui-docker-updating', JSON.stringify(stale));
     const store = createDockerStore();
     expect(store.getUpdating().has('plex')).toBe(false);
@@ -426,7 +497,9 @@ describe('starting state', () => {
     const store = createDockerStore();
     store.setState(sampleState());
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.markStarting(['plex', 'sonarr']);
     expect(store.getStarting().has('plex')).toBe(true);
     expect(store.getStarting().has('sonarr')).toBe(true);
@@ -438,7 +511,9 @@ describe('starting state', () => {
     store.setState(sampleState());
     store.markStarting(['plex']);
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.markStarting(['plex']);
     expect(calls).toBe(0);
   });
@@ -528,9 +603,11 @@ describe('showStats flag', () => {
   it('only notifies subscribers when the flag actually changes', () => {
     const store = createDockerStore();
     let calls = 0;
-    store.subscribe(() => { calls++; });
+    store.subscribe(() => {
+      calls++;
+    });
     store.setShowStats(true);
-    store.setShowStats(true);   // no-op
+    store.setShowStats(true); // no-op
     store.setShowStats(false);
     expect(calls).toBe(2);
   });

@@ -10,15 +10,20 @@ const fixture = JSON.parse(
   readFileSync(join(__dir, '../../../src/ts/main/__fixtures__/main-state.sample.json'), 'utf8'),
 ) as MainPageState;
 
-afterEach(() => { vi.unstubAllGlobals(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('fetchSnapshot', () => {
   it('parses a real main-state.php payload into MainPageState', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => fixture,
-    })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => fixture,
+      })),
+    );
 
     const s = await fetchSnapshot();
     expect(s.array.devices.length).toBe(14);
@@ -38,7 +43,10 @@ describe('fetchSnapshot', () => {
   });
 
   it('throws on a non-OK response', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 409, json: async () => ({}) })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 409, json: async () => ({}) })),
+    );
     await expect(fetchSnapshot()).rejects.toThrow('409');
   });
 });

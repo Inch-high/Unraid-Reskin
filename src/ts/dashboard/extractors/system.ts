@@ -49,7 +49,7 @@ function parseTotalFromDetail(detail: string): string {
 export const systemExtractor: Extractor<MemoryState> = {
   match: ({ source }) => {
     if (source.querySelector('.tile-system-memory-charts')) return true;
-    if (source.id && source.id.includes('tblSystem')) return true;
+    if (source.id?.includes('tblSystem')) return true;
     const pies = source.querySelectorAll('div.pie');
     return pies.length > 1;
   },

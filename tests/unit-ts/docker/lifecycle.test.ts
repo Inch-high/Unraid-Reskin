@@ -9,8 +9,12 @@ class MockNchan {
   on(event: string, fn: (arg: unknown) => void): void {
     (this.handlers[event] ||= []).push(fn);
   }
-  start(): void { this.started = true; }
-  stop(): void { this.stopped = true; }
+  start(): void {
+    this.started = true;
+  }
+  stop(): void {
+    this.stopped = true;
+  }
   emit(event: string, arg: unknown): void {
     (this.handlers[event] || []).forEach((h) => h(arg));
   }
@@ -85,7 +89,7 @@ describe('createLiveSubscription', () => {
   });
 
   it('returns a no-op subscription when NchanSubscriber is missing', () => {
-    delete (window as any).NchanSubscriber;
+    (window as any).NchanSubscriber = undefined;
     const onDelta = vi.fn();
     const sub = createLiveSubscription({
       url: '/sub/dockerload',

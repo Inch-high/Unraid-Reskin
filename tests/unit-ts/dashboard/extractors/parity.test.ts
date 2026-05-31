@@ -54,7 +54,8 @@ describe('parityExtractor', () => {
 
   it('does not match a non-parity tbody', () => {
     const wrapper = document.createElement('table');
-    wrapper.innerHTML = '<tbody title="Virtual Information"><tr><td><h3>VIRTUAL</h3></td></tr></tbody>';
+    wrapper.innerHTML =
+      '<tbody title="Virtual Information"><tr><td><h3>VIRTUAL</h3></td></tr></tbody>';
     const other = wrapper.querySelector('tbody')!;
     expect(parityExtractor.match({ source: other })).toBe(false);
   });

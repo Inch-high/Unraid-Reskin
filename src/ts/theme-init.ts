@@ -7,10 +7,7 @@ export interface ThemeState {
   density: Density;
 }
 
-export function resolveTheme(
-  mode: ThemeMode,
-  prefersDark: () => boolean,
-): ResolvedTheme {
+export function resolveTheme(mode: ThemeMode, prefersDark: () => boolean): ResolvedTheme {
   if (mode === 'dark') return 'dark';
   if (mode === 'light') return 'light';
   if (mode === 'system') return prefersDark() ? 'dark' : 'light';

@@ -34,7 +34,10 @@ export class MdMainSpinControls extends LitElement {
       <div class="row">
         <button ?disabled=${disabled} @click=${() => this._run(A.buildSpinAll('up'))}>Spin Up</button>
         <button ?disabled=${disabled} @click=${() => this._run(A.buildSpinAll('down'))}>Spin Down</button>
-        <button @click=${() => { if (confirm('Clear all read/write/error statistics?')) void this._run(A.buildClearStats()); }}>Clear Stats</button>
+        <button @click=${() => {
+          if (confirm('Clear all read/write/error statistics?'))
+            void this._run(A.buildClearStats());
+        }}>Clear Stats</button>
         ${disabled ? html`<span class="note">Spin controls disabled while an operation is running.</span>` : ''}
       </div>
     `;
