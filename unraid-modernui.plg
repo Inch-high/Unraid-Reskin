@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.0">
+<!ENTITY version   "0.8.1">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,10 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.1 (2026-05-31)
+- Fix (dashboard): disk rows in the Array and Cache cards now align their state / temp / SMART / progress / percentage columns across mixed active and standby rows. The disk list owns the grid column tracks and each row is a subgrid spanning them, instead of every row sizing its own `auto` columns independently (which let active rows with a temp + SMART glyph drift out of alignment from standby rows with "—" placeholders).
+- Fix (docker): the update/remove confirmation dialogs now use a styled `md-docker-confirm-modal` (matching the drive-info / folder / tag modal family) in place of the native `window.confirm()`. Destructive (remove) confirms focus Cancel so a stray Enter can't trigger a removal; primary (update) confirms keep action-button autofocus to mirror native behaviour; and an open confirm resolves cleanly if the page is torn down mid-prompt. +`md-docker-confirm-modal` unit coverage (confirm/cancel/backdrop/Escape resolution, listener cleanup, tone-based focus). 450 TS + PHP suites green.
+
 ###v0.8.0 (2026-05-31)
 - Feat (main): click any device tile on `/Main` to open a reskinned **drive-info modal** with five tabs — Health (SMART pass/fail verdict, temperature, power-on hours/cycles, capacity, identity), Attributes (ATA SMART table with failing/key attributes flagged, NVMe health log, SCSI counters), Self-test (run short/extended, live progress, abort, history log), Errors (array read-errors + disabled/unmountable reason + SMART error log), and Settings (spin-down delay + warning/critical temperature + SMART notification thresholds). The drive-name link still opens the stock `/Main/Device` page as an escape hatch.
 - Feat (main): new read-only `main-smart.php` runs `smartctl --json` to source the SMART data. It is deliberately a SEPARATE file from `main-state.php` (whose zero-shell CI invariant is untouched), resolves the `/dev` node from `disks.ini` rather than client input, `escapeshellarg`s every token, and passes `-n standby` so opening the panel never spins up a sleeping disk — it offers an explicit "wake & read" instead. The self-test trigger (short/extended/abort) validates `csrf_token` against `var.ini`; a new CI guard asserts the file may only ever invoke `/usr/sbin/smartctl`. Spin-down delay and SMART threshold writes reuse the stock `/update.htm` + `/update.php` endpoints — no new privileged writes.
