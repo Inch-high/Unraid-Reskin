@@ -98,7 +98,11 @@ export class ModernuiMainPage extends LitElement {
     if (this._util === next) return;
     document.documentElement.dataset.modernuiMainUtil = next;
     this.requestUpdate();
-    const csrf = (window as { csrf_token?: string }).csrf_token;
+    // Authoritative token is the snapshot's csrfToken (boot.ts backfills it from
+    // the #modernui-main-root data-csrf attribute, the same source every other
+    // action POST uses). Fall back to the page global only if the snapshot is
+    // somehow tokenless.
+    const csrf = this._state?.csrfToken || (window as { csrf_token?: string }).csrf_token;
     if (!csrf) return; // best-effort; the live UI already reflects the change
     const body = new URLSearchParams();
     body.set('main_util_style', next);

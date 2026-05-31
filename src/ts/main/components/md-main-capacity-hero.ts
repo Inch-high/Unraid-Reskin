@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { MainArray, DeviceStatus } from '../types';
-import { formatBytes, formatPct } from '../format';
+import { formatBytes } from '../format';
 
 const PROBLEM: DeviceStatus[] = ['invalid', 'wrong', 'disabled', 'missing', 'unmountable'];
 

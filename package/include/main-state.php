@@ -131,13 +131,14 @@ function modernui_map_smart(array $d): string {
 // Device class for the tile icon. nvme by kernel name, usb for the flash/boot
 // device, otherwise the rotational flag distinguishes SSD from HDD. A missing
 // or unreadable sysfs read defaults to 'hdd' so a spinning disk is never
-// mislabeled as solid-state.
-function modernui_map_device_type(string $role, string $linuxDevice): string {
+// mislabeled as solid-state. $sysfsBase is injectable so the rotational→ssd
+// branch is unit-testable off a real /sys (tests point it at a fixture dir).
+function modernui_map_device_type(string $role, string $linuxDevice, string $sysfsBase = '/sys/block'): string {
     if ($role === 'flash') return 'usb';
     if (strncmp($linuxDevice, 'nvme', 4) === 0) return 'nvme';
     $dev = basename($linuxDevice);
     if ($dev !== '') {
-        $path = "/sys/block/{$dev}/queue/rotational";
+        $path = "{$sysfsBase}/{$dev}/queue/rotational";
         if (is_readable($path)) {
             if (trim((string)@file_get_contents($path)) === '0') return 'ssd';
         }

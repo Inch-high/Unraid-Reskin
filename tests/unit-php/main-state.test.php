@@ -31,6 +31,25 @@ assert($byName['disk1']['role'] === 'data', 'disk1 role');
 assert($byName['parity']['deviceType'] === 'hdd', 'sdh + unreadable sysfs → hdd; got ' . $byName['parity']['deviceType']);
 assert($byName['disk1']['deviceType'] === 'hdd', 'sdk + unreadable sysfs → hdd; got ' . $byName['disk1']['deviceType']);
 
+// modernui_map_device_type branches in isolation, including the rotational→ssd
+// path that the real /sys is never around to exercise. Point $sysfsBase at a
+// throwaway dir holding a queue/rotational file per device.
+$sysfs = sys_get_temp_dir() . '/modernui-sysfs-' . getmypid();
+@mkdir("{$sysfs}/sdspin/queue", 0777, true);
+@mkdir("{$sysfs}/sdsolid/queue", 0777, true);
+file_put_contents("{$sysfs}/sdspin/queue/rotational", "1\n");
+file_put_contents("{$sysfs}/sdsolid/queue/rotational", "0\n");
+assert(modernui_map_device_type('flash', 'sda', $sysfs) === 'usb', 'flash role → usb regardless of sysfs');
+assert(modernui_map_device_type('pool', 'nvme0n1', $sysfs) === 'nvme', 'nvme name → nvme regardless of sysfs');
+assert(modernui_map_device_type('data', 'sdsolid', $sysfs) === 'ssd', 'rotational=0 → ssd');
+assert(modernui_map_device_type('data', 'sdspin', $sysfs) === 'hdd', 'rotational=1 → hdd');
+assert(modernui_map_device_type('data', 'sdmissing', $sysfs) === 'hdd', 'unreadable sysfs → hdd fallback');
+@unlink("{$sysfs}/sdspin/queue/rotational");
+@unlink("{$sysfs}/sdsolid/queue/rotational");
+@rmdir("{$sysfs}/sdspin/queue"); @rmdir("{$sysfs}/sdspin");
+@rmdir("{$sysfs}/sdsolid/queue"); @rmdir("{$sysfs}/sdsolid");
+@rmdir($sysfs);
+
 // model + serial split (the user-requested 1:1 field)
 assert($byName['disk1']['model'] === 'ST12000VN0008-2YS101', 'model split: ' . $byName['disk1']['model']);
 assert($byName['disk1']['serial'] === 'ZRT0Q2AK', 'serial split: ' . $byName['disk1']['serial']);
@@ -95,6 +114,15 @@ assert($par['errors'] === 0, 'sbSyncErrs=0');
 // --- top-level --------------------------------------------------------------
 assert($state['csrfToken'] === 'TESTCSRF', 'csrf passthrough');
 assert($state['serverVersion'] === '7.3.1', 'version passthrough');
+
+// The HTTP path (from_files) must NOT leak the per-boot CSRF token into the
+// readable JSON body — the front-end reads it from the data-csrf attribute
+// instead. var.ini.sample carries a csrf_token, so this guards the omission.
+$fromFiles = modernui_main_state_from_files($fix . '/disks.ini.sample', $fix . '/var.ini.sample');
+assert($fromFiles['csrfToken'] === '', 'from_files must omit the CSRF token from the snapshot body; got ' . var_export($fromFiles['csrfToken'], true));
+// var.ini.sample carries csrf_token="REDACTED" — that literal must not survive
+// into the serialized response anywhere.
+assert(strpos(json_encode($fromFiles), 'REDACTED') === false, 'CSRF token value must not appear in the serialized snapshot body');
 
 // JSON-encodable (the HTTP path emits this).
 $json = json_encode($state);

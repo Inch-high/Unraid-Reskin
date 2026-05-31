@@ -86,7 +86,6 @@ $csrf_token = $var['csrf_token'] ?? '';
       </p>
     </fieldset>
 
-
     <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;">
       <legend>Density</legend>
       <?= modernui_radio('density', 'comfortable', 'Comfortable', $density) ?>

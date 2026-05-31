@@ -65,4 +65,29 @@ describe('modernui-main-page — disk usage style', () => {
     expect(calls[0].body).toContain('main_util_style=ring');
     expect(calls[0].body).toContain('csrf_token=TESTCSRF');
   });
+
+  it('prefers the snapshot csrfToken over the page global when both are present', async () => {
+    (window as { csrf_token?: string }).csrf_token = 'GLOBALCSRF';
+    const calls: Array<{ body: string }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, opts: { body: string }) => {
+      calls.push({ body: opts.body });
+      return { ok: true };
+    }));
+
+    // Snapshot carries its own (authoritative) token — it must win.
+    const store = createMainStore();
+    store.setState({ ...fixture, csrfToken: 'SNAPCSRF' });
+    const el = document.createElement('modernui-main-page') as ModernuiMainPage;
+    document.body.appendChild(el);
+    el.setStore(store);
+    await el.updateComplete;
+
+    ([...el.shadowRoot!.querySelectorAll('.seg button')]
+      .find((b) => b.textContent?.trim() === 'Ring') as HTMLButtonElement).click();
+    await el.updateComplete;
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].body).toContain('csrf_token=SNAPCSRF');
+    expect(calls[0].body).not.toContain('GLOBALCSRF');
+  });
 });

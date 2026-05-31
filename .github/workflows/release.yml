@@ -6,8 +6,8 @@
 # Steps:
 #   1. Verify the tag matches package.json's `version` and the .plg's `<!ENTITY version "...">`
 #      so we never publish a release whose .plg points at a tarball it can't find.
-#   2. Run the TS test suite. PHP tests need a configured PHP and aren't useful as a
-#      release gate — they cover request-shape validation and the dev box runs them.
+#   2. Run the TS + PHP test suites (PHP 8.2 matches Unraid 7.x) so a tag can't
+#      ship with a regressed front-end OR server-side endpoint.
 #   3. Build the assets (Sass + Vite → package/theme/dist/).
 #   4. Pack the .txz (tools/package-txz.mjs does CRLF normalization first — Windows
 #      checkouts have historically tainted .page files).
@@ -43,6 +43,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      # PHP 8.2 matches Unraid 7.x — gates the server-side endpoint tests before
+      # a tag ships, same as the per-PR CI workflow.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
 
       - name: Derive version from tag
         id: ver
@@ -81,6 +88,9 @@ jobs:
 
       - name: Run TS tests
         run: npm run test:ts
+
+      - name: Run PHP tests
+        run: npm run test:php
 
       - name: Build assets
         run: npm run build
