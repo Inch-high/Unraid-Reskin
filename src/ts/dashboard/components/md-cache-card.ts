@@ -18,11 +18,20 @@ export class MdCacheCard extends LitElement {
     :host { display: block; }
     .leds { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 16px; }
     .led { width: 14px; height: 18px; border-radius: 2px; background: var(--text-muted); }
-    .disk-list { display: grid; gap: 6px; }
-    .disk {
+    /* The list owns the column tracks so every row aligns to the same grid —
+       each row is a subgrid spanning all 6 columns. Without this each .disk
+       sizes its own auto columns independently, so active rows (with a temp +
+       SMART glyph) and standby rows (with "—" placeholders) drift out of
+       alignment. */
+    .disk-list {
       display: grid;
       grid-template-columns: 1fr auto auto auto 80px 36px;
-      gap: 12px;
+      gap: 6px 12px;
+    }
+    .disk {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
       align-items: center;
       padding: 6px 0;
       border-bottom: 1px solid var(--border-subtle);
