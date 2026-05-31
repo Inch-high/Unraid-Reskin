@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.6.1">
+<!ENTITY version   "0.7.0">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,11 @@
 
 <CHANGES>
 <![CDATA[
+###v0.7.0 (2026-05-31)
+- Feat (main): the `/Main` device list is now a responsive grid of compact disk **tiles** instead of a wide row table. Each tile shows the device type (HDD / SSD / NVMe / USB icon), name + model, online/standby state, used-of-total with a utilization bar or radial ring, and a temp / SMART / errors footer — every critical fact survives, the horizontal scroll does not. An array **capacity hero** (used/free + parity protection + healthy count) tops the page, with a per-device state LED strip on the Array group. `deviceType` is derived server-side in `main-state.php` (nvme by kernel name, usb for the flash device, the rotational flag for SSD vs HDD).
+- Feat (main): one-click **Bar / Ring** toggle in the `/Main` header switches how every disk's usage is drawn and persists per-install — written via the stock save endpoint and restored with no flash on reload. Replaces the old full-width 11-column device rows; backend, nchan live updates, and the Array Operation panel are unchanged.
+- CI/Tests: the PHP suite now runs in both the per-PR CI and the release workflow (setup-php 8.2, matching Unraid 7.x) so the server-side endpoints are gated, not just the dev box. Added device-tile / capacity-hero / page-util coverage and made `modernui_map_device_type`'s sysfs base injectable so the rotational→SSD branch is unit-tested; the Bar/Ring persist POST prefers the snapshot's authoritative CSRF token. 439 TS + PHP suites green.
+
 ###v0.6.1 (2026-05-30)
 - Security (main): `main-state.php` no longer emits the per-boot CSRF token in its read-only JSON snapshot. The token is delivered solely via the `#modernui-main-root` data-csrf attribute (htmlspecialchars-escaped), which the front-end already treats as authoritative — keeping it out of a readable response body (data minimization / defense-in-depth). No functional change: action POSTs still read the token from the attribute.
 - Fix (main): Unassigned Devices "Historical (previous) devices" detection now compares serials exactly instead of with a loose bidirectional substring test. A previously-seen device whose serial happens to be a substring of an attached disk's serial (or vice-versa) is no longer wrongly treated as present and hidden from the Historical list.

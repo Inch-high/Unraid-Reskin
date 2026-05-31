@@ -1,7 +1,6 @@
 import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MdMainCardBase } from './md-main-card';
-import './md-main-device-row';
 import type { UnassignedState, UnassignedDisk, UnassignedRemote, UnassignedHistorical } from '../types';
 import { formatBytes, formatTemp, formatPct } from '../format';
 import * as A from '../actions';

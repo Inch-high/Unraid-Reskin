@@ -1,36 +1,25 @@
 import { html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MdMainCardBase } from './md-main-card';
-import './md-main-device-row';
+import './md-main-device-tile';
 import type { MainDevice } from '../types';
-import { formatBytes, formatPct } from '../format';
+import type { UtilStyle } from './md-main-device-tile';
 
-// "Boot Device" card — the single flash device.
+// "Boot" group — the single flash device, rendered as one tile.
 @customElement('md-main-boot-card')
 export class MdMainBootCard extends MdMainCardBase {
   @property({ type: Object }) device!: MainDevice;
-  @property({ type: Boolean }) compact = false;
+  @property({ type: String }) util: UtilStyle = 'bar';
 
   render() {
     const d = this.device;
     if (!d) return html``;
     return html`
-      <div class="card">
-        <div class="card-head">
-          <div class="title"><h2>Boot Device</h2></div>
-          ${d.fsSizeBytes !== null
-            ? html`<span class="totals">
-                <strong>${formatBytes(d.fsUsedBytes)}</strong> used of
-                <strong>${formatBytes(d.fsSizeBytes)}</strong>
-                ${d.utilizationPct !== null ? html`(${formatPct(d.utilizationPct)})` : ''}
-              </span>`
-            : ''}
-        </div>
-        <div class="rows">
-          ${this.renderColHead()}
-          <md-main-device-row .device=${d} ?compact=${this.compact}></md-main-device-row>
-        </div>
+      <div class="section-head">
+        <span class="section-title">Boot</span>
+        ${d.fsType ? html`<span class="section-meta">${d.fsType} · flash device</span>` : ''}
       </div>
+      ${this.renderTiles([d], this.util)}
     `;
   }
 }

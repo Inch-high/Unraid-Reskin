@@ -15,6 +15,7 @@ function modernui_validate_settings(array $input): array {
         'shell'                 => 'on',
         'docker'                => 'on',
         'main'                  => 'on',
+        'main_util_style'       => 'bar',
         'docker_folder_default' => 'expanded',
         'docker_show_stats'     => 'off',
     ];
@@ -28,6 +29,7 @@ function modernui_validate_settings(array $input): array {
         'shell'                 => ['on', 'off'],
         'docker'                => ['on', 'off'],
         'main'                  => ['on', 'off'],
+        'main_util_style'       => ['bar', 'ring'],
         'docker_folder_default' => ['expanded', 'collapsed'],
         'docker_show_stats'     => ['on', 'off'],
     ];
