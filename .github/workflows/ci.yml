@@ -105,15 +105,17 @@ jobs:
       # main-smart.php DOES shell out (SMART has no on-disk source), but the
       # ONLY binary it may invoke is /usr/sbin/smartctl, and only via a single
       # escapeshellarg'd exec() boundary. Forbid all other exec/network
-      # primitives, and assert the smartctl path + escaping are present.
+      # primitives (incl. the backtick operator), and assert the smartctl path
+      # + escaping are present. We check CODE only — `//` line comments are
+      # stripped first so markdown backticks/words in prose don't false-trip.
       - name: Guard main-smart.php (smartctl-only)
         run: |
-          if grep -nE 'curl_exec|shell_exec|proc_open|popen|\bsystem\(|\bpassthru\(|`|wget |file_get_contents\(["'\'']https?:|fopen\(["'\'']https?:' \
-              package/include/main-smart.php; then
+          code="$(sed 's|//.*||' package/include/main-smart.php)"
+          if printf '%s\n' "$code" | grep -nE 'curl_exec|shell_exec|proc_open|popen|\bsystem\(|\bpassthru\(|`|wget |file_get_contents\(["'\'']https?:|fopen\(["'\'']https?:'; then
             echo "::error::main-smart.php may only invoke smartctl via exec() — no other exec/network primitive."
             exit 1
           fi
-          if [ "$(grep -cE '\bexec\(' package/include/main-smart.php)" -ne 1 ]; then
+          if [ "$(printf '%s\n' "$code" | grep -cE '\bexec\(')" -ne 1 ]; then
             echo "::error::main-smart.php must contain exactly one exec() boundary."
             exit 1
           fi
