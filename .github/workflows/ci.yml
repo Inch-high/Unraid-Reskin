@@ -1,13 +1,11 @@
 # Continuous integration — runs on every pull request and on pushes to main.
 #
-# Gate: the TypeScript test suite must pass and the assets must build cleanly
-# (Sass + Vite → package/theme/dist/). This is the same TS-test + build pair
-# the release workflow runs before publishing, lifted to a per-PR check so
-# regressions are caught before merge rather than at tag time.
-#
-# PHP tests are deliberately omitted — they need a configured PHP runtime and,
-# per release.yml, cover request-shape validation that the dev box exercises;
-# they aren't a useful merge gate here.
+# Gate: the TypeScript test suite AND the PHP test suite must pass, and the
+# assets must build cleanly (Sass + Vite → package/theme/dist/). The TS-test +
+# build pair mirrors the release workflow; the PHP suite is gated here too so
+# the server-side endpoints (request-shape validation in save.php, the
+# disks.ini → MainPageState mapping in main-state.php) can't regress unnoticed
+# between dev-box runs.
 
 name: CI
 
@@ -36,11 +34,22 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # PHP 8.2 matches the runtime shipped with Unraid 7.x. zend.assertions is
+      # forced on at the CLI by run-all.mjs, so the assert()s in the .test.php
+      # files are real failures here.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run TS tests
         run: npm run test:ts
+
+      - name: Run PHP tests
+        run: npm run test:php
 
       - name: Build assets
         run: npm run build

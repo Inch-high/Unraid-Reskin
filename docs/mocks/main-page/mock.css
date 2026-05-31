@@ -1,0 +1,228 @@
+/* =============================================================
+   ModernUI — Main (Storage) page redesign · static mock styles
+   Tokens mirror src/styles/tokens.scss so the mock paints what the
+   shipped Lit components will. The page (index.html) has a live
+   Bar / Ring toggle that swaps every tile's capacity block in place.
+   ============================================================= */
+
+:root {
+  --bg-base: #0f1419;
+  --bg-surface: #161c23;
+  --bg-elevated: #1e252e;
+
+  --border-subtle: #232b35;
+  --border-default: #2d3744;
+
+  --text-primary: #e5e9ef;
+  --text-secondary: #9aa4b2;
+  --text-muted: #6b7280;
+
+  --mui-accent: #ff8c2f;
+  --mui-accent-hover: #ff9e4a;
+  --mui-accent-muted: rgba(255, 140, 47, 0.15);
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+svg { display: block; }
+
+/* ---------- shell chrome (context only — not the focus of the mock) ---------- */
+.shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column;
+}
+.sidebar-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border-subtle); }
+.logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--mui-accent), #b3450c); flex: 0 0 auto; }
+.server-name { font-weight: 600; font-size: 14px; }
+.server-sub { font-size: 11px; color: var(--text-muted); }
+.sidebar-nav { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: var(--radius-md); color: var(--text-secondary); font-size: 13.5px; font-weight: 500; }
+.nav-item svg { width: 18px; height: 18px; fill: currentColor; flex: 0 0 auto; }
+.nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.nav-item.active { background: var(--mui-accent-muted); color: var(--mui-accent); }
+.sidebar-foot { padding: 14px 18px; border-top: 1px solid var(--border-subtle); font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; }
+.status-row { display: flex; align-items: center; gap: 8px; }
+
+.main { display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-base); }
+.breadcrumb { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.topbar-right { display: flex; gap: 8px; }
+.icon-btn { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); cursor: pointer; }
+.icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+.icon-btn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+
+/* ---------- page ---------- */
+.page { padding: 22px 24px 48px; max-width: 1320px; width: 100%; margin: 0 auto; }
+
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.page-head h1 { margin: 0 0 6px; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+.page-sub { margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+.dot-sep { color: var(--text-muted); }
+.page-actions { display: flex; gap: 8px; align-items: center; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn svg { width: 16px; height: 16px; fill: currentColor; }
+.btn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.btn-primary { background: var(--mui-accent); border-color: var(--mui-accent); color: #1a0e02; font-weight: 600; }
+.btn-primary:hover { background: var(--mui-accent-hover); color: #1a0e02; }
+.btn-danger:hover { color: var(--danger); border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.08); }
+
+/* segmented control — live in-page toggle between bar and ring utilization.
+   Active state is driven entirely by the <html> class so a single class flip
+   switches both the control and every tile. */
+.variant-toggle { display: inline-flex; padding: 3px; gap: 3px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.variant-toggle button { padding: 5px 13px; border: 0; border-radius: var(--radius-sm); font: inherit; font-size: 12.5px; font-weight: 500; color: var(--text-secondary); background: transparent; cursor: pointer; }
+.variant-toggle button:hover { color: var(--text-primary); }
+html:not(.viz-ring) .variant-toggle .v-bar,
+html.viz-ring .variant-toggle .v-ring { background: var(--bg-elevated); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+/* ---------- capacity hero ---------- */
+.hero { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 22px; display: grid; grid-template-columns: 1fr auto; gap: 18px 28px; align-items: center; }
+.hero-cap { min-width: 0; }
+.hero-cap-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.hero-used { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; }
+.hero-total { font-size: 14px; color: var(--text-secondary); }
+.hero-free { margin-left: auto; font-size: 13px; color: var(--text-secondary); }
+.hero-free b { color: var(--text-primary); font-weight: 600; }
+.hero-bar { height: 10px; border-radius: var(--radius-full); background: var(--bg-elevated); overflow: hidden; display: flex; }
+.hero-bar > span { display: block; height: 100%; }
+.hero-bar > span.data { background: var(--mui-accent); }
+.hero-bar > span.high { background: var(--warning); }
+.hero-stats { display: flex; gap: 26px; }
+.hero-stat { text-align: right; }
+.hero-stat .v { font-size: 18px; font-weight: 600; }
+.hero-stat .l { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+.hero-stat .v.ok { color: var(--success); }
+
+/* ---------- section ---------- */
+.section { margin-bottom: 26px; }
+.section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.section-title { font-size: 15px; font-weight: 600; letter-spacing: -0.005em; }
+.section-meta { font-size: 12.5px; color: var(--text-secondary); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--radius-full); font-size: 11.5px; font-weight: 600; border: 1px solid var(--border-default); color: var(--text-secondary); }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.pill-ok { color: var(--success); border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+.pill-warn { color: var(--warning); border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+.pill-danger { color: var(--danger); border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+.section-spacer { flex: 1; }
+.section-actions { display: flex; gap: 6px; }
+
+/* led strip — quick fleet glance, echoes the dashboard array card */
+.leds { display: flex; gap: 4px; }
+.led { width: 11px; height: 16px; border-radius: 2px; background: var(--text-muted); }
+
+/* ---------- tile grid ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(266px, 1fr)); gap: 12px; }
+
+.tile {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 15px 13px;
+  display: flex; flex-direction: column; gap: 13px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.20), 0 1px 3px rgba(0,0,0,.12);
+  transition: box-shadow 120ms cubic-bezier(.2,0,0,1), border-color 120ms cubic-bezier(.2,0,0,1);
+}
+.tile:hover { border-color: var(--border-default); box-shadow: 0 1px 2px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.22); }
+.tile.is-problem { border-color: rgba(239,68,68,.45); }
+.tile.is-standby { opacity: .82; }
+
+/* tile head: type icon · name + model · state */
+.tile-head { display: flex; align-items: center; gap: 11px; }
+.disk-icon { width: 36px; height: 36px; flex: 0 0 auto; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--bg-elevated); color: var(--text-secondary); }
+.disk-icon svg { width: 21px; height: 21px; fill: currentColor; }
+.tile.t-nvme .disk-icon { color: var(--mui-accent); background: var(--mui-accent-muted); }
+.tile-id { min-width: 0; flex: 1; }
+.disk-name { display: flex; align-items: center; gap: 7px; }
+.disk-name a { font-size: 14.5px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disk-name a:hover { color: var(--mui-accent); }
+.tile.is-problem .disk-name a { color: var(--danger); }
+.type-tag { flex: 0 0 auto; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; padding: 1px 5px; border-radius: var(--radius-xs); background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle); text-transform: uppercase; }
+.disk-model { font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; font-family: var(--font-mono); }
+
+.state { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: var(--text-secondary); }
+.state .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--st); box-shadow: 0 0 0 2px color-mix(in srgb, var(--st) 22%, transparent); }
+.st-active { --st: var(--success); }
+.st-standby { --st: var(--text-muted); }
+.st-spinning { --st: var(--warning); }
+.st-problem { --st: var(--danger); color: var(--danger); }
+
+/* capacity block — BAR variant */
+.cap { display: flex; flex-direction: column; gap: 7px; }
+.cap-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cap-used { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cap-total { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.cap-pct { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.bar { height: 7px; border-radius: var(--radius-full); background: var(--bg-elevated); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--mui-accent); border-radius: inherit; }
+.bar > span.high { background: var(--warning); }
+.bar > span.full { background: var(--danger); }
+
+/* capacity block — RING variant. Hidden by default (bar shown); the toggle
+   flips <html class="viz-ring"> to swap every tile in place. */
+.cap-ring { display: none; align-items: center; gap: 14px; }
+html.viz-ring .tile .cap { display: none; }
+html.viz-ring .tile .cap-ring { display: flex; }
+.ring { --p: 0; --col: var(--mui-accent); position: relative; width: 66px; height: 66px; flex: 0 0 auto; }
+.ring .arc { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(var(--col) calc(var(--p) * 3.6deg), var(--bg-elevated) 0); }
+.ring .hole { position: absolute; inset: 8px; border-radius: 50%; background: var(--bg-surface); display: grid; place-items: center; }
+.ring .hole .pct { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1; }
+.ring.high { --col: var(--warning); }
+.ring.full { --col: var(--danger); }
+.cap-ring .nums { min-width: 0; }
+.cap-ring .nums .u { font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cap-ring .nums .t { font-size: 11.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; margin-top: 1px; }
+.cap-ring .nums .free { font-size: 11.5px; color: var(--text-muted); margin-top: 5px; }
+
+/* parity / no-fs capacity placeholder */
+.cap-nofs { font-size: 12.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; }
+.cap-nofs .sz { color: var(--text-secondary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* tile footer: temp · smart · errors */
+.tile-foot { display: flex; align-items: center; gap: 0; padding-top: 11px; border-top: 1px solid var(--border-subtle); }
+.foot-chip { display: inline-flex; align-items: center; gap: 5px; padding: 0 12px; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.foot-chip:first-child { padding-left: 0; }
+.foot-chip + .foot-chip { border-left: 1px solid var(--border-subtle); }
+.foot-chip svg { width: 14px; height: 14px; fill: currentColor; opacity: .85; }
+.foot-chip .gly { font-weight: 700; }
+.foot-chip.smart-ok .gly { color: var(--success); }
+.foot-chip.smart-warn .gly { color: var(--warning); }
+.foot-chip.smart-fail .gly { color: var(--danger); }
+.foot-chip.err-bad { color: var(--danger); font-weight: 600; }
+.foot-chip.muted { color: var(--text-muted); }
+
+.note { margin-top: 30px; padding: 14px 16px; border: 1px dashed var(--border-default); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 12.5px; line-height: 1.6; }
+.note b { color: var(--text-primary); }
+
+@media (max-width: 720px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .hero { grid-template-columns: 1fr; }
+  .hero-stats { justify-content: space-between; }
+}

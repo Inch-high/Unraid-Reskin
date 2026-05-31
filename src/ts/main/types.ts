@@ -8,6 +8,7 @@
 // Field references below cite disks.ini / var.ini keys (see __fixtures__/).
 
 export type DeviceRole = 'parity' | 'data' | 'pool' | 'flash';
+export type DeviceType = 'hdd' | 'ssd' | 'nvme' | 'usb';  // tile icon class (see main-state.php)
 export type DeviceSpin = 'active' | 'standby';            // from disks.ini `spundown` (0/1)
 export type SmartHealth = 'healthy' | 'warning' | 'failed' | 'unknown';
 export type OrbColor = 'green' | 'grey' | 'yellow' | 'red';
@@ -26,6 +27,7 @@ export type DeviceStatus =
 export interface MainDevice {
   name: string;            // disks.ini `name`  (parity, parity2, disk1…, cache…, flash)
   role: DeviceRole;        // from `type`
+  deviceType: DeviceType;  // hdd|ssd|nvme|usb — nvme by name, usb by role, else rotational flag
   linuxDevice: string;     // `device`  (sdX / nvmeXn1)
   model: string;           // `id` before the last '_'
   serial: string;          // `id` after the last '_'      ← user-requested 1:1 field

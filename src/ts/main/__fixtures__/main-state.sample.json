@@ -4,6 +4,7 @@
             {
                 "name": "parity",
                 "role": "parity",
+                "deviceType": "hdd",
                 "linuxDevice": "sdh",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "WR801HH2",
@@ -30,6 +31,7 @@
             {
                 "name": "parity2",
                 "role": "parity",
+                "deviceType": "hdd",
                 "linuxDevice": "sdb",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "WR8012SQ",
@@ -56,6 +58,7 @@
             {
                 "name": "disk1",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdk",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0Q2AK",
@@ -82,6 +85,7 @@
             {
                 "name": "disk2",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdj",
                 "model": "ST12000VN0008-2JH101",
                 "serial": "ZL002PQY",
@@ -108,6 +112,7 @@
             {
                 "name": "disk3",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdl",
                 "model": "ST12000VN0008-2JH101",
                 "serial": "ZL002FFT",
@@ -134,6 +139,7 @@
             {
                 "name": "disk4",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdn",
                 "model": "ST12000VN0008-2JH101",
                 "serial": "ZL002FNP",
@@ -160,6 +166,7 @@
             {
                 "name": "disk5",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdg",
                 "model": "ST12000VN0008-2PH103",
                 "serial": "ZLW20PZE",
@@ -186,6 +193,7 @@
             {
                 "name": "disk6",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdi",
                 "model": "ST12000VN0008-2PH103",
                 "serial": "ZL2J0HVY",
@@ -212,6 +220,7 @@
             {
                 "name": "disk7",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdc",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0NF65",
@@ -238,6 +247,7 @@
             {
                 "name": "disk8",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdd",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0NJ92",
@@ -264,6 +274,7 @@
             {
                 "name": "disk9",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sde",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0NWP2",
@@ -290,6 +301,7 @@
             {
                 "name": "disk10",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdf",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0FAP7",
@@ -316,6 +328,7 @@
             {
                 "name": "disk11",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sdm",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "ZRT0NRCZ",
@@ -342,6 +355,7 @@
             {
                 "name": "disk12",
                 "role": "data",
+                "deviceType": "hdd",
                 "linuxDevice": "sda",
                 "model": "ST12000VN0008-2YS101",
                 "serial": "WR8012K9",
@@ -387,6 +401,7 @@
                 {
                     "name": "cache",
                     "role": "pool",
+                    "deviceType": "nvme",
                     "linuxDevice": "nvme0n1",
                     "model": "Seagate_ZP2000GM30063",
                     "serial": "D3300D81",
@@ -413,6 +428,7 @@
                 {
                     "name": "cache2",
                     "role": "pool",
+                    "deviceType": "nvme",
                     "linuxDevice": "nvme1n1",
                     "model": "Seagate_ZP2000GM30063",
                     "serial": "D3300D8H",
@@ -439,6 +455,7 @@
                 {
                     "name": "cache3",
                     "role": "pool",
+                    "deviceType": "nvme",
                     "linuxDevice": "nvme2n1",
                     "model": "Seagate_ZP2000GM30063",
                     "serial": "D3300D3T",
@@ -465,6 +482,7 @@
                 {
                     "name": "cache4",
                     "role": "pool",
+                    "deviceType": "nvme",
                     "linuxDevice": "nvme3n1",
                     "model": "Seagate_ZP2000GM30063",
                     "serial": "D3300D45",
@@ -494,6 +512,7 @@
     "boot": {
         "name": "flash",
         "role": "flash",
+        "deviceType": "usb",
         "linuxDevice": "sdo",
         "model": "Samsung_Flash_Drive_FIT",
         "serial": "0372725020005916-0:0",

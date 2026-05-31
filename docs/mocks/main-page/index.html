@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>ModernUI · Main / Storage (mock)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="./mock.css">
+<!-- no-flash: apply the saved utilization style before first paint -->
+<script>try{if(localStorage.getItem('modernui-main-util')==='ring')document.documentElement.classList.add('viz-ring');}catch(e){}</script>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- sidebar (context only) -->
+  <aside class="sidebar">
+    <header class="sidebar-head">
+      <div class="logo"></div>
+      <div>
+        <div class="server-name">HL15Rack</div>
+        <div class="server-sub">Unraid OS Pro</div>
+      </div>
+    </header>
+    <nav class="sidebar-nav">
+      <a class="nav-item"><svg viewBox="0 0 24 24"><path d="M13 3v6h8V3h-8zM3 21h8v-6H3v6zM3 13h8V3H3v10zm10 8h8v-10h-8v10z"/></svg> Dashboard</a>
+      <a class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.59 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm0 2c3.87 0 6 1.5 6 2s-2.13 2-6 2-6-1.5-6-2 2.13-2 6-2zm-6 4.64C7.47 10.47 9.61 11 12 11s4.53-.53 6-1.36v2.81C16.7 13.4 14.42 14 12 14s-4.7-.6-6-1.55V9.64zm0 5C7.61 15.55 9.72 16 12 16s4.39-.45 6-1.23V17c0 .5-2.13 2-6 2s-6-1.5-6-2v-2.36z"/></svg> Storage</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24"><path d="M21 16H3V4h18m0-2H3c-1.11 0-2 .89-2 2v12a2 2 0 002 2h7v2H8v2h8v-2h-2v-2h7a2 2 0 002-2V4c0-1.11-.89-2-2-2z"/></svg> VMs</a>
+      <a class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1a7.03 7.03 0 00-1.69-.98l-.37-2.65A.5.5 0 0014 2h-4a.5.5 0 00-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.49.49 0 00.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66a.5.5 0 00-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.09.49 0 .61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg> Settings</a>
+    </nav>
+    <footer class="sidebar-foot">
+      <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span> Array Started</div>
+      <div class="status-row">🌡 41 °C · 184 W</div>
+    </footer>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="breadcrumb">Main</div>
+      <div class="topbar-right">
+        <button class="icon-btn" title="Notifications"><svg viewBox="0 0 24 24"><path d="M14 20a2 2 0 01-2 2 2 2 0 01-2-2h4M12 2a1 1 0 011 1v1.07A6 6 0 0118 10v6l3 3v1H3v-1l3-3v-6a6 6 0 015-5.93V3a1 1 0 011-1z"/></svg></button>
+        <button class="icon-btn" title="Account"><svg viewBox="0 0 24 24"><path d="M12 4a4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4 4 4 0 014-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z"/></svg></button>
+      </div>
+    </header>
+
+    <section class="page">
+
+      <!-- page header -->
+      <header class="page-head">
+        <div>
+          <h1>Main</h1>
+          <p class="page-sub">
+            <span class="pill pill-ok"><span class="dot" style="background:var(--success)"></span> Array Started</span>
+            <span class="dot-sep">·</span>
+            <span><strong>8</strong> array devices</span>
+            <span class="dot-sep">·</span>
+            <span><strong>2</strong> pool · <strong>1</strong> boot</span>
+          </p>
+        </div>
+        <div class="page-actions">
+          <div class="variant-toggle" role="group" aria-label="Utilization style">
+            <button type="button" class="v-bar" onclick="setUtil('bar')">Bar</button>
+            <button type="button" class="v-ring" onclick="setUtil('ring')">Ring</button>
+          </div>
+          <button class="btn btn-danger"><svg viewBox="0 0 24 24"><path d="M18 18H6V6h12v12z"/></svg> Stop Array</button>
+        </div>
+      </header>
+
+      <!-- capacity hero -->
+      <div class="hero">
+        <div class="hero-cap">
+          <div class="hero-cap-top">
+            <span class="hero-used">38.3 TB</span>
+            <span class="hero-total">used of 72 TB</span>
+            <span class="hero-free"><b>33.7 TB</b> free</span>
+          </div>
+          <div class="hero-bar"><span class="data" style="width:53%"></span></div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="v ok">Valid</div><div class="l">Parity protection</div></div>
+          <div class="hero-stat"><div class="v">2 + 6</div><div class="l">Parity + data</div></div>
+          <div class="hero-stat"><div class="v">7 / 8</div><div class="l">Devices healthy</div></div>
+        </div>
+      </div>
+
+      <!-- ============ ARRAY ============ -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-title">Array</span>
+          <span class="pill pill-ok"><span class="dot" style="background:var(--success)"></span> Parity valid</span>
+          <span class="section-spacer"></span>
+          <span class="leds">
+            <span class="led" style="background:var(--success)"></span>
+            <span class="led" style="background:var(--text-muted)"></span>
+            <span class="led" style="background:var(--success)"></span>
+            <span class="led" style="background:var(--danger)"></span>
+            <span class="led" style="background:var(--text-muted)"></span>
+            <span class="led" style="background:var(--warning)"></span>
+            <span class="led" style="background:var(--success)"></span>
+            <span class="led" style="background:var(--danger)"></span>
+          </span>
+        </div>
+
+        <div class="grid">
+
+          <!-- parity -->
+          <div class="tile t-hdd">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">parity</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">ST14000NM001G</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap-nofs"><span class="sz">14 TB</span> · parity device (no filesystem)</div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>36 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- parity2 (standby) -->
+          <div class="tile t-hdd is-standby">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">parity2</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">WDC WD140EDGG</div>
+              </div>
+              <span class="state st-standby"><span class="dot"></span>standby</span>
+            </div>
+            <div class="cap-nofs"><span class="sz">14 TB</span> · parity device (no filesystem)</div>
+            <div class="tile-foot">
+              <span class="foot-chip muted"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>—</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- disk1 -->
+          <div class="tile t-hdd">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk1</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">WDC WD140EFGX</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">8.21 TB</span><span class="cap-total">/ 12 TB</span><span class="cap-pct">68%</span></div>
+              <div class="bar"><span style="width:68%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:68"><div class="arc"></div><div class="hole"><span class="pct">68%</span></div></div>
+              <div class="nums"><div class="u">8.21 TB</div><div class="t">of 12 TB</div><div class="free">3.79 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>38 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- disk2 (near full) -->
+          <div class="tile t-hdd">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk2</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">TOSHIBA MG09ACA</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">11.4 TB</span><span class="cap-total">/ 12 TB</span><span class="cap-pct">95%</span></div>
+              <div class="bar"><span class="full" style="width:95%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring full" style="--p:95"><div class="arc"></div><div class="hole"><span class="pct">95%</span></div></div>
+              <div class="nums"><div class="u">11.4 TB</div><div class="t">of 12 TB</div><div class="free">0.6 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>41 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- disk3 (standby) -->
+          <div class="tile t-hdd is-standby">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk3</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">ST12000VN0008</div>
+              </div>
+              <span class="state st-standby"><span class="dot"></span>standby</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">2.10 TB</span><span class="cap-total">/ 12 TB</span><span class="cap-pct">18%</span></div>
+              <div class="bar"><span style="width:18%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:18"><div class="arc"></div><div class="hole"><span class="pct">18%</span></div></div>
+              <div class="nums"><div class="u">2.10 TB</div><div class="t">of 12 TB</div><div class="free">9.90 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip muted"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>—</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- disk4 (smart warning + errors) -->
+          <div class="tile t-hdd is-problem">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk4</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">WDC WD120EFBX</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">6.70 TB</span><span class="cap-total">/ 12 TB</span><span class="cap-pct">56%</span></div>
+              <div class="bar"><span style="width:56%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:56"><div class="arc"></div><div class="hole"><span class="pct">56%</span></div></div>
+              <div class="nums"><div class="u">6.70 TB</div><div class="t">of 12 TB</div><div class="free">5.30 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>39 °C</span>
+              <span class="foot-chip smart-warn"><span class="gly">!</span> SMART</span>
+              <span class="foot-chip err-bad">2 err</span>
+            </div>
+          </div>
+
+          <!-- disk5 (high) -->
+          <div class="tile t-hdd">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk5</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">HGST HUH721212ALE</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">9.86 TB</span><span class="cap-total">/ 12 TB</span><span class="cap-pct">82%</span></div>
+              <div class="bar"><span class="high" style="width:82%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring high" style="--p:82"><div class="arc"></div><div class="hole"><span class="pct">82%</span></div></div>
+              <div class="nums"><div class="u">9.86 TB</div><div class="t">of 12 TB</div><div class="free">2.14 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>40 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- disk6 (unmountable) -->
+          <div class="tile t-hdd is-problem">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2H6M6,4H18V12H16V14H14V12H10V14H8V12H6V4Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">disk6</a><span class="type-tag">HDD</span></div>
+                <div class="disk-model">ST12000VN0008</div>
+              </div>
+              <span class="state st-problem"><span class="dot"></span>unmountable</span>
+            </div>
+            <div class="cap-nofs">Filesystem not mounted · <span class="sz">12 TB</span></div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>37 °C</span>
+              <span class="foot-chip smart-fail"><span class="gly">?</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============ CACHE POOL ============ -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-title">cache</span>
+          <span class="pill pill-ok"><span class="dot" style="background:var(--success)"></span> Online</span>
+          <span class="section-meta">zfs · mirror · 421 GB used of 1.86 TB</span>
+        </div>
+
+        <div class="grid">
+
+          <!-- cache (nvme) -->
+          <div class="tile t-nvme">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M2 7H4.5V17H3V8.5H2M22 7V16H14V17H7V16H6V7M10 9H8V12H10M13 9H11V12H13M20 9H15V14H20V9Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">cache</a><span class="type-tag">NVMe</span></div>
+                <div class="disk-model">Samsung SSD 990 PRO 2TB</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">421 GB</span><span class="cap-total">/ 1.86 TB</span><span class="cap-pct">22%</span></div>
+              <div class="bar"><span style="width:22%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:22"><div class="arc"></div><div class="hole"><span class="pct">22%</span></div></div>
+              <div class="nums"><div class="u">421 GB</div><div class="t">of 1.86 TB</div><div class="free">1.45 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>44 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+          <!-- cache2 (nvme) -->
+          <div class="tile t-nvme">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M2 7H4.5V17H3V8.5H2M22 7V16H14V17H7V16H6V7M10 9H8V12H10M13 9H11V12H13M20 9H15V14H20V9Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">cache2</a><span class="type-tag">NVMe</span></div>
+                <div class="disk-model">Samsung SSD 990 PRO 2TB</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>active</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">421 GB</span><span class="cap-total">/ 1.86 TB</span><span class="cap-pct">22%</span></div>
+              <div class="bar"><span style="width:22%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:22"><div class="arc"></div><div class="hole"><span class="pct">22%</span></div></div>
+              <div class="nums"><div class="u">421 GB</div><div class="t">of 1.86 TB</div><div class="free">1.45 TB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>45 °C</span>
+              <span class="foot-chip smart-ok"><span class="gly">✓</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============ BOOT ============ -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-title">Boot</span>
+          <span class="section-meta">vfat · flash device</span>
+        </div>
+
+        <div class="grid">
+          <div class="tile t-usb">
+            <div class="tile-head">
+              <div class="disk-icon"><svg viewBox="0 0 24 24"><path d="M15,7V11H16V13H13V5H15L12,1L9,5H11V13H8V10.93C8.7,10.56 9.2,9.85 9.2,9C9.2,7.78 8.21,6.8 7,6.8C5.79,6.8 4.8,7.78 4.8,9C4.8,9.85 5.3,10.56 6,10.93V13A2,2 0 0,0 8,15H11V18.05C10.29,18.41 9.8,19.15 9.8,20A2.2,2.2 0 0,0 12,22.2A2.2,2.2 0 0,0 14.2,20C14.2,19.15 13.71,18.41 13,18.05V15H16A2,2 0 0,0 18,13V11H19V7H15Z"/></svg></div>
+              <div class="tile-id">
+                <div class="disk-name"><a href="#">flash</a><span class="type-tag">USB</span></div>
+                <div class="disk-model">SanDisk Cruzer Fit</div>
+              </div>
+              <span class="state st-active"><span class="dot"></span>mounted</span>
+            </div>
+            <div class="cap">
+              <div class="cap-top"><span class="cap-used">1.18 GB</span><span class="cap-total">/ 30.0 GB</span><span class="cap-pct">4%</span></div>
+              <div class="bar"><span style="width:4%"></span></div>
+            </div>
+            <div class="cap-ring">
+              <div class="ring" style="--p:4"><div class="arc"></div><div class="hole"><span class="pct">4%</span></div></div>
+              <div class="nums"><div class="u">1.18 GB</div><div class="t">of 30.0 GB</div><div class="free">28.8 GB free</div></div>
+            </div>
+            <div class="tile-foot">
+              <span class="foot-chip muted"><svg viewBox="0 0 24 24"><path d="M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0M12 4a1 1 0 011 1v7.46c1.21.68 2 2.01 2 3.54a3 3 0 01-6 0c0-1.53.79-2.86 2-3.54V5a1 1 0 011-1z"/></svg>—</span>
+              <span class="foot-chip muted"><span class="gly">—</span> SMART</span>
+              <span class="foot-chip muted">0 err</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="note">
+        <b>Storage tiles.</b> Each disk is a compact tile in a responsive grid — type icon (HDD / NVMe / USB),
+        name, model, online/sleep state, used-of-total, and a footer of temp · SMART · errors. The long
+        11-column table is gone; everything critical survives. Use the <b>Bar / Ring</b> toggle above to switch
+        how every disk's usage is drawn — the choice is remembered, so each user keeps the style they prefer.
+      </p>
+
+    </section>
+  </main>
+</div>
+
+<script>
+  // Live utilization-style toggle. In the shipped plugin this maps to a
+  // persisted setting (settings.cfg -> loader.js -> data-modernui-main-util);
+  // here we persist to localStorage so the mock behaves the same way.
+  function setUtil(v) {
+    document.documentElement.classList.toggle('viz-ring', v === 'ring');
+    try { localStorage.setItem('modernui-main-util', v); } catch (e) {}
+  }
+</script>
+
+</body>
+</html>
