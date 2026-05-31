@@ -1,5 +1,6 @@
 import { createDockerStore, filtersFromQuery } from './store';
 import { fetchSnapshot } from './actions';
+import { readCachedSnapshot, writeCachedSnapshot } from './snapshot-cache';
 import { createLiveSubscription } from './lifecycle';
 import { createUpdateProgressStore } from './update-progress';
 import './components/md-docker-page';
@@ -154,6 +155,8 @@ export async function boot(): Promise<void> {
         tags: snapshot.tags,
         tagAssignments: snapshot.tagAssignments,
       });
+      // Stash for the next boot's instant paint (SWR). Best-effort.
+      writeCachedSnapshot(snapshot);
     } catch (err) {
       console.warn('[modernui-docker] snapshot failed:', err);
     }
@@ -187,11 +190,25 @@ export async function boot(): Promise<void> {
     },
   );
 
-  // Mount immediately so the page paints (loading state) before fetch resolves.
+  // Mount immediately so the page paints before the fetch resolves.
   const page = document.createElement('modernui-docker-page') as ModernuiDockerPage;
   page.setStore(store);
   page.setUpdateProgressStore(progressStore);
   root.appendChild(page);
+
+  // Stale-while-revalidate: hydrate from the last cached snapshot so the page
+  // paints real rows instantly instead of a loading state. The resync() below
+  // revalidates against the server and overwrites. Skipped silently if there's
+  // no cache (first-ever visit / expired / private mode).
+  const cached = readCachedSnapshot();
+  if (cached) {
+    store.setState({
+      containers: cached.containers,
+      folders: cached.folders,
+      tags: cached.tags,
+      tagAssignments: cached.tagAssignments,
+    });
+  }
 
   await resync();
 
