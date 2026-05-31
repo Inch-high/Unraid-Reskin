@@ -30,7 +30,17 @@ import './md-docker-bulk-bar';
 import './md-docker-folder-modal';
 import './md-docker-tag-modal';
 import './md-docker-update-panel';
+import './md-docker-confirm-modal';
+import type { IconName } from '../icons';
 import type { MdDockerUpdatePanel } from './md-docker-update-panel';
+
+interface ConfirmConfig {
+  heading: string;
+  message: string;
+  confirmLabel: string;
+  tone: 'primary' | 'danger';
+  iconName: IconName;
+}
 
 @customElement('modernui-docker-page')
 export class ModernuiDockerPage extends LitElement {
@@ -181,6 +191,10 @@ export class ModernuiDockerPage extends LitElement {
   @state() private _showFolderModal = false;
   @state() private _showTagModal = false;
   @state() private _checkingUpdates = false;
+  // Styled replacement for window.confirm(). When set, the confirm modal is
+  // rendered; _confirmResolve settles the promise handed back by _askConfirm().
+  @state() private _confirm: ConfirmConfig | null = null;
+  private _confirmResolve: ((ok: boolean) => void) | null = null;
   private _checkPollHandle: number | null = null;
   // Single shared poll handle for "an update is in flight somewhere". One poll
   // services all in-flight container updates regardless of how many were
@@ -244,6 +258,36 @@ export class ModernuiDockerPage extends LitElement {
     }
   }
 
+  // Promise-based styled confirm. Replaces window.confirm() — resolves true if
+  // the user clicks the action button, false on cancel/backdrop/Escape/X. Only
+  // one confirm is ever open at a time; a stray pending one resolves false.
+  private _askConfirm(opts: {
+    heading: string;
+    message: string;
+    confirmLabel?: string;
+    tone?: 'primary' | 'danger';
+    iconName?: IconName;
+  }): Promise<boolean> {
+    this._confirmResolve?.(false);
+    this._confirm = {
+      heading: opts.heading,
+      message: opts.message,
+      confirmLabel: opts.confirmLabel ?? 'Confirm',
+      tone: opts.tone ?? 'primary',
+      iconName: opts.iconName ?? 'update',
+    };
+    return new Promise<boolean>((resolve) => {
+      this._confirmResolve = resolve;
+    });
+  }
+
+  private _resolveConfirm(ok: boolean): void {
+    const resolve = this._confirmResolve;
+    this._confirmResolve = null;
+    this._confirm = null;
+    resolve?.(ok);
+  }
+
   private async _handleAction(e: CustomEvent<DockerRowActionDetail>): Promise<void> {
     if (!this._store) return;
     const { container, action } = e.detail;
@@ -266,9 +310,13 @@ export class ModernuiDockerPage extends LitElement {
         return;
       case 'remove':
         if (
-          !confirm(
-            `Remove container "${c.name}"? Templates are kept; you can re-add from Add Container.`,
-          )
+          !(await this._askConfirm({
+            heading: 'Remove container',
+            message: `Remove container "${c.name}"? Templates are kept — you can re-add it from Add Container.`,
+            confirmLabel: 'Remove',
+            tone: 'danger',
+            iconName: 'trash',
+          }))
         )
           return;
         await executeContainer(c.name, 'remove');
@@ -369,9 +417,13 @@ export class ModernuiDockerPage extends LitElement {
 
     if (a === 'remove') {
       if (
-        !confirm(
-          `Remove ${selected.length} container${selected.length === 1 ? '' : 's'}? Templates are kept.`,
-        )
+        !(await this._askConfirm({
+          heading: `Remove ${selected.length} container${selected.length === 1 ? '' : 's'}`,
+          message: `Remove ${selected.length} selected container${selected.length === 1 ? '' : 's'}? Templates are kept.`,
+          confirmLabel: 'Remove',
+          tone: 'danger',
+          iconName: 'trash',
+        }))
       )
         return;
       await executeBulk(selected, 'remove');
@@ -694,9 +746,13 @@ export class ModernuiDockerPage extends LitElement {
     if (selected.length === 0) return;
     // Confirm — updating pulls a new image and recreates the container, can be slow.
     if (
-      !confirm(
-        `Update ${selected.length} container${selected.length === 1 ? '' : 's'}? Each will be pulled + recreated.`,
-      )
+      !(await this._askConfirm({
+        heading: `Update ${selected.length} container${selected.length === 1 ? '' : 's'}`,
+        message: `Each selected container will be pulled and recreated. This can take a few minutes.`,
+        confirmLabel: 'Update',
+        tone: 'primary',
+        iconName: 'update',
+      }))
     )
       return;
     this._store.markUpdating(selected);
@@ -722,9 +778,13 @@ export class ModernuiDockerPage extends LitElement {
       .map((c) => c.name);
     if (updatable.length === 0) return;
     if (
-      !confirm(
-        `Update ${updatable.length} container${updatable.length === 1 ? '' : 's'} with available updates? Each will be pulled + recreated.`,
-      )
+      !(await this._askConfirm({
+        heading: `Update ${updatable.length} container${updatable.length === 1 ? '' : 's'}`,
+        message: `Every container with an available update will be pulled and recreated. This can take a few minutes.`,
+        confirmLabel: 'Update all',
+        tone: 'primary',
+        iconName: 'update',
+      }))
     )
       return;
     this._store.markUpdating(updatable);
@@ -955,6 +1015,22 @@ export class ModernuiDockerPage extends LitElement {
             .assignments=${state.tagAssignments}
             .containers=${state.containers}
           ></md-docker-tag-modal>
+        `
+            : nothing
+        }
+
+        ${
+          this._confirm
+            ? html`
+          <md-docker-confirm-modal
+            .heading=${this._confirm.heading}
+            .message=${this._confirm.message}
+            .confirmLabel=${this._confirm.confirmLabel}
+            .tone=${this._confirm.tone}
+            .iconName=${this._confirm.iconName}
+            @confirm=${() => this._resolveConfirm(true)}
+            @cancel=${() => this._resolveConfirm(false)}
+          ></md-docker-confirm-modal>
         `
             : nothing
         }
