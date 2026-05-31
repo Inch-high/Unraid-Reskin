@@ -244,6 +244,9 @@ export class ModernuiDockerPage extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this._unsubscribe?.();
+    // Settle any open confirm so a caller awaiting _askConfirm() isn't left
+    // with a promise that never resolves when the page is torn down.
+    this._resolveConfirm(false);
     if (this._checkPollHandle !== null) {
       window.clearTimeout(this._checkPollHandle);
       this._checkPollHandle = null;

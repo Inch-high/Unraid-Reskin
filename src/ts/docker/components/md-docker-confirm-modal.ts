@@ -78,9 +78,13 @@ export class MdDockerConfirmModal extends LitElement {
     this.dispatchEvent(new CustomEvent('cancel', { bubbles: true, composed: true }));
   }
 
-  // Autofocus the action button so Enter confirms, mirroring native confirm().
+  // Autofocus on open. For primary tone the action button is focused so Enter
+  // confirms (mirroring native confirm()). For destructive (danger) actions we
+  // focus Cancel instead, so an accidental Enter doesn't trigger an irreversible
+  // remove — the safer default for a destructive confirmation.
   firstUpdated(): void {
-    this.renderRoot.querySelector<HTMLButtonElement>('.btn-action')?.focus();
+    const selector = this.tone === 'danger' ? '.btn-ghost' : '.btn-action';
+    this.renderRoot.querySelector<HTMLButtonElement>(selector)?.focus();
   }
 
   render() {
