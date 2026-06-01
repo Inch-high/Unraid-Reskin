@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.3">
+<!ENTITY version   "0.8.4">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,11 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.4 (2026-06-01)
+- Chore (version): make `package.json` the single source of truth for the plugin version so it can no longer drift across files. The front-end reads it via a Vite `define` (`src/ts/version.ts`), render-time PHP pages read a build-emitted `version` file (`modernui_plugin_version()`), and a new `npm run version:check` guard — wired into CI and release — fails the build if `package.json`, `package-lock.json`, and the `.plg` `<!ENTITY version>` disagree.
+- Fix (settings): the Settings → Theme "About" footer and the shell user-menu now show the real plugin version instead of stale hardcoded literals (`v0.7.0 (Phase 7)` / `v0.4.2`), and the user-menu's GitHub link points at the real repo.
+- Docs: README gains a screenshot tour of the rebuilt surfaces (Dashboard, Main, Docker folder/tag management).
+
 ###v0.8.3 (2026-06-01)
 - Fix (docker): keep the `/Docker` "Check for updates" button honest. The status poll cleared the "Checking…" state on its very first 2s tick — a `return` inside the `try` fell through to a `finally` that reset the flag — so on a 40+ container host the button flipped back to idle almost immediately while the real per-image registry walk was still running, making the check look instant and out of sync with the container count. The poll now only concludes once the worker has genuinely completed (it has observed `running:true`, or a `finishedAt` newer than a pre-launch baseline has landed), so the button stays active for the full walk and the snapshot is re-fetched only after the worker rewrites the `webui-info` cache — every container's update badge reflects the fresh check.
 - Fix (docker): the 60s poll limit was a hard total-runtime cap, shorter than a real 40+ container walk, so it could cut the post-check snapshot refresh off mid-walk and read stale `updated` flags. It is now an inactivity watchdog, reset on every observed `running:true`, so a provably-alive worker runs as long as it needs while a worker that never establishes (or wedges) its lock still bails. New `checkUpdatesCompleted()` pure helper covers the decision; +5 unit cases. 456 TS suites green; backend untouched (verified correct against the stock `getAllInfo`/`reloadUpdateStatus` path on a live host).
