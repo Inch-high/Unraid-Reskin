@@ -11,6 +11,13 @@ const distDir = join(root, 'package/theme/dist');
 if (existsSync(distDir)) rmSync(distDir, { recursive: true });
 mkdirSync(distDir, { recursive: true });
 
+// Emit the plugin version into the payload so render-time PHP pages (Theme.page)
+// can show the real version instead of a hardcoded literal. Ships in the txz, so
+// it's present after both `dev-mirror` and a real .plg install.
+const pkgVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+writeFileSync(join(root, 'package/version'), pkgVersion + '\n');
+console.log(`✓ version (${pkgVersion})`);
+
 // Build CSS
 const css = sass.compile(join(root, 'src/styles/modernui.scss'), { style: 'compressed' });
 writeFileSync(join(distDir, 'modernui.css'), css.css);
@@ -26,6 +33,7 @@ for (const entry of [
 ]) {
   await viteBuild({
     root,
+    define: { __MODERNUI_VERSION__: JSON.stringify(pkgVersion) },
     build: {
       outDir: distDir,
       emptyOutDir: false,

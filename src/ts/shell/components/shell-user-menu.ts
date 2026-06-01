@@ -1,8 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { MODERNUI_VERSION } from '../../version';
 
-const VERSION = '0.4.2';
-const GITHUB_URL = 'https://github.com/EXAMPLE/unraid-modernui';
+const GITHUB_URL = 'https://github.com/Inch-high/Unraid-Reskin';
 const MANUAL_URL = '/webGui/include/Help.php';
 
 @customElement('shell-user-menu')
@@ -86,7 +86,7 @@ export class ShellUserMenu extends LitElement {
       <button class="trigger" type="button" @click=${this._toggle} title="User menu">U</button>
       <div class="popover" role="menu">
         <div class="about">
-          <p><strong>Modern UI v${VERSION}</strong> · <a href=${GITHUB_URL} target="_blank">GitHub</a></p>
+          <p><strong>Modern UI v${MODERNUI_VERSION}</strong> · <a href=${GITHUB_URL} target="_blank">GitHub</a></p>
           <p>Unraid® webGui © Lime Technology, Inc. · <a href=${MANUAL_URL} target="_blank">Manual</a></p>
         </div>
         <div class="divider"></div>
