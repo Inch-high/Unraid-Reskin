@@ -35,6 +35,22 @@ Every array, parity and cache device as its own card: model, state, temperature,
 
 Containers organised into collapsible **folders** with per-folder CPU/RAM/disk roll-ups, plus **tags**, instant **search**, **state / tag filters**, and **bulk actions**. *Check for updates* runs a live update walk across every container; *Manage Tags*, *Manage Folders* and *Add Container* round out the toolbar. Folder and tag assignments persist on the flash drive and survive reboots. The stock Docker backend — start/stop/edit/remove and nchan live stats — is left untouched.
 
+#### Organising containers into folders
+
+![Manage Docker Folders dialog — folder list on the left, name/colour/icon and a two-column container picker on the right](docs/screenshots/docker-folders.jpeg)
+
+*Manage Folders* opens a single editor for every folder. Pick a **name**, a **colour** and an **icon**, then assign containers with the two-column picker — *In this folder* on the left, *Available* on the right, click to move either way. A container can live in one folder; anything unassigned falls into **Ungrouped**.
+
+![Creating a new folder — "Demo Stack" with a blue colour, chart icon and two containers assigned](docs/screenshots/docker-folder-new.jpeg)
+
+**+ New folder** adds a fresh entry you can name and fill straightaway. Nothing is written until you hit **Save** (Cancel discards the draft); saves are atomic to `/boot/config/plugins/unraid-modernui/docker-folders.json`, so a crash mid-write can't corrupt your layout.
+
+#### Tagging containers
+
+![Manage Docker Tags dialog — tag list, tag name/colour, and a per-container assignment checklist with tag badges](docs/screenshots/docker-tags.jpeg)
+
+Tags are **cross-cutting** — unlike folders, a container can carry many. *Manage Tags* lists every tag with its colour; pick one to edit its name/colour or tick containers in the filterable assignment list. Tags then become first-class **filters** on the main Docker page (e.g. show only `arr-stack` or `dns`).
+
 ### Settings → Theme
 
 ![Theme settings — independent Modern/Stock toggles for Dashboard, Shell, Docker and Main, plus colour mode and density options](docs/screenshots/theme.jpeg)
