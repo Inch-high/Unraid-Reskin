@@ -15,6 +15,7 @@ import {
   saveSetting,
   checkForUpdates,
   getCheckUpdatesStatus,
+  checkUpdatesCompleted,
   fetchSnapshot,
   openWebUi,
   openLogs,
@@ -581,8 +582,19 @@ export class ModernuiDockerPage extends LitElement {
     if (!this._store || this._checkingUpdates) return;
     this._checkingUpdates = true;
     try {
+      // Baseline the previous run's completion timestamp BEFORE spawning the
+      // worker. The poll loop uses it to tell "this run finished" apart from a
+      // stale finishedAt left over from an earlier check (see
+      // checkUpdatesCompleted). Best-effort — a failed baseline read falls back
+      // to the saw-running guard.
+      let baselineFinishedAt: number | null = null;
+      try {
+        baselineFinishedAt = (await getCheckUpdatesStatus()).finishedAt;
+      } catch {
+        /* baseline is best-effort */
+      }
       await checkForUpdates();
-      this._pollCheckUpdates();
+      this._pollCheckUpdates(baselineFinishedAt);
     } catch (err) {
       this._checkingUpdates = false;
       console.warn('[modernui-docker] check-for-updates failed:', err);
@@ -594,60 +606,95 @@ export class ModernuiDockerPage extends LitElement {
   // on visibilitychange would still serve us, but tab-hidden polling burns
   // background CPU on long-lived tabs — see unraid/webgui#2641).
   //
-  // Soft 60s cap: the worker is already self-healing — posix_kill(pid, 0) on
-  // the lock file cleans stale PIDs, so a crashed worker eventually flips
-  // `status.running` to false. But if PHP-FPM dies mid-fork, the lock + status
-  // file may stay forever stuck in "running". Bail after ~60s so the button
-  // returns to its idle state instead of polling indefinitely.
+  // POLL_MAX_MS is an *inactivity* watchdog, not a total-runtime cap: it's
+  // reset every time the worker reports running:true (see `lastProgressAt`).
+  // A real check of 40+ containers is each a serial HTTPS manifest fetch and
+  // routinely runs well over a minute, so a fixed total cap would cut the
+  // button back to idle long before the walk finished. Resetting on observed
+  // progress lets a provably-alive worker run as long as it needs while still
+  // bailing if it never establishes (or wedges in) its lock — a crashed worker
+  // self-heals anyway: posix_kill(pid, 0) cleans the stale PID and running()
+  // flips to false within one poll.
   private static readonly POLL_INTERVAL_MS = 2000;
   private static readonly POLL_MAX_MS = 60_000;
 
-  private _pollCheckUpdates(): void {
-    const startedAt = Date.now();
+  private _pollCheckUpdates(baselineFinishedAt: number | null): void {
+    // Reset whenever we see the worker running; the watchdog measures time
+    // SINCE the last sign of life, not total elapsed.
+    let lastProgressAt = Date.now();
+    // Has the worker reported running:true at least once? Until it has, a
+    // running:false is "hasn't booted yet", not "done" — see checkUpdatesCompleted.
+    let sawRunning = false;
+    // Were we hidden on the previous tick? Used to grant a fresh watchdog
+    // window the moment we regain visibility (see the tick body).
+    let wasHidden = false;
+    const reschedule = (): void => {
+      this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
+    };
+    const refreshSnapshot = async (): Promise<void> => {
+      const snap = await fetchSnapshot({ withStats: this._store?.getShowStats() ?? false });
+      this._store?.setState({
+        containers: snap.containers,
+        folders: snap.folders,
+        tags: snap.tags,
+        tagAssignments: snap.tagAssignments,
+      });
+    };
     const tick = async (): Promise<void> => {
       this._checkPollHandle = null;
-      if (Date.now() - startedAt > ModernuiDockerPage.POLL_MAX_MS) {
-        // Soft cap reached. Treat as a silent worker failure: still refresh
-        // the snapshot once (the worker might have written update-status.json
-        // even if it never cleared its lock), warn, release the button.
-        console.warn('[modernui-docker] check-for-updates poll exceeded 60s, giving up');
+      // Tab hidden: pause polling (background polling burns CPU on long-lived
+      // tabs). Crucially this runs BEFORE the watchdog — while hidden we don't
+      // observe the worker, so the gap must NOT count as "no sign of life", or
+      // a long walk with a backgrounded tab would bail mid-flight and refresh a
+      // half-written cache (the stale-flag symptom this loop exists to avoid).
+      if (document.hidden) {
+        wasHidden = true;
+        reschedule();
+        return;
+      }
+      // Just regained visibility after a hidden stretch: we couldn't watch the
+      // worker while away, so grant a fresh watchdog window rather than bailing
+      // on a lastProgressAt that's now stale by the whole hidden duration.
+      if (wasHidden) {
+        wasHidden = false;
+        lastProgressAt = Date.now();
+      }
+      if (Date.now() - lastProgressAt > ModernuiDockerPage.POLL_MAX_MS) {
+        // No sign of a running worker for the watchdog window. Treat as a
+        // silent failure: still refresh the snapshot once (the worker might
+        // have written update-status.json before wedging), warn, release the
+        // button.
+        console.warn(
+          '[modernui-docker] check-for-updates watchdog: no running worker for 60s, giving up',
+        );
         try {
-          const snap = await fetchSnapshot({ withStats: this._store?.getShowStats() ?? false });
-          this._store?.setState({
-            containers: snap.containers,
-            folders: snap.folders,
-            tags: snap.tags,
-            tagAssignments: snap.tagAssignments,
-          });
+          await refreshSnapshot();
         } catch {
           /* snapshot is best-effort here */
         }
         this._checkingUpdates = false;
         return;
       }
-      if (document.hidden) {
-        this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
-        return;
-      }
       try {
         const status = await getCheckUpdatesStatus();
         if (status.running) {
-          this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
+          sawRunning = true;
+          lastProgressAt = Date.now();
+        }
+        // Keep polling (and keep the button in its "Checking…" state) until the
+        // run has genuinely completed — NOT on the first premature running:false
+        // the detached worker can momentarily emit before it writes its lock.
+        if (!checkUpdatesCompleted(status, sawRunning, baselineFinishedAt)) {
+          reschedule();
           return;
         }
         if (status.error) {
           console.warn('[modernui-docker] check-for-updates worker error:', status.error);
         }
-        const snap = await fetchSnapshot({ withStats: this._store?.getShowStats() ?? false });
-        this._store?.setState({
-          containers: snap.containers,
-          folders: snap.folders,
-          tags: snap.tags,
-          tagAssignments: snap.tagAssignments,
-        });
+        await refreshSnapshot();
+        this._checkingUpdates = false;
       } catch (err) {
         console.warn('[modernui-docker] status poll failed:', err);
-      } finally {
         this._checkingUpdates = false;
       }
     };
