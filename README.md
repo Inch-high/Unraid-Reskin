@@ -13,6 +13,40 @@ A clean, flat, responsive theme for Unraid 7.x. Inspired by TrueNAS SCALE with r
 
 Each surface has its own Modern/Stock toggle in **Settings → Theme**, and every replaced page falls back to stock instantly (toggle, `?modernui=off`, or uninstall).
 
+## Screenshots
+
+A tour of the rebuilt surfaces. Every page keeps Unraid's stock backend — only the UI layer is replaced — and each can be flipped back to stock independently from [Settings → Theme](#settings--theme).
+
+### Dashboard
+
+![Modern Dashboard — hero metrics strip with grouped Compute, Storage, Devices, Network and Workloads cards](docs/screenshots/dashboard.jpeg)
+
+A single hero strip across the top — **Array**, **Cache**, **Workloads**, **Power** — then grouped cards below: per-core **Processor & Memory**, a **Disk Location** bay map, **GPU** and **IPMI** sensors, live **Network** throughput, and a **Docker Containers** roll-up. Cards whose source plugin isn't installed are quietly skipped, so the layout stays clean on any install (see [optional plugin dependencies](#optional-plugin-dependencies)).
+
+### Main — array & devices
+
+![Modern Main page — array usage bar plus per-device cards for every disk and cache pool](docs/screenshots/main.jpeg)
+
+Every array, parity and cache device as its own card: model, state, temperature, reads/writes/errors, filesystem and usage, with SMART health at a glance. The usage bar up top shows capacity, free space and parity status; the full **Array Operation** panel (Start/Stop, parity checks, spin up/down, encryption-key entry) lives behind *Array Details*. Every action reuses Unraid's stock endpoints.
+
+### Docker
+
+![Modern Docker page — containers grouped into collapsible folders with search, tag filters and bulk actions](docs/screenshots/docker.jpeg)
+
+Containers organised into collapsible **folders** with per-folder CPU/RAM/disk roll-ups, plus **tags**, instant **search**, **state / tag filters**, and **bulk actions**. *Check for updates* runs a live update walk across every container; *Manage Tags*, *Manage Folders* and *Add Container* round out the toolbar. Folder and tag assignments persist on the flash drive and survive reboots. The stock Docker backend — start/stop/edit/remove and nchan live stats — is left untouched.
+
+### Settings → Theme
+
+![Theme settings — independent Modern/Stock toggles for Dashboard, Shell, Docker and Main, plus colour mode and density options](docs/screenshots/theme.jpeg)
+
+Each surface — **Dashboard**, **Shell**, **Docker page**, **Main page** — has its own **Modern / Stock** switch, so you can adopt the theme one page at a time. Also here: light / dark / system colour mode, comfortable / compact density, zebra stripes, and reduced-motion control. **Disable theme** reverts the entire UI to stock instantly — one of four [fallback paths](#fallback-to-stock-ui-any-time-instantly).
+
+### Consistent shell everywhere
+
+![Stock Settings index rendered inside the modern shell](docs/screenshots/settings.jpeg)
+
+Pages that aren't individually rebuilt still pick up the new shell — left sidebar, slim topbar, and the sidebar status footer (array, temps, power, UPS). Above is Unraid's stock **Settings** index, re-skinned without touching its contents.
+
 ## Install
 
 Two options:
