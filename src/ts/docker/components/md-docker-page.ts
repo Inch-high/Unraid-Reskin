@@ -625,6 +625,9 @@ export class ModernuiDockerPage extends LitElement {
     // Has the worker reported running:true at least once? Until it has, a
     // running:false is "hasn't booted yet", not "done" — see checkUpdatesCompleted.
     let sawRunning = false;
+    // Were we hidden on the previous tick? Used to grant a fresh watchdog
+    // window the moment we regain visibility (see the tick body).
+    let wasHidden = false;
     const reschedule = (): void => {
       this._checkPollHandle = window.setTimeout(tick, ModernuiDockerPage.POLL_INTERVAL_MS);
     };
@@ -639,6 +642,23 @@ export class ModernuiDockerPage extends LitElement {
     };
     const tick = async (): Promise<void> => {
       this._checkPollHandle = null;
+      // Tab hidden: pause polling (background polling burns CPU on long-lived
+      // tabs). Crucially this runs BEFORE the watchdog — while hidden we don't
+      // observe the worker, so the gap must NOT count as "no sign of life", or
+      // a long walk with a backgrounded tab would bail mid-flight and refresh a
+      // half-written cache (the stale-flag symptom this loop exists to avoid).
+      if (document.hidden) {
+        wasHidden = true;
+        reschedule();
+        return;
+      }
+      // Just regained visibility after a hidden stretch: we couldn't watch the
+      // worker while away, so grant a fresh watchdog window rather than bailing
+      // on a lastProgressAt that's now stale by the whole hidden duration.
+      if (wasHidden) {
+        wasHidden = false;
+        lastProgressAt = Date.now();
+      }
       if (Date.now() - lastProgressAt > ModernuiDockerPage.POLL_MAX_MS) {
         // No sign of a running worker for the watchdog window. Treat as a
         // silent failure: still refresh the snapshot once (the worker might
@@ -653,10 +673,6 @@ export class ModernuiDockerPage extends LitElement {
           /* snapshot is best-effort here */
         }
         this._checkingUpdates = false;
-        return;
-      }
-      if (document.hidden) {
-        reschedule();
         return;
       }
       try {
