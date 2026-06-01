@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "package": "node tools/package-txz.mjs",
+    "version:check": "node tools/check-version-sync.mjs",
     "dev-mirror": "node tools/dev-mirror.mjs",
     "test": "npm run test:ts && npm run test:php",
     "test:ts": "vitest run",

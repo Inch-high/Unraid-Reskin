@@ -83,6 +83,18 @@ function modernui_split_model_serial(string $id): array
     return [substr($id, 0, $pos), substr($id, $pos + 1)];
 }
 
+// Read the plugin version from the `version` file the build emits into the
+// payload root (one dir up from include/). Lets render-time PHP pages show the
+// real version without hardcoding it. Returns '' if the file is missing.
+function modernui_plugin_version(): string
+{
+    $path = dirname(__DIR__) . '/version';
+    if (!is_file($path)) {
+        return '';
+    }
+    return trim((string) file_get_contents($path));
+}
+
 function modernui_disabled_flag_path(string $cfgdir): string
 {
     return rtrim($cfgdir, '/') . '/disabled';

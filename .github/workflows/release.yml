@@ -86,6 +86,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The tag check above pins package.json + .plg to the tag; this also
+      # asserts package-lock.json agrees so the three local files never drift.
+      - name: Check version sync
+        run: npm run version:check
+
       - name: Run TS tests
         run: npm run test:ts
 

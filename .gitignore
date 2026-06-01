@@ -1,5 +1,6 @@
 node_modules/
 package/theme/dist/
+package/version
 package/backups/
 *.txz
 .DS_Store
