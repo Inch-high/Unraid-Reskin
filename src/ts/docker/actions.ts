@@ -226,6 +226,35 @@ export async function getCheckUpdatesStatus(): Promise<CheckUpdatesStatus> {
   };
 }
 
+// Decide whether a status poll that reports `running: false` means THIS run
+// actually finished — vs. the detached worker simply not having written its PID
+// lock yet (it's spawned via `exec(nohup … &)` and establishes its own lock
+// only once it cold-starts, so the very first poll can momentarily race ahead
+// of it). Concluding on that premature `running: false` is what made the button
+// flip back to idle in ~2s while the real 40+ container registry walk was still
+// running.
+//
+// A run is complete when EITHER:
+//   • we've observed the worker `running: true` at least once (it provably got
+//     going — the walk is far longer than the poll interval, so any real run is
+//     seen at least once), OR
+//   • a completion timestamp newer than the pre-launch baseline has landed
+//     (covers a tiny/fast host whose worker finishes between two polls, so we
+//     never catch it running but still conclude promptly instead of waiting out
+//     the watchdog).
+export function checkUpdatesCompleted(
+  status: CheckUpdatesStatus,
+  sawRunning: boolean,
+  baselineFinishedAt: number | null,
+): boolean {
+  if (status.running) return false;
+  if (sawRunning) return true;
+  return (
+    status.finishedAt !== null &&
+    (baselineFinishedAt === null || status.finishedAt > baselineFinishedAt)
+  );
+}
+
 // =========================================================================
 // Settings persistence — partial POST to the shared theme save endpoint.
 // save.php merges incoming keys over the existing settings.cfg, so we only

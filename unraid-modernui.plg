@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.2">
+<!ENTITY version   "0.8.3">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,10 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.3 (2026-06-01)
+- Fix (docker): keep the `/Docker` "Check for updates" button honest. The status poll cleared the "Checking…" state on its very first 2s tick — a `return` inside the `try` fell through to a `finally` that reset the flag — so on a 40+ container host the button flipped back to idle almost immediately while the real per-image registry walk was still running, making the check look instant and out of sync with the container count. The poll now only concludes once the worker has genuinely completed (it has observed `running:true`, or a `finishedAt` newer than a pre-launch baseline has landed), so the button stays active for the full walk and the snapshot is re-fetched only after the worker rewrites the `webui-info` cache — every container's update badge reflects the fresh check.
+- Fix (docker): the 60s poll limit was a hard total-runtime cap, shorter than a real 40+ container walk, so it could cut the post-check snapshot refresh off mid-walk and read stale `updated` flags. It is now an inactivity watchdog, reset on every observed `running:true`, so a provably-alive worker runs as long as it needs while a worker that never establishes (or wedges) its lock still bails. New `checkUpdatesCompleted()` pure helper covers the decision; +5 unit cases. 456 TS suites green; backend untouched (verified correct against the stock `getAllInfo`/`reloadUpdateStatus` path on a live host).
+
 ###v0.8.2 (2026-05-31)
 - Fix (docker): repair the `/Docker` "check for updates" pipeline end-to-end. The detached worker had been silently failing on every run — it `require`d `DockerClient.php` from *inside* the worker function, scoping that file's top-level `$dockerManPaths` as a function-local, so `getAllInfo()`'s `global $dockerManPaths` saw null and threw "Path must not be empty" before writing anything. The docker stack is now bootstrapped at FILE scope in the CLI dispatch block (matching `docker-state.php`), and the worker calls `getAllInfo($reload=true)` instead of `reloadUpdateStatus()` directly so it rewrites the per-container `webui-info` cache (the `updated` field the snapshot reads) in the same pass — update badges now actually surface.
 - Fix (docker): clear a stuck "Update available" badge after a successful update. Unraid's `unraid-update-status.json` can keep the pre-update local digest and `reloadUpdateStatus()` reuses it, so the badge could persist forever. When an update probe completes via container **id rotation** (the definitive sign the pull succeeded and the container was recreated), the modern store now force-clears `updateAvailable` instead of trusting the stale shared cache; a genuine future update re-surfaces normally.

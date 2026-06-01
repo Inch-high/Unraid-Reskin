@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkForUpdates, getCheckUpdatesStatus } from '../../../src/ts/docker/actions';
+import {
+  checkForUpdates,
+  getCheckUpdatesStatus,
+  checkUpdatesCompleted,
+} from '../../../src/ts/docker/actions';
+import type { CheckUpdatesStatus } from '../../../src/ts/docker/actions';
 
 // The check-for-updates client is intentionally thin (POST to start, GET to
 // poll). These tests pin down the wire format so the front-end keeps lining
@@ -65,5 +70,55 @@ describe('checkForUpdates / getCheckUpdatesStatus', () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
     const status = await getCheckUpdatesStatus();
     expect(status).toEqual({ running: false, finishedAt: null, error: null });
+  });
+});
+
+// The completion guard is what keeps the "Checking…" button honest: the
+// detached worker is spawned async, so the first status poll can race ahead of
+// it and momentarily see running:false before the worker has written its lock.
+// Concluding on that would flip the button back to idle in ~2s while the real
+// 40+ container walk is still going (the original bug). These pin the decision.
+describe('checkUpdatesCompleted', () => {
+  const status = (over: Partial<CheckUpdatesStatus> = {}): CheckUpdatesStatus => ({
+    running: false,
+    finishedAt: null,
+    error: null,
+    ...over,
+  });
+
+  it('never completes while the worker reports running', () => {
+    // Even if a stale finishedAt is present, running:true wins.
+    expect(checkUpdatesCompleted(status({ running: true, finishedAt: 100 }), false, 50)).toBe(
+      false,
+    );
+    expect(checkUpdatesCompleted(status({ running: true }), true, null)).toBe(false);
+  });
+
+  it('does NOT conclude on a premature running:false before the worker is seen', () => {
+    // First poll beat the worker to its lock: running:false, no fresh finishedAt
+    // (matches the baseline), never saw it running → keep polling.
+    expect(checkUpdatesCompleted(status({ finishedAt: 100 }), false, 100)).toBe(false);
+    // No prior completion at all, worker not yet booted.
+    expect(checkUpdatesCompleted(status({ finishedAt: null }), false, null)).toBe(false);
+  });
+
+  it('completes once the worker has been observed running', () => {
+    expect(checkUpdatesCompleted(status({ finishedAt: 100 }), true, 100)).toBe(true);
+    expect(checkUpdatesCompleted(status({ finishedAt: null }), true, null)).toBe(true);
+  });
+
+  it('completes on a fresh finishedAt even if running was never observed', () => {
+    // Tiny/fast host: worker finished between two polls. finishedAt advanced
+    // past the pre-launch baseline → conclude promptly instead of waiting out
+    // the watchdog.
+    expect(checkUpdatesCompleted(status({ finishedAt: 200 }), false, 100)).toBe(true);
+    // No baseline (couldn't read it) but a finishedAt exists → trust it.
+    expect(checkUpdatesCompleted(status({ finishedAt: 200 }), false, null)).toBe(true);
+  });
+
+  it('treats an unchanged finishedAt as stale, not a fresh completion', () => {
+    expect(checkUpdatesCompleted(status({ finishedAt: 100 }), false, 100)).toBe(false);
+    // Clock skew / equal timestamp is not "newer".
+    expect(checkUpdatesCompleted(status({ finishedAt: 100 }), false, 150)).toBe(false);
   });
 });
