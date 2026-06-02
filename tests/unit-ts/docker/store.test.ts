@@ -408,6 +408,30 @@ describe('updating state', () => {
     expect(store.getState().containers[0].updateAvailable).toBe(false);
   });
 
+  it('loses the badge force-clear if probes are cleared BEFORE the reconciling snapshot', () => {
+    // Ordering contract for boot.ts onBatchComplete (the stuck-badge bug): the
+    // id-rotation force-clear only runs while the update probe still exists.
+    // clearAllUpdating() before the resync's setState() deletes the probe, so
+    // reconcileUpdating() has nothing to match and the badge falls back to the
+    // snapshot's stale updateAvailable=true. onBatchComplete must therefore
+    // resync FIRST, then clear. This test pins that dependency so a future
+    // reorder back to clear-then-resync fails loudly.
+    const store = createDockerStore();
+    const s = sampleState();
+    s.containers[0] = mkContainer({ name: 'plex', id: 'old-id', updateAvailable: true });
+    store.setState(s);
+    store.markUpdating(['plex']);
+
+    // Wrong order: wipe probes before the recreated snapshot arrives.
+    store.clearAllUpdating();
+    const next = sampleState();
+    next.containers[0] = mkContainer({ name: 'plex', id: 'new-id', updateAvailable: true });
+    store.setState(next);
+
+    // No probe survived, so the lagging-cache badge persists — the bug.
+    expect(store.getState().containers[0].updateAvailable).toBe(true);
+  });
+
   it('clears entries when updateAvailable flips true→false (id unchanged path)', () => {
     const store = createDockerStore();
     const s = sampleState();
