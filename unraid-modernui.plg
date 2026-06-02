@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.4">
+<!ENTITY version   "0.8.5">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,10 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.5 (2026-06-02)
+- Fix (docker): stop `/Docker` from blanking — and stop a stale "update available" badge — while a container update is in flight. During the stock `update_container` flow's rewrite of the `webui-info` `docker.json`, `getAllInfo()` momentarily returns an empty list (still HTTP 200), which overwrote the populated store with nothing and poisoned the per-tab snapshot cache, leaving the page blank across refreshes until the update finished. `docker-state.php` now cross-checks `getAllInfo()` against `getDockerContainers()` (the docker socket, unaffected by the rewrite) and responds `503` when the daemon still lists containers but the cache reads empty; the client keeps its current rows and retries on the next resync instead of clobbering them. A genuinely empty server (every container deleted) still returns `[]` and renders the empty state — fixing the inverse "ghost rows after delete-all" bug the first client-side guard introduced. No extra docker calls: both sources were already fetched on every load.
+- Fix (docker): clear the freshly-updated "update available" badge without a manual reload. The `_DONE_` handler now resyncs *before* clearing the update probes, so the id-rotation reconcile (the definitive "pull succeeded, container recreated" signal) can force-clear the badge over Unraid's lagging digest cache while the probe still exists; clearing first left reconcile nothing to match and the stale badge persisted. New `docker-state.test.php` for the transient-empty disambiguation plus `boot.ts`/`store.ts` ordering coverage; 116 TS + PHP suites green.
+
 ###v0.8.4 (2026-06-01)
 - Chore (version): make `package.json` the single source of truth for the plugin version so it can no longer drift across files. The front-end reads it via a Vite `define` (`src/ts/version.ts`), render-time PHP pages read a build-emitted `version` file (`modernui_plugin_version()`), and a new `npm run version:check` guard — wired into CI and release — fails the build if `package.json`, `package-lock.json`, and the `.plg` `<!ENTITY version>` disagree.
 - Fix (settings): the Settings → Theme "About" footer and the shell user-menu now show the real plugin version instead of stale hardcoded literals (`v0.7.0 (Phase 7)` / `v0.4.2`), and the user-menu's GitHub link points at the real repo.
