@@ -147,6 +147,13 @@ export async function boot(): Promise<void> {
       // Only request stats when the toggle is on — saves a second+ on
       // every fetch when stats aren't shown. nchan deltas keep CPU/RAM
       // fresh for running containers regardless.
+      // docker-state.php returns 503 during the window the stock update_container
+      // flow rewrites the webui-info docker.json that getAllInfo() reads (the
+      // container list is momentarily empty though the daemon still has them).
+      // fetchSnapshot() throws on that non-200, so the catch below keeps the
+      // current state and we retry on the next resync — instead of blanking the
+      // page and poisoning the SWR cache with an empty list. A genuinely empty
+      // server returns 200 with an empty list and renders the empty state.
       const snapshot = await fetchSnapshot({ withStats: store.getShowStats() });
       lastServerUptime = snapshot.serverUptime;
       store.setState({
@@ -167,11 +174,16 @@ export async function boot(): Promise<void> {
   // snapshot of the in-flight pull/recreate sequence. The page mounts a panel
   // that consumes this.
   //
-  // The onBatchComplete callback fires on the script's `_DONE_` marker — we
-  // force-clear the docker store's updating set + refetch so the panel and
-  // per-row "update available" badges don't sit on stale state if the digest
-  // cache hasn't caught up yet. Without this fallback, "Working…" would
-  // linger until the 5-min watchdog fired.
+  // The onBatchComplete callback fires on the script's `_DONE_` marker. We
+  // resync THEN clear the updating set — order matters. reconcileUpdating()
+  // force-clears a recreated container's stale "update available" badge (the
+  // Unraid digest cache lags after a pull; see store.ts), but only while that
+  // container's update probe still exists. Clearing probes first — as this used
+  // to — left reconcile nothing to match, so the freshly-updated badge persisted
+  // on the lagging cache until a manual page reload. So: resync first (the
+  // rotated-id snapshot reconciles and clears the badge), then clearAllUpdating
+  // mops up any probe that didn't self-reconcile (a no-op/failed update) so the
+  // panel doesn't sit on "Working…" until the 5-min watchdog.
   const progressStore = createUpdateProgressStore(
     (image) => {
       // image string ("linuxserver/plex:latest") → container.name. Match
@@ -185,8 +197,7 @@ export async function boot(): Promise<void> {
       return null;
     },
     () => {
-      store.clearAllUpdating();
-      void resync();
+      void resync().then(() => store.clearAllUpdating());
     },
   );
 
