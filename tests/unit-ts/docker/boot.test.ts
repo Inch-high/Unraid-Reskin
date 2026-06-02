@@ -1,28 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { isDockerPageEnabled, isTransientEmptySnapshot } from '../../../src/ts/docker/boot';
+import { isDockerPageEnabled } from '../../../src/ts/docker/boot';
 
-// Regression: refreshing /Docker while a container update is in flight rendered
-// a blank page. docker-state.php returns `containers: []` (HTTP 200) during the
-// window the stock update_container flow rewrites webui-info docker.json, and
-// resync() overwrote the populated store + SWR cache with that empty list — so
-// the page blanked and stayed blank across refreshes until the update finished.
-// isTransientEmptySnapshot() is the guard that makes resync() skip that overwrite.
-describe('isTransientEmptySnapshot', () => {
-  it('treats an empty snapshot as transient when the store already has rows', () => {
-    expect(isTransientEmptySnapshot(0, 43)).toBe(true);
-  });
-
-  it('accepts an empty snapshot on first load (store still empty)', () => {
-    // A genuinely empty server must still render the empty state, not be skipped.
-    expect(isTransientEmptySnapshot(0, 0)).toBe(false);
-  });
-
-  it('always accepts a non-empty snapshot', () => {
-    expect(isTransientEmptySnapshot(43, 43)).toBe(false);
-    expect(isTransientEmptySnapshot(1, 0)).toBe(false);
-    expect(isTransientEmptySnapshot(42, 43)).toBe(false); // a real removal, not empty
-  });
-});
+// The transient-empty-snapshot guard that used to live here moved server-side:
+// docker-state.php now returns 503 (not 200 + `containers: []`) while the stock
+// update_container flow rewrites webui-info docker.json, so resync()'s catch
+// keeps current state. See modernui_is_transient_empty in docker-state.php and
+// docker-state.test.php. Removing the client heuristic also fixes the inverse
+// bug — a genuinely empty server (all containers deleted) now renders the empty
+// state instead of being suppressed as "transient".
 
 describe('isDockerPageEnabled gate', () => {
   it('defaults ON when the attribute is absent', () => {

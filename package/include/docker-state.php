@@ -27,13 +27,33 @@ if (is_file(MODERNUI_DOCKER_CLIENT)) {
     require_once MODERNUI_DOCKER_CLIENT;               // populates $dockerManPaths + $driver
 }
 
-function modernui_docker_state(bool $withStats = false): array
+// True when getAllInfo() returned no rows while the docker daemon still lists
+// containers — i.e. the stock update_container flow is mid-rewrite of the
+// webui-info docker.json that getAllInfo() reads. getDockerContainers() hits
+// the docker socket directly and is unaffected by that rewrite, so it's the
+// source of truth: an empty info list alongside a non-empty daemon means
+// "transient rewrite", not "genuinely empty server". The caller responds 503
+// for the transient case so the client keeps its current state and retries,
+// instead of blanking the page on a momentarily-empty snapshot.
+function modernui_is_transient_empty(int $infoCount, int $daemonCount): bool
+{
+    return $infoCount === 0 && $daemonCount > 0;
+}
+
+// $transient is set true (by-ref) when the snapshot is a transient mid-rewrite
+// empty (see modernui_is_transient_empty). On that path the returned array is
+// empty and the caller should respond 503 rather than serve it.
+function modernui_docker_state(bool $withStats = false, bool &$transient = false): array
 {
     global $dockerManPaths, $driver;  // bound from DockerClient.php's top-level scope
+
+    $transient = false;
 
     modernui_maybe_migrate_folder_view2();
 
     $containers = [];
+    $infoCount = 0;
+    $daemonCount = 0;
     if (class_exists('DockerTemplates') && class_exists('DockerClient')) {
         try {
             // Two data sources to merge:
@@ -41,7 +61,8 @@ function modernui_docker_state(bool $withStats = false): array
             //   getDockerContainers() →  docker socket data (Image, Status, Id, Ports, NetworkMode)
             // Keyed by container Name in both.
             $templates = new DockerTemplates();
-            $info = $templates->getAllInfo(false, true, false);
+            $info = (array)$templates->getAllInfo(false, true, false);
+            $infoCount = count($info);
 
             $client = new DockerClient();
             $rawContainers = $client->getDockerContainers();
@@ -51,6 +72,7 @@ function modernui_docker_state(bool $withStats = false): array
                     $byName[$ct['Name']] = $ct;
                 }
             }
+            $daemonCount = count($byName);
 
             // Sizes + live CPU/RAM are both expensive (sizes walks each
             // container's RW layer; `docker stats --no-stream` blocks ~1s for
@@ -61,7 +83,7 @@ function modernui_docker_state(bool $withStats = false): array
             $sizes = $withStats ? modernui_fetch_sizes($client) : [];
             $stats = $withStats ? modernui_fetch_docker_stats() : [];
 
-            foreach ((array)$info as $name => $row) {
+            foreach ($info as $name => $row) {
                 $container = $byName[$name] ?? [];
                 $shortId = substr((string)($container['Id'] ?? ''), 0, 12);
                 $vdisk = $sizes[$shortId] ?? null;
@@ -72,6 +94,15 @@ function modernui_docker_state(bool $withStats = false): array
             error_log('[modernui] docker-state error: ' . $e->getMessage());
             $containers = [];
         }
+    }
+
+    // Mid-rewrite of the webui-info docker.json: bail before reading folders/tags
+    // and let the caller serve a 503. The client treats that as "keep current
+    // state, retry on the next resync" rather than accepting an empty list. A
+    // genuinely empty server (daemon also empty) falls through and returns [].
+    if (modernui_is_transient_empty($infoCount, $daemonCount)) {
+        $transient = true;
+        return [];
     }
 
     $folders = modernui_read_folders();
@@ -269,5 +300,16 @@ if (PHP_SAPI !== 'cli') {
     // ?stats=1 opts into the expensive size + docker-stats fetches. The
     // front-end only sends it when the Stats pill is on.
     $withStats = isset($_GET['stats']) && $_GET['stats'] === '1';
-    modernui_json_response(modernui_docker_state($withStats));
+    $transient = false;
+    $snapshot = modernui_docker_state($withStats, $transient);
+    if ($transient) {
+        // Mid-rewrite of the webui-info docker.json by the stock update flow:
+        // the container list is momentarily empty though the daemon still has
+        // them. 503 tells the client to keep its current state and retry —
+        // fetchSnapshot() throws on the non-200 and resync()'s catch swallows
+        // it. See modernui_is_transient_empty.
+        modernui_json_response(['error' => 'transient', 'retry' => true], 503);
+    } else {
+        modernui_json_response($snapshot);
+    }
 }

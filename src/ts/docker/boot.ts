@@ -19,17 +19,6 @@ export function isDockerPageEnabled(doc: Document): boolean {
   return doc.documentElement.dataset.modernuiDocker !== 'off';
 }
 
-// True when an incoming snapshot is an empty container list while the store
-// already holds containers. docker-state.php returns `containers: []` (still
-// HTTP 200) during the window the stock update_container flow rewrites the
-// webui-info docker.json that getAllInfo() reads. Accepting it would blank the
-// page and poison the SWR cache; resync() skips the overwrite in that case and
-// waits for the next snapshot. First load (currentCount === 0) falls through so
-// a genuinely empty server still renders the empty state.
-export function isTransientEmptySnapshot(incomingCount: number, currentCount: number): boolean {
-  return incomingCount === 0 && currentCount > 0;
-}
-
 // Parse a docker-style size string like "25.34MiB" or "1.5GiB" into bytes.
 // Matches the format `docker stats --format='{{.MemUsage}}'` produces; MiB/GiB
 // use 1024 base, MB/GB use 1000 base per Docker CLI conventions.
@@ -158,21 +147,15 @@ export async function boot(): Promise<void> {
       // Only request stats when the toggle is on — saves a second+ on
       // every fetch when stats aren't shown. nchan deltas keep CPU/RAM
       // fresh for running containers regardless.
+      // docker-state.php returns 503 during the window the stock update_container
+      // flow rewrites the webui-info docker.json that getAllInfo() reads (the
+      // container list is momentarily empty though the daemon still has them).
+      // fetchSnapshot() throws on that non-200, so the catch below keeps the
+      // current state and we retry on the next resync — instead of blanking the
+      // page and poisoning the SWR cache with an empty list. A genuinely empty
+      // server returns 200 with an empty list and renders the empty state.
       const snapshot = await fetchSnapshot({ withStats: store.getShowStats() });
       lastServerUptime = snapshot.serverUptime;
-      // Guard against a transient empty snapshot clobbering good state. While the
-      // stock update_container flow recreates a container, it rewrites the
-      // webui-info docker.json that getAllInfo() reads; for that window
-      // docker-state.php returns `containers: []` — still HTTP 200, so the catch
-      // below never fires. Accepting it would blank the page AND poison the SWR
-      // cache (writeCachedSnapshot), leaving it blank across refreshes until the
-      // update finished. Keep current state and wait for the next resync (nchan
-      // delta / update-complete callback) to deliver the real list.
-      if (
-        isTransientEmptySnapshot(snapshot.containers.length, store.getState().containers.length)
-      ) {
-        return;
-      }
       store.setState({
         containers: snapshot.containers,
         folders: snapshot.folders,
