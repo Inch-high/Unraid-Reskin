@@ -9,6 +9,7 @@ import type {
   DockerFoldersFile,
   DockerTagsFile,
 } from './types';
+import { dlog } from './debug';
 
 export type DockerAction = 'start' | 'stop' | 'restart' | 'pause' | 'resume' | 'remove' | 'update';
 
@@ -127,6 +128,21 @@ export interface DockerSnapshot {
   serverUptime: number | null;
 }
 
+// Error thrown by fetchSnapshot on a non-200. Carries the HTTP status so
+// callers (and the debug log) can distinguish the transient 503 the stock
+// backend serves while it rewrites the webui-info docker.json — during a
+// container update or a check-for-updates run — from a genuine failure.
+export class SnapshotError extends Error {
+  constructor(public readonly status: number) {
+    super(`docker-state.php ${status}`);
+    this.name = 'SnapshotError';
+  }
+  /** The transient mid-rewrite window (see docker-state.php modernui_is_transient_empty). */
+  get isTransient(): boolean {
+    return this.status === 503;
+  }
+}
+
 // withStats=true opts into the expensive VDisk + `docker stats` fetches on
 // the server. We only pass it when the Stats pill is on — otherwise the hot
 // snapshot path takes ~1s+ less (no shell-out to `docker stats --no-stream`,
@@ -135,9 +151,33 @@ export interface DockerSnapshot {
 export async function fetchSnapshot(opts: { withStats?: boolean } = {}): Promise<DockerSnapshot> {
   const url =
     '/plugins/unraid-modernui/include/docker-state.php' + (opts.withStats ? '?stats=1' : '');
-  const res = await fetch(url, { credentials: 'same-origin' });
-  if (!res.ok) throw new Error(`docker-state.php ${res.status}`);
-  return res.json();
+  const t = Date.now();
+  let res: Response;
+  try {
+    res = await fetch(url, { credentials: 'same-origin' });
+  } catch (err) {
+    // Network-level failure (offline, connection reset mid-update). Surfaced
+    // distinctly from an HTTP error so the debug trace shows which it was.
+    dlog('fetchSnapshot: network error', { withStats: !!opts.withStats, err: String(err) });
+    throw err;
+  }
+  if (!res.ok) {
+    // 503 here is the expected transient window, not a bug — log it as such so
+    // the navigate-away-during-update repro reads clearly in the console.
+    dlog('fetchSnapshot: HTTP error', {
+      status: res.status,
+      transient: res.status === 503,
+      ms: Date.now() - t,
+    });
+    throw new SnapshotError(res.status);
+  }
+  const snapshot = (await res.json()) as DockerSnapshot;
+  dlog('fetchSnapshot: ok', {
+    containers: snapshot.containers?.length ?? 0,
+    withStats: !!opts.withStats,
+    ms: Date.now() - t,
+  });
+  return snapshot;
 }
 
 // =========================================================================

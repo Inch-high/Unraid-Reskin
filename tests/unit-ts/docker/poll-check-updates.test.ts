@@ -44,12 +44,18 @@ const POLL_MAX_MS = 60_000;
 // loop, and return the page + a setState spy. Cast to `any` — `_pollCheckUpdates`
 // and `_checkingUpdates` are private, but driving the real method is the whole
 // point (the regression was in this method, not in any public surface).
-function startPoll(baselineFinishedAt: number | null) {
+function startPoll(
+  baselineFinishedAt: number | null,
+  containers: Array<{ updateAvailable?: boolean }> = [],
+) {
   const setState = vi.fn();
   // Cast to `any` to drive the private poll loop directly — the regression was
   // in this method, so testing it through the real method is the point.
   const page = new ModernuiDockerPage() as any;
-  page._store = { getShowStats: () => false, setState };
+  // getState feeds the post-completion result banner (_announceCheckResult),
+  // which counts updateAvailable containers — supply it so that path runs for
+  // real instead of throwing and being swallowed by the poll's catch.
+  page._store = { getShowStats: () => false, setState, getState: () => ({ containers }) };
   page._checkingUpdates = true;
   page._pollCheckUpdates(baselineFinishedAt);
   return { page, setState };
@@ -99,6 +105,24 @@ describe('_pollCheckUpdates orchestration', () => {
     expect(page._checkingUpdates).toBe(false);
     expect(fetchSnapshotMock).toHaveBeenCalledTimes(1);
     expect(setState).toHaveBeenCalledTimes(1);
+    // Completion also surfaces the result banner — here the "all up to date"
+    // (zero updateAvailable) case, which otherwise produces no visible change.
+    expect(page._checkSummary).toEqual({ tone: 'success', text: 'All containers up to date' });
+  });
+
+  it('announces the update count in the completion banner', async () => {
+    // Two of three containers flag updateAvailable → the banner pluralises the
+    // count. Exercises the _announceCheckResult path that reads store state.
+    getStatusMock.mockResolvedValue(status({ running: false, finishedAt: 1005 }));
+    const { page } = startPoll(1000, [
+      { updateAvailable: true },
+      { updateAvailable: false },
+      { updateAvailable: true },
+    ]);
+
+    await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+    expect(page._checkingUpdates).toBe(false);
+    expect(page._checkSummary).toEqual({ tone: 'info', text: '2 updates available' });
   });
 
   it('concludes promptly on a fast host (fresh finishedAt, never seen running)', async () => {
