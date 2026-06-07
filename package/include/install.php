@@ -153,6 +153,19 @@ function modernui_inject_script_tag(): void
     file_put_contents(MODERNUI_LAYOUT_FILE, $injected, LOCK_EX);
 }
 
+// Build a dist asset URL with a cache-busting ?v=<mtime> query so a plugin
+// update doesn't leave the browser running a stale bundle (the classic
+// blank-page-until-hard-refresh after an upgrade). Mirrors the filemtime
+// busting already applied to loader.js + modernui.css via MODERNUI_SCRIPT_TAG /
+// MODERNUI_STYLE_TAG. install.php runs after the new files are extracted, so the
+// mtimes are fresh. Falls back to the bare URL if the file is unreadable.
+function modernui_dist_asset_url(string $file): string
+{
+    $base = '/plugins/unraid-modernui/theme/dist/' . $file;
+    $mtime = @filemtime('/usr/local/emhttp/plugins/unraid-modernui/theme/dist/' . $file);
+    return $mtime ? $base . '?v=' . $mtime : $base;
+}
+
 function modernui_generate_loader_js(bool $disabled): void
 {
     $target = $disabled ? 're-enable.js' : 'modernui.js';
@@ -175,13 +188,13 @@ function modernui_generate_loader_js(bool $disabled): void
     $extraScript = '';
     if (!$disabled) {
         $extraScript .= "var d=document.createElement('script');\n"
-                      . "d.src='/plugins/unraid-modernui/theme/dist/modernui-dashboard.js';\n"
+                      . "d.src='" . modernui_dist_asset_url('modernui-dashboard.js') . "';\n"
                       . "document.head.appendChild(d);\n";
         $extraScript .= "var dk=document.createElement('script');\n"
-                      . "dk.src='/plugins/unraid-modernui/theme/dist/modernui-docker.js';\n"
+                      . "dk.src='" . modernui_dist_asset_url('modernui-docker.js') . "';\n"
                       . "document.head.appendChild(dk);\n";
         $extraScript .= "var mn=document.createElement('script');\n"
-                      . "mn.src='/plugins/unraid-modernui/theme/dist/modernui-main.js';\n"
+                      . "mn.src='" . modernui_dist_asset_url('modernui-main.js') . "';\n"
                       . "document.head.appendChild(mn);\n";
     }
     $loader = "(function(){\n"
@@ -197,7 +210,7 @@ function modernui_generate_loader_js(bool $disabled): void
         . 'r.dataset.modernuiDockerFolderDefault=' . json_encode($dockerFolderDefault) . ";\n"
         . 'r.dataset.modernuiDockerStats=' . json_encode($dockerShowStats) . ";\n"
         . "var s=document.createElement('script');\n"
-        . "s.src='/plugins/unraid-modernui/theme/dist/" . $target . "';\n"
+        . "s.src='" . modernui_dist_asset_url($target) . "';\n"
         . "document.head.appendChild(s);\n"
         . $extraScript
         . "})();\n";

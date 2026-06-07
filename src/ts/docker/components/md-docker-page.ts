@@ -23,6 +23,7 @@ import {
   openEdit,
   type DockerAction,
 } from '../actions';
+import { dlog } from '../debug';
 import type { DockerRowActionDetail } from './md-docker-row';
 import type { BulkAction } from './md-docker-bulk-bar';
 import './md-docker-toolbar';
@@ -179,6 +180,30 @@ export class ModernuiDockerPage extends LitElement {
       border-radius: var(--radius-md);
     }
     .empty strong { display: block; font-size: 16px; color: var(--text-primary); margin-bottom: 4px; }
+
+    /* Transient result banner shown when a "check for updates" run completes.
+       Auto-dismisses; tone-coloured leading dot mirrors the header stat pills. */
+    .check-summary {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    .check-summary .cs-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .check-summary.info .cs-dot    { background: var(--info); }
+    .check-summary.success .cs-dot { background: var(--success); }
+    .check-summary.danger .cs-dot  { background: var(--danger); }
+    .check-summary .cs-text { flex: 1 1 auto; }
+    .check-summary .cs-close {
+      background: transparent; border: 0; color: var(--text-muted);
+      cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+    .check-summary .cs-close:hover { color: var(--text-primary); background: var(--bg-elevated); }
   `;
 
   private _store: DockerStore | null = null;
@@ -192,6 +217,14 @@ export class ModernuiDockerPage extends LitElement {
   @state() private _showFolderModal = false;
   @state() private _showTagModal = false;
   @state() private _checkingUpdates = false;
+  // Transient banner shown when a "check for updates" run completes, summarising
+  // the result (e.g. "3 updates available" / "All containers up to date"). Auto-
+  // dismisses after a few seconds; _checkSummaryHandle tracks that timer so it's
+  // cancelled on teardown / replacement. Without this the completion is silent —
+  // badges just appear — and a "0 updates" result gives no feedback at all.
+  @state() private _checkSummary: { tone: 'info' | 'success' | 'danger'; text: string } | null =
+    null;
+  private _checkSummaryHandle: number | null = null;
   // Styled replacement for window.confirm(). When set, the confirm modal is
   // rendered; _confirmResolve settles the promise handed back by _askConfirm().
   @state() private _confirm: ConfirmConfig | null = null;
@@ -260,6 +293,48 @@ export class ModernuiDockerPage extends LitElement {
       window.clearTimeout(this._startingPollHandle);
       this._startingPollHandle = null;
     }
+    if (this._checkSummaryHandle !== null) {
+      window.clearTimeout(this._checkSummaryHandle);
+      this._checkSummaryHandle = null;
+    }
+  }
+
+  // Show the post-check result banner. tone drives the colour/icon; the banner
+  // auto-dismisses after AUTO_DISMISS_MS (a prior pending dismiss is cleared so
+  // a fresh result gets the full window). The user can also dismiss it manually.
+  private static readonly CHECK_SUMMARY_AUTO_DISMISS_MS = 8000;
+  private _showCheckSummary(tone: 'info' | 'success' | 'danger', text: string): void {
+    if (this._checkSummaryHandle !== null) window.clearTimeout(this._checkSummaryHandle);
+    this._checkSummary = { tone, text };
+    this._checkSummaryHandle = window.setTimeout(() => {
+      this._checkSummary = null;
+      this._checkSummaryHandle = null;
+    }, ModernuiDockerPage.CHECK_SUMMARY_AUTO_DISMISS_MS);
+  }
+
+  // Summarise the snapshot after a completed check: count containers flagged
+  // updateAvailable and surface "N updates available" / "All containers up to
+  // date" — or a failure note when the worker reported an error. Pulled out so
+  // both the normal completion path and the resumed-run path share one place.
+  private _announceCheckResult(error: string | null): void {
+    if (error) {
+      this._showCheckSummary('danger', 'Update check failed — see logs');
+      return;
+    }
+    const found = this._store?.getState().containers.filter((c) => c.updateAvailable).length ?? 0;
+    if (found === 0) {
+      this._showCheckSummary('success', 'All containers up to date');
+    } else {
+      this._showCheckSummary('info', `${found} update${found === 1 ? '' : 's'} available`);
+    }
+  }
+
+  private _dismissCheckSummary(): void {
+    if (this._checkSummaryHandle !== null) {
+      window.clearTimeout(this._checkSummaryHandle);
+      this._checkSummaryHandle = null;
+    }
+    this._checkSummary = null;
   }
 
   // Promise-based styled confirm. Replaces window.confirm() — resolves true if
@@ -581,6 +656,7 @@ export class ModernuiDockerPage extends LitElement {
   private _runCheckForUpdates = async (): Promise<void> => {
     if (!this._store || this._checkingUpdates) return;
     this._checkingUpdates = true;
+    dlog('check-for-updates: started');
     try {
       // Baseline the previous run's completion timestamp BEFORE spawning the
       // worker. The poll loop uses it to tell "this run finished" apart from a
@@ -599,6 +675,39 @@ export class ModernuiDockerPage extends LitElement {
       this._checkingUpdates = false;
       console.warn('[modernui-docker] check-for-updates failed:', err);
       alert(`Check for updates failed: ${(err as Error).message}`);
+    }
+  };
+
+  // Re-attach to a check-for-updates run that's still in flight server-side.
+  //
+  // checkForUpdates() spawns a DETACHED PHP worker whose run state lives in a
+  // server PID lock (see docker-check-updates.php), so the work continues across
+  // a page navigation — but _checkingUpdates is a per-instance flag that resets
+  // to false on every fresh load. Without this, navigating away and back during
+  // a check shows the button idle ("Check for updates") even though the worker
+  // is still walking the registry, and the new updateAvailable badges only
+  // appear on some later incidental resync — so the user can't tell the check
+  // finished. Called from boot.ts after mount: if the worker is still running we
+  // restore the "Checking…" UI and resume the poll, which refreshes the snapshot
+  // on completion exactly like the original run would have.
+  resumeCheckForUpdatesIfRunning = async (): Promise<void> => {
+    if (!this._store || this._checkingUpdates) return;
+    try {
+      const status = await getCheckUpdatesStatus();
+      if (!status.running) {
+        dlog('check-for-updates: no run in flight on boot', { finishedAt: status.finishedAt });
+        return;
+      }
+      dlog('check-for-updates: resuming in-flight run after navigation');
+      this._checkingUpdates = true;
+      // Baseline at the worker's current finishedAt. It's running now, so the
+      // poll will observe running:true (sets sawRunning) and conclude on the
+      // real completion — then refreshSnapshot() paints the new badges.
+      this._pollCheckUpdates(status.finishedAt);
+    } catch (err) {
+      // Status probe is best-effort; a failure just means we don't resume the
+      // optimistic UI (the next resync still eventually reflects the result).
+      dlog('check-for-updates: resume probe failed', { err: String(err) });
     }
   };
 
@@ -667,12 +776,14 @@ export class ModernuiDockerPage extends LitElement {
         console.warn(
           '[modernui-docker] check-for-updates watchdog: no running worker for 60s, giving up',
         );
+        dlog('check-for-updates: watchdog gave up (no running worker for 60s)');
         try {
           await refreshSnapshot();
         } catch {
           /* snapshot is best-effort here */
         }
         this._checkingUpdates = false;
+        this._showCheckSummary('danger', 'Update check timed out');
         return;
       }
       try {
@@ -685,15 +796,22 @@ export class ModernuiDockerPage extends LitElement {
         // run has genuinely completed — NOT on the first premature running:false
         // the detached worker can momentarily emit before it writes its lock.
         if (!checkUpdatesCompleted(status, sawRunning, baselineFinishedAt)) {
+          dlog('check-for-updates: still running', { running: status.running, sawRunning });
           reschedule();
           return;
         }
         if (status.error) {
           console.warn('[modernui-docker] check-for-updates worker error:', status.error);
         }
+        dlog('check-for-updates: completed, refreshing snapshot', { error: status.error });
         await refreshSnapshot();
         this._checkingUpdates = false;
+        // Surface the outcome now that the snapshot carries the fresh
+        // updateAvailable flags — including the "0 / up to date" case, which
+        // otherwise produces no visible change at all.
+        this._announceCheckResult(status.error);
       } catch (err) {
+        dlog('check-for-updates: poll failed', { err: String(err) });
         console.warn('[modernui-docker] status poll failed:', err);
         this._checkingUpdates = false;
       }
@@ -979,6 +1097,19 @@ export class ModernuiDockerPage extends LitElement {
             <a class="btn btn-primary" href="/Docker/AddContainer">${icon('plus')} Add Container</a>
           </div>
         </header>
+
+        ${
+          this._checkSummary
+            ? html`
+          <div class="check-summary ${this._checkSummary.tone}" role="status" aria-live="polite">
+            <span class="cs-dot"></span>
+            <span class="cs-text">${this._checkSummary.text}</span>
+            <button class="cs-close" title="Dismiss" aria-label="Dismiss"
+                    @click=${() => this._dismissCheckSummary()}>×</button>
+          </div>
+        `
+            : nothing
+        }
 
         <md-docker-toolbar
           .filters=${filters}

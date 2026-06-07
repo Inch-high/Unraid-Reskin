@@ -1,8 +1,9 @@
 import { createDockerStore, filtersFromQuery } from './store';
-import { fetchSnapshot } from './actions';
+import { fetchSnapshot, SnapshotError } from './actions';
 import { readCachedSnapshot, writeCachedSnapshot } from './snapshot-cache';
 import { createLiveSubscription } from './lifecycle';
 import { createUpdateProgressStore } from './update-progress';
+import { dlog, isDockerDebug } from './debug';
 import './components/md-docker-page';
 import type { ModernuiDockerPage } from './components/md-docker-page';
 import type { DockerDelta } from './types';
@@ -112,15 +113,87 @@ function resolveById(
   return null;
 }
 
-export async function boot(): Promise<void> {
-  if (!isDockerPageEnabled(document)) return;
-  if (!onDockerPage()) return;
+// Wait for #modernui-docker-root to appear in the DOM, up to a timeout. Returns
+// the element once present, or null if it never shows. Needed because the newer
+// Unraid web-component shell can inject the legacy .page body (which contains our
+// mount point) a tick after our head-loaded bundle executes — so a one-shot
+// querySelector at script-eval time races and can miss it, especially on a
+// re-navigation. A MutationObserver catches the insertion; the timeout stops us
+// waiting forever on a page that genuinely has no mount point (stock UI).
+function waitForRoot(timeoutMs = 10_000): Promise<HTMLElement | null> {
+  return new Promise((resolve) => {
+    const existing = document.querySelector<HTMLElement>('#modernui-docker-root');
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+    let settled = false;
+    const finish = (el: HTMLElement | null): void => {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      window.clearTimeout(timer);
+      resolve(el);
+    };
+    const observer = new MutationObserver(() => {
+      const el = document.querySelector<HTMLElement>('#modernui-docker-root');
+      if (el) finish(el);
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
+  });
+}
 
-  const root = document.querySelector<HTMLElement>('#modernui-docker-root');
-  if (!root) return; // mount point absent → stock page is rendering, bail silently
+export async function boot(): Promise<void> {
+  // Logged BEFORE the guards so we can tell "boot never ran" (no line at all)
+  // apart from "boot ran but bailed at a guard" (this line, then a bail line).
+  // The reported symptom — debug banner prints but nothing else — means boot
+  // returned at one of the three guards below without throwing.
+  dlog('boot: entry', {
+    path: window.location.pathname,
+    search: window.location.search,
+    readyState: document.readyState,
+    dockerFlag: document.documentElement.dataset.modernuiDocker,
+    rootPresent: !!document.querySelector('#modernui-docker-root'),
+  });
+
+  if (!isDockerPageEnabled(document)) {
+    dlog('boot: BAIL — page disabled (data-modernui-docker=off)');
+    return;
+  }
+  if (!onDockerPage()) {
+    dlog('boot: BAIL — not on /Docker', { pathname: window.location.pathname });
+    return;
+  }
+
+  let root = document.querySelector<HTMLElement>('#modernui-docker-root');
+  if (!root) {
+    // The mount point wasn't in the DOM at script-eval time. On the newer Unraid
+    // web-component shell the legacy .page content (our root div) can be injected
+    // a tick AFTER our head-loaded bundle runs — especially on a re-navigation —
+    // so bailing immediately (as before) left the page permanently blank. Wait
+    // for it instead of giving up.
+    dlog('boot: root absent at entry — waiting for mount point', {
+      readyState: document.readyState,
+    });
+    root = await waitForRoot();
+    if (!root) {
+      dlog('boot: BAIL — mount point never appeared');
+      return;
+    }
+    dlog('boot: root appeared after wait');
+  }
+
+  dlog('boot: start', { path: window.location.pathname, search: window.location.search });
 
   const store = createDockerStore();
   store.setFilters(filtersFromQuery(window.location.search));
+  // Surface how many "updating" probes survived the navigation. This is the
+  // crux of the navigate-away-during-update repro: a container UPDATE persists
+  // a probe (so md-docker-page restarts a poll that recovers from a boot 503),
+  // but a CHECK-FOR-UPDATES persists nothing — so if the boot resync 503s with
+  // no usable cache, nothing retries and the page stays on the skeleton.
+  dlog('boot: hydrated updating probes', { count: store.getUpdating().size });
   // Default folder state (Expanded / Collapsed) flows from Settings → Theme
   // via loader.js → dataset attribute on <html>.
   const defaultFolderState = document.documentElement.dataset.modernuiDockerFolderDefault;
@@ -164,7 +237,32 @@ export async function boot(): Promise<void> {
       });
       // Stash for the next boot's instant paint (SWR). Best-effort.
       writeCachedSnapshot(snapshot);
+      dlog('resync: applied snapshot', {
+        containers: snapshot.containers.length,
+        loading: store.isLoading(),
+      });
     } catch (err) {
+      // A transient 503 means the stock backend is mid-rewrite (update or
+      // check-for-updates in flight). We keep the current state and retry on the
+      // next resync — but on a COLD boot there's no current state and (for a
+      // check-for-updates) no probe-driven poll to retry, so loading stays true
+      // and the page sits on the skeleton. That stuck-loading combination is the
+      // signature of the reported bug; logging it makes it unmistakable.
+      const transient = err instanceof SnapshotError && err.isTransient;
+      dlog('resync: FAILED', {
+        transient,
+        status: err instanceof SnapshotError ? err.status : undefined,
+        stillLoading: store.isLoading(),
+        haveContainers: store.getState().containers.length,
+        updatingProbes: store.getUpdating().size,
+        err: String(err),
+      });
+      if (transient && store.isLoading()) {
+        dlog(
+          'resync: STUCK — boot resync 503 with empty store and no rendered rows; ' +
+            'nothing will retry unless an updating probe or a visibility flip fires',
+        );
+      }
       console.warn('[modernui-docker] snapshot failed:', err);
     }
   }
@@ -197,6 +295,7 @@ export async function boot(): Promise<void> {
       return null;
     },
     () => {
+      dlog('progress: _DONE_ batch complete — resync then clearAllUpdating');
       void resync().then(() => store.clearAllUpdating());
     },
   );
@@ -219,9 +318,36 @@ export async function boot(): Promise<void> {
       tags: cached.tags,
       tagAssignments: cached.tagAssignments,
     });
+    dlog('cache: HIT — hydrated from sessionStorage', { containers: cached.containers.length });
+  } else {
+    // No cache → if the resync below 503s, the store has nothing to paint and
+    // loading never clears. This is the cold-boot half of the bug.
+    dlog('cache: MISS — no usable SWR snapshot; loading state depends on resync');
+  }
+
+  // Expose the live stores for console inspection while debugging, e.g.
+  // window.__modernuiDocker.store.isLoading(). Only attached when debug is on.
+  if (isDockerDebug()) {
+    (window as unknown as { __modernuiDocker?: unknown }).__modernuiDocker = {
+      store,
+      progressStore,
+      resync,
+    };
   }
 
   await resync();
+  dlog('boot: initial resync settled', {
+    loading: store.isLoading(),
+    containers: store.getState().containers.length,
+  });
+
+  // If a "check for updates" worker is still running server-side (the user
+  // started one, then navigated away and back), re-attach the "Checking…" UI
+  // and resume polling so the page reflects the in-flight run and refreshes the
+  // update badges when it completes — instead of looking idle while the worker
+  // keeps walking the registry. Fire-and-forget; it self-cancels if nothing is
+  // running.
+  void page.resumeCheckForUpdatesIfRunning();
 
   // Detect a post-reboot autostart-in-progress sequence. rc.docker reads
   // /var/lib/docker/unraid-autostart at boot and starts each listed container

@@ -303,6 +303,11 @@ if (PHP_SAPI !== 'cli') {
     $transient = false;
     $snapshot = modernui_docker_state($withStats, $transient);
     if ($transient) {
+        // Logged so a "page failed to load during an update / check-for-updates"
+        // report can be correlated against the server clock — this 503 window is
+        // the stock backend mid-rewriting the webui-info docker.json. Front-end
+        // debug logging (?dockerdebug=1) records the matching client-side miss.
+        error_log('[modernui] docker-state transient 503 (webui-info mid-rewrite) — client keeps state and retries');
         // Mid-rewrite of the webui-info docker.json by the stock update flow:
         // the container list is momentarily empty though the daemon still has
         // them. 503 tells the client to keep its current state and retry —
