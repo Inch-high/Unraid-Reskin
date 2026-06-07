@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unraid-modernui">
 <!ENTITY author    "Inch-high">
-<!ENTITY version   "0.8.5">
+<!ENTITY version   "0.8.6">
 <!ENTITY launch    "Settings/Theme">
 <!ENTITY plugindir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
@@ -22,6 +22,13 @@
 
 <CHANGES>
 <![CDATA[
+###v0.8.6 (2026-06-07)
+- Fix (docker): the `/Docker` page no longer renders completely blank (no toolbar, no skeleton) when you navigate away and back — especially while a container update or a "check for updates" run is in flight. On the newer Unraid web-component shell the legacy `.page` body (our mount point) can be injected a tick after our head-loaded bundle runs; `boot()` did a one-shot `querySelector` and bailed permanently when the root was absent. It now waits for the mount point via a `MutationObserver` (10s cap) before giving up.
+- Fix (docker): a "check for updates" run now survives navigation. The run is a detached server-side worker (PID lock), but the "Checking…" UI was a per-instance flag that reset on reload, so returning to the page looked idle while the worker kept walking the registry. `boot()` re-attaches to an in-flight run and resumes polling, so the update badges refresh on completion as if uninterrupted.
+- Feat (docker): a transient, dismissible banner now reports the result of a completed update check — *N updates available* / *All containers up to date* / a failure note — including the previously-silent "0 updates" case. Fires on both the normal and resumed paths.
+- Fix (docker): `install.php` now appends `?v=<filemtime>` to each injected page bundle URL, matching the cache-busting already applied to `loader.js` + `modernui.css`. A plugin update could otherwise serve a stale bundle until a hard refresh (the classic blank-page-after-upgrade).
+- Chore (docker): added gated debug logging (off by default; enable with `?dockerdebug=1`, a per-session sessionStorage flag) across the boot / resync / poll path plus a server-side transient-503 log line, to make this class of "fails to load" report diagnosable from the console. Inert unless enabled. 117 TS docker suites green.
+
 ###v0.8.5 (2026-06-02)
 - Fix (docker): stop `/Docker` from blanking — and stop a stale "update available" badge — while a container update is in flight. During the stock `update_container` flow's rewrite of the `webui-info` `docker.json`, `getAllInfo()` momentarily returns an empty list (still HTTP 200), which overwrote the populated store with nothing and poisoned the per-tab snapshot cache, leaving the page blank across refreshes until the update finished. `docker-state.php` now cross-checks `getAllInfo()` against `getDockerContainers()` (the docker socket, unaffected by the rewrite) and responds `503` when the daemon still lists containers but the cache reads empty; the client keeps its current rows and retries on the next resync instead of clobbering them. A genuinely empty server (every container deleted) still returns `[]` and renders the empty state — fixing the inverse "ghost rows after delete-all" bug the first client-side guard introduced. No extra docker calls: both sources were already fetched on every load.
 - Fix (docker): clear the freshly-updated "update available" badge without a manual reload. The `_DONE_` handler now resyncs *before* clearing the update probes, so the id-rotation reconcile (the definitive "pull succeeded, container recreated" signal) can force-clear the badge over Unraid's lagging digest cache while the probe still exists; clearing first left reconcile nothing to match and the stale badge persisted. New `docker-state.test.php` for the transient-empty disambiguation plus `boot.ts`/`store.ts` ordering coverage; 116 TS + PHP suites green.
